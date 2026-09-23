@@ -1,0 +1,22 @@
+# Nextcloud calendars <-> ~/.local/share/calendars (read by khal)
+# Password is NOT stored here: it lives in the GNOME keyring (see calendar-login.sh).
+[general]
+status_path = "~/.local/share/vdirsyncer/status/"
+
+[pair nextcloud]
+a = "nextcloud_local"
+b = "nextcloud_remote"
+collections = ["from a", "from b"]
+metadata = ["color", "displayname"]
+conflict_resolution = "b wins"
+
+[storage nextcloud_local]
+type = "filesystem"
+path = "~/.local/share/calendars/"
+fileext = ".ics"
+
+[storage nextcloud_remote]
+type = "caldav"
+url = "https://cloud.example.com/remote.php/dav/"
+username = "YOUR_NEXTCLOUD_USER"
+password.fetch = ["command", "secret-tool", "lookup", "service", "nextcloud-caldav", "user", "YOUR_LINUX_USER"]

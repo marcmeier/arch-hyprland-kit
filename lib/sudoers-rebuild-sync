@@ -1,0 +1,5 @@
+# Lets auto-snapshot.sh (rebuild-snapshot.timer) install packages from the kit's lists without a
+# password prompt. Installed to /etc/sudoers.d/10-rebuild-sync by restore.sh, or by hand:
+#   sudo install -m440 lib/sudoers-rebuild-sync /etc/sudoers.d/10-rebuild-sync
+# Note: pacman without password is effectively root for this user.
+user ALL=(root) NOPASSWD: /usr/bin/pacman

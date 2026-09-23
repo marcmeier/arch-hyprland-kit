@@ -1,0 +1,9 @@
+    "battery": {
+        "interval": 30,
+        "states": { "warning": 25, "critical": 12 },
+        "format": "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "{timeTo}\n{power} W"
+    },

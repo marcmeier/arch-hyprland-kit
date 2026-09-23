@@ -1,0 +1,265 @@
+// -*- mode: jsonc -*-
+// Minimal floating bar: user + workspaces + window left, clock centered, media, tray and controls right.
+// Backup of the stock config: config.jsonc.bak-default
+{
+    "layer": "top",
+    "position": "top",
+    "height": 36,
+    "margin-top": 6,
+    "margin-left": 10,
+    "margin-right": 10,
+    "spacing": 8,
+    "reload_style_on_change": true,
+
+    "modules-left": [
+        "group/user",
+        "group/workspaces",
+        "custom/window"
+    ],
+    "modules-center": [
+        "group/datetime",
+        "custom/weather"
+    ],
+    "modules-right": [
+        "group/media",
+        "tray",
+        "group/audio",
+        "custom/claude",
+        "battery",
+        "network",
+        "custom/updates",
+        "group/actions",
+        "custom/power"
+    ],
+
+    // Profile picture (round PNG rendered from ~/.face) + display name
+    "group/user": {
+        "orientation": "horizontal",
+        "modules": ["custom/avatar", "custom/username"]
+    },
+    "custom/avatar": {
+        "format": " ",
+        "tooltip": false
+    },
+    "custom/username": {
+        "exec": "n=$(getent passwd \"$USER\" | cut -d: -f5 | cut -d, -f1); echo \"${n:-$USER}\"", "interval": "once",
+        "tooltip": false
+    },
+
+    "group/workspaces": {
+        "orientation": "horizontal",
+        "modules": ["custom/ws1", "custom/ws2", "custom/ws3", "custom/ws4", "custom/ws5", "custom/wsmore"]
+    },
+    "custom/ws1": {
+        "exec": "~/.config/waybar/ws.py 1",
+        "return-type": "json",
+        "on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 1 })'",
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+    },
+    "custom/ws2": {
+        "exec": "~/.config/waybar/ws.py 2",
+        "return-type": "json",
+        "on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 2 })'",
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+    },
+    "custom/ws3": {
+        "exec": "~/.config/waybar/ws.py 3",
+        "return-type": "json",
+        "on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 3 })'",
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+    },
+    "custom/ws4": {
+        "exec": "~/.config/waybar/ws.py 4",
+        "return-type": "json",
+        "on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 4 })'",
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+    },
+    "custom/ws5": {
+        "exec": "~/.config/waybar/ws.py 5",
+        "return-type": "json",
+        "on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 5 })'",
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+    },
+
+    "custom/wsmore": {
+        "exec": "~/.config/waybar/ws.py more",
+        "return-type": "json",
+        "on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'",
+        "on-click-right": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+    },
+
+    // Active window: app glyph + title + app name (window.py, follows Hyprland events)
+    "custom/window": {
+        "exec": "~/.config/waybar/window.py",
+        "return-type": "json"
+    },
+
+    "clock": {
+        "format": "{:%H:%M  <span size='small' weight='normal' color='#8b93a1'>%a %d %b</span>}",
+        "tooltip": false,
+        "on-click": "~/.config/waybar/ikhal.sh"
+    },
+
+    // Now playing: transport buttons + title, drawn as one joined pill (see style.css).
+    // Every segment is hidden while no player runs (media.py prints empty text).
+    "group/media": {
+        "orientation": "horizontal",
+        "modules": ["custom/media-prev", "custom/media-play", "custom/media-next", "custom/media"]
+    },
+    "custom/media-prev": {
+        "exec": "~/.config/waybar/media.py prev",
+        "return-type": "json",
+        "on-click": "playerctl previous"
+    },
+    "custom/media-play": {
+        "exec": "~/.config/waybar/media.py play",
+        "return-type": "json",
+        "on-click": "playerctl play-pause"
+    },
+    "custom/media-next": {
+        "exec": "~/.config/waybar/media.py next",
+        "return-type": "json",
+        "on-click": "playerctl next"
+    },
+    "custom/media": {
+        "exec": "~/.config/waybar/media.py info",
+        "return-type": "json",
+        "on-click": "playerctl play-pause",
+        "on-click-right": "playerctl next",
+        "on-scroll-up": "playerctl next",
+        "on-scroll-down": "playerctl previous"
+    },
+
+    // Idle inhibitor + notifications in one pill
+    "group/actions": {
+        "orientation": "horizontal",
+        "modules": ["idle_inhibitor", "custom/notifications"]
+    },
+
+    // Output switcher + microphone in one pill
+    "group/audio": {
+        "orientation": "horizontal",
+        "modules": ["pulseaudio", "pulseaudio#mic"]
+    },
+
+    // Left: next output (audio-switch.py) · middle: mixer · right: mute
+    "pulseaudio": {
+        "format": "{icon}   {volume}%",
+        "format-muted": "\uf026    muted",
+        "format-icons": {
+            "headphone": "\uf025",
+            "default": ["\uf027", "\uf028"]
+        },
+        "scroll-step": 2,
+        "on-click": "~/.config/waybar/audio-switch.py",
+        "on-click-middle": "pwvucontrol",
+        "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+        "tooltip-format": "{desc}\nClick: next output  ·  Middle: mixer  ·  Right: mute"
+    },
+
+    // Default microphone: click mutes, scroll changes the input level
+    "pulseaudio#mic": {
+        "format": "{format_source}",
+        "format-source": "\uf130",
+        "format-source-muted": "\uf131",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+        "on-scroll-up": "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SOURCE@ 2%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 2%-",
+        "tooltip-format": "Microphone {source_volume}%\nClick: mute  ·  Scroll: level"
+    },
+
+    // Claude Code usage: session/week utilisation + reset times (claude-usage.py)
+    "custom/claude": {
+        "exec": "~/.config/waybar/claude-usage.py",
+        "return-type": "json",
+        "interval": 180,
+        "on-click": "xdg-open https://claude.ai/settings/usage"
+    },
+
+    "custom/notifications": {
+        "exec": "~/.config/waybar/notifications.sh",
+        "return-type": "json",
+        "interval": 5,
+        "signal": 10,
+        "on-click": "makoctl mode -t dnd; pkill -RTMIN+10 waybar",
+        "on-click-right": "makoctl dismiss -a; pkill -RTMIN+10 waybar",
+        "on-click-middle": "makoctl restore; pkill -RTMIN+10 waybar"
+    },
+
+    "battery": {
+        "interval": 30,
+        "states": { "warning": 25, "critical": 12 },
+        "format": "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "{timeTo}\n{power} W"
+    },
+
+    "network": {
+        "format-ethernet": "",  // hidden while connected
+        "format-wifi": "\uf1eb {signalStrength}%",
+        "tooltip-format-wifi": "{essid}\n{ipaddr}/{cidr}",
+        "format-disconnected": " offline",
+        "tooltip-format-ethernet": "{ifname}\n{ipaddr}/{cidr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
+        "on-click": "ghostty -e nmtui"
+    },
+
+    "custom/updates": {
+        "exec": "~/.config/waybar/updates.sh",
+        "return-type": "json",
+        "interval": 1800,
+        "on-click": "ghostty -e bash -c 'yay -Syu; echo; read -rp \"Done, press Enter\"'",
+        "on-click-right": "pkill -RTMIN+8 waybar",
+        "signal": 8
+    },
+
+    // Next event from khal (synced from Nextcloud). Click: interactive calendar (add/edit events)
+    // One bubble: date/time + next event; click opens ikhal
+    "group/datetime": {
+        "orientation": "horizontal",
+        "modules": ["clock", "custom/calendar"]
+    },
+
+    "custom/calendar": {
+        "exec": "~/.config/waybar/calendar.sh",
+        "return-type": "json",
+        "interval": 60,
+        "signal": 9,
+        "max-length": 30,
+        "on-click": "~/.config/waybar/ikhal.sh",
+        "on-click-right": "ghostty -e bash -c 'vdirsyncer sync; echo; read -rp \"Synced, press Enter\"'"
+    },
+
+    "custom/weather": {
+        "exec": "~/.config/waybar/weather.sh",
+        "return-type": "json",
+        "interval": 1800
+    },
+
+    // Click toggles: while active, hypridle will not lock/sleep
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": { "activated": "󰅶", "deactivated": "󰾪" },
+        "tooltip-format-activated": "Idle inhibited (no lock/sleep)",
+        "tooltip-format-deactivated": "Idle allowed"
+    },
+
+    "tray": {
+        "icon-size": 16,
+        "spacing": 10
+    },
+
+    "custom/power": {
+        "format": "",
+        "tooltip": false,
+        "on-click": "~/.config/wlogout/wlogout.sh"
+    }
+}

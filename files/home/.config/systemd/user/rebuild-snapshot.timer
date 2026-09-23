@@ -1,0 +1,11 @@
+[Unit]
+Description=Sync rebuild kit with GitHub (snapshot, pull, apply, push)
+
+[Timer]
+OnStartupSec=3min
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

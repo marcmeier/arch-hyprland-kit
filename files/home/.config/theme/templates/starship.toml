@@ -1,0 +1,67 @@
+# Matches waybar / ghostty: cyan path, green accent, dim details.
+add_newline = false
+command_timeout = 500
+
+format = """
+$username$hostname$directory$git_branch$git_status$python$rust$golang$cmd_duration$jobs
+$character"""
+
+[character]
+success_symbol = "[❯](bold @secondary@)"
+error_symbol   = "[❯](bold #ff5f6d)"
+
+[directory]
+style = "bold @primary@"
+truncation_length = 3
+truncation_symbol = "…/"
+read_only = " "
+read_only_style = "#ffb454"
+
+[git_branch]
+symbol = " "
+format = "[on](#6b7280) [$symbol$branch]($style) "
+style = "@secondary@"
+
+[git_status]
+format = "([$all_status$ahead_behind]($style) )"
+style = "#ffb454"
+conflicted = "="
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕"
+modified = "!"
+staged = "+"
+untracked = "?"
+stashed = "$"
+deleted = "✘"
+
+[cmd_duration]
+min_time = 3000
+format = "[took $duration]($style) "
+style = "#6b7280"
+
+[jobs]
+symbol = "✦"
+style = "#c792ea"
+
+[username]
+format = "[$user]($style)@"
+style_user = "#6b7280"
+style_root = "bold #ff5f6d"
+
+[hostname]
+ssh_only = true
+format = "[$hostname]($style) "
+style = "#6b7280"
+
+[python]
+format = "[py $version]($style) "
+style = "#6b7280"
+
+[rust]
+format = "[rs $version]($style) "
+style = "#6b7280"
+
+[golang]
+format = "[go $version]($style) "
+style = "#6b7280"

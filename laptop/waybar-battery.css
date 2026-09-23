@@ -1,0 +1,12 @@
+
+/* ---- battery (notebooks only, added by restore.sh) ---- */
+#battery {
+    background: @surface;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 0 14px;
+    color: @text;
+}
+#battery.charging, #battery.plugged { color: @accent2; }
+#battery.warning:not(.charging) { color: @warn; }
+#battery.critical:not(.charging) { color: @crit; }

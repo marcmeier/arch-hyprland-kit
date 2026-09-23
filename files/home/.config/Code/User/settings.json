@@ -1,0 +1,5 @@
+{
+    "workbench.startupEditor": "none",
+    "chat.titleBar.signIn.enabled": false,
+    "chat.titleBar.openInAgentsWindow.enabled": false
+}

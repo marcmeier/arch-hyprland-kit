@@ -1,0 +1,44 @@
+# Matches the waybar/wlogout theme. There was no user config before, so the
+# backup is "delete this file" (mako then falls back to its built-in defaults).
+
+font=JetBrainsMono Nerd Font 10
+anchor=top-right
+layer=overlay
+# top,right,bottom,left: keeps clear of the floating waybar (34px + 6px margin)
+outer-margin=50,10,0,0
+margin=0,0,8,0
+width=360
+height=140
+padding=12,16
+border-size=1
+border-radius=14
+icons=1
+max-icon-size=40
+icon-border-radius=8
+
+background-color=#14161ccc
+text-color=#d7dce2
+border-color=#33aaff88
+progress-color=over #ffcc3344
+
+format=<b>%s</b>\n%b
+markup=1
+max-visible=4
+default-timeout=6000
+group-by=app-name
+
+[urgency=low]
+border-color=#ffffff22
+text-color=#6b7280
+default-timeout=3000
+
+[urgency=critical]
+border-color=#ff5f6dcc
+default-timeout=0
+
+[app-name=notify-send]
+border-color=#ffcc3388
+
+# Toggled from the waybar bell (makoctl mode -t dnd): notifications are held, not shown
+[mode=dnd]
+invisible=1

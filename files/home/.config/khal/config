@@ -1,0 +1,52 @@
+[calendars]
+[[nextcloud]]
+path = ~/.local/share/calendars/*
+type = discover
+
+[locale]
+timeformat = %H:%M
+dateformat = %d.%m.%Y
+longdateformat = %d.%m.%Y
+datetimeformat = %d.%m.%Y %H:%M
+longdatetimeformat = %d.%m.%Y %H:%M
+firstweekday = 0
+
+[default]
+highlight_event_days = True
+
+[view]
+# no long descriptions in the lists (open the event to read them)
+agenda_event_format = {calendar-color}{cancelled}{start-end-time-style} {title}{repeat-symbol}{alarm-symbol}{reset}
+event_format = {calendar-color}{cancelled}{start}-{end} {title}{repeat-symbol}{alarm-symbol}{reset}
+
+# match the desktop theme. Colours are ghostty palette slots: dark cyan = #33ccff,
+# light green = #00ff99, dark gray = #4b5263, light gray = #d7dce2.
+# "black" (ansi slot 0) is remapped to the window background in ikhal.sh.
+[palette]
+header = light gray, black, bold
+footer = dark gray, black
+line header = dark cyan, black, bold
+alt header = dark cyan, black, bold
+bright = light gray, black, bold
+list = light gray, black
+list focused = black, dark cyan, bold
+edit = light gray, black
+edit focus = black, dark cyan, bold
+button = light gray, black
+button focused = black, dark cyan, bold
+reveal focus = black, dark cyan
+today = black, dark cyan
+today focus = black, light green, bold
+date header = light gray, black, bold
+date header focused = black, dark cyan, bold
+date header selected = light gray, dark gray
+dayname = dark gray, black
+monthname = dark cyan, black, bold
+weeknumber_right = dark gray, black
+alt monthname = dark cyan, black, bold
+alt today = black, dark cyan
+alt today focus = black, light green, bold
+caption = dark cyan, black, bold
+frame = dark gray, black
+frame focus = dark cyan, black
+frame focus color = dark cyan, black

@@ -1,0 +1,20 @@
+[background]
+path = "/usr/share/backgrounds/login.png"
+fit = "Cover"
+
+[GTK]
+application_prefer_dark_theme = true
+cursor_theme_name = "capitaine-cursors"
+font_name = "JetBrainsMono Nerd Font 13"
+
+[appearance]
+greeting_msg = "archlinux"
+
+[commands]
+reboot = ["systemctl", "reboot"]
+poweroff = ["systemctl", "poweroff"]
+
+[widget.clock]
+format = "%H:%M"
+resolution = "500ms"
+label_width = 200

@@ -43,7 +43,7 @@
 
     "group/system": {
         "orientation": "horizontal",
-        "modules": ["tray", "custom/updates", "idle_inhibitor", "custom/notifications", "custom/power"]
+        "modules": ["tray", "custom/updates", "custom/sync", "idle_inhibitor", "custom/notifications", "custom/power"]
     },
     "tray": { "spacing": 8 }
 }

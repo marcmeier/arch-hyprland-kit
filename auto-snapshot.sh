@@ -10,6 +10,15 @@
 #
 #   --adopt  make this machine match GitHub: drop unpushed local commits and copy every kit file
 #            over the live one. For a machine that fell behind, before its first regular run.
+#   --now    one full run whatever the mode says (also: a file $STATE/now, set by the waybar menu)
+#
+# Per machine switches in $STATE (~/.local/state/rebuild), set from the waybar sync pill
+# (~/.config/waybar/sync-menu.sh); they never travel with the kit, so GitHub cannot flip them:
+#   mode      auto (default): all four steps · review: record and fetch, but while GitHub has
+#             something new, stop before the merge (nothing applied, nothing pushed) until
+#             "Sync now" · off: the timer does nothing at all
+#   installs  on (default) · off: never install packages or VS Code extensions from the lists
+# Every run leaves its outcome in $STATE/status and refreshes the waybar pill (signal 11).
 #
 # Everything runs inside main(): the pull may rewrite this very file while bash is reading it.
 set -euo pipefail
@@ -17,12 +26,20 @@ export LC_ALL=C   # same sort order as snapshot.sh, whatever locale the session 
 
 main() {
   cd "$(dirname "$(readlink -f "$0")")"
-  local H=$HOME ADOPT=0
-  [[ ${1:-} == --adopt ]] && ADOPT=1
+  local H=$HOME ADOPT=0 NOW=0 OFFLINE=0 incoming sha
+  case ${1:-} in --adopt) ADOPT=1 ;; --now) NOW=1 ;; esac
   STATE="${XDG_STATE_HOME:-$H/.local/state}/rebuild"
   mkdir -p "$STATE"
   exec 9> "$STATE/lock"
   flock -n 9 || { echo "rebuild sync: already running"; exit 0; }
+  RESULT=failed APPLIED=0
+  trap write_status EXIT
+  [[ -e $STATE/now ]] && { NOW=1; rm -f "$STATE/now"; }
+  MODE=$(cat "$STATE/mode" 2> /dev/null || echo auto)
+  pkill -RTMIN+11 -x waybar 2> /dev/null || true   # the pill shows the run
+  if [[ $MODE == off ]] && (( ! NOW && ! ADOPT )); then
+    RESULT=paused; echo "rebuild sync: switched off on this machine (waybar sync pill)"; exit 0
+  fi
   HOST=$(< /etc/hostname)
   source ./kit.conf
 
@@ -40,30 +57,53 @@ main() {
 
     # 2. pull (offline: skip straight to installing what is missing)
     if git fetch -q origin main; then
+      incoming=$(git rev-list --count HEAD..origin/main)
+      if [[ $MODE == review ]] && (( incoming && ! NOW )); then
+        RESULT=held
+        # one notification per new GitHub state, not every hour
+        sha=$(git rev-parse origin/main)
+        if [[ $sha != "$(cat "$STATE/held.notified" 2> /dev/null)" ]]; then
+          notify normal "$incoming change(s) on GitHub wait for your review (sync pill in the bar)"
+          echo "$sha" > "$STATE/held.notified"
+        fi
+        exit 0
+      fi
       if ! git merge -q --no-edit -X theirs origin/main; then
         git merge --abort 2> /dev/null || true
+        RESULT=conflict
         notify critical "Could not take over the GitHub state (merge conflict). Please resolve it by hand: $PWD"
         exit 1
       fi
     else
+      OFFLINE=1
       echo "rebuild sync: GitHub not reachable, working offline"
     fi
   fi
 
   # 3. apply
-  APPLIED=0 RELOAD=()
+  RELOAD=()
   apply_kit "$old"
   install_missing
   reload_changed
 
   # 4. push + zip
+  RESULT=ok
+  (( OFFLINE )) && RESULT=offline
   if git rev-parse -q --verify origin/main > /dev/null && (( $(git rev-list --count origin/main..HEAD) )); then
-    git push -q origin main && echo "rebuild sync: pushed to GitHub" \
-      || echo "rebuild sync: git push failed, will retry next run" >&2
+    if git push -q origin main; then echo "rebuild sync: pushed to GitHub"
+    else RESULT="push failed"; echo "rebuild sync: git push failed, will retry next run" >&2; fi
   fi
   refresh_zip
   (( APPLIED )) && notify normal "Taken over from GitHub: $APPLIED change(s)"
   echo "rebuild sync: done $(date -Is)"
+}
+
+# EXIT trap: outcome of this run for the waybar sync pill (sync.py)
+write_status() {
+  local rc=$?
+  (( rc )) && [[ $RESULT == ok || $RESULT == offline ]] && RESULT=failed
+  printf 'time=%s\nresult=%s\napplied=%s\n' "$(date +%s)" "$RESULT" "$APPLIED" > "$STATE/status"
+  pkill -RTMIN+11 -x waybar 2> /dev/null || true
 }
 
 notify() {  # notify URGENCY TEXT
@@ -142,6 +182,10 @@ reload_changed() {
 # sudo rule from lib/sudoers-rebuild-sync (pacman without password); without it only a notification.
 install_missing() {
   local have miss_repo miss_aur miss_code failed=() msg x
+  if [[ $(cat "$STATE/installs" 2> /dev/null) == off ]]; then
+    echo "rebuild sync: installs switched off on this machine, not installing anything"
+    return 0
+  fi
   have=$(pacman -Qq | sort)
   mapfile -t miss_repo < <(comm -23 <(sort -u packages/pacman.txt) <(echo "$have"))
   mapfile -t miss_aur < <(comm -23 <(sort -u packages/aur.txt) <(echo "$have"))

@@ -144,6 +144,20 @@ systemctl --user start rebuild-snapshot.service
 journalctl --user -u rebuild-snapshot.service -n 30
 ```
 
+### 🎛️ Sync Pill in the Bar
+
+The sync shares a pill with the package updates (`group/upkeep`; in the compact bar it sits in the system group). It shows the GitHub logo, set off from the updates by a thin divider; colour and a small mark give the state: dim when all is in step, `↓n` for commits on GitHub this machine has not taken over, `↑n` for local commits not pushed yet, yellow while something waits for review or the sync is off (with a pause mark), red with an alert mark after a merge conflict or a failed run. The tooltip says who wrote to GitHub last, what the incoming commits would change (files and, highlighted, **new packages**) and when every machine last sent a change.
+
+| Mode | What the hourly run does |
+|---|---|
+| **automatic** (default) | all four steps, as above |
+| **review first** | records and fetches, but while GitHub has something new it stops before the merge: nothing applied, nothing pushed, one notification. Look at the diff, then *Sync now* takes it over. |
+| **off** | nothing at all |
+
+Separately, **installs off** keeps the sync from installing any package or VS Code extension from the lists (configs are still applied). Click the pill for the menu (modes, installs, *Review incoming changes* as a full diff in a terminal, *Check GitHub now*, log, commits on GitHub); right-click syncs now, middle-click pauses or resumes. Terminal: `~/.config/waybar/sync-menu.sh now|toggle|auto|review|off|installs|check|diff|log|github`.
+
+The switches are files in `~/.local/state/rebuild` (`mode`, `installs`) and never travel with the kit, so a bad state on GitHub cannot switch them back on. Every run writes its outcome to `status` there and refreshes the pill (signal 11); `sync.py` itself only reads local git refs, the network is used by the run or by *Check GitHub now*.
+
 ## 🖥️ Waybar Adapts to the Screen
 
 The bar was designed for the 3440px desktop monitor. On a 1920px notebook panel the same pills would sit shoulder to shoulder, so every monitor gets its own bar in the layout that fits its width. A notebook docked to an ultrawide shows the compact bar on its panel and the spacious one on the big screen at the same time, and follows plugging, unplugging and display mode changes with no manual step.

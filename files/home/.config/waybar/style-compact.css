@@ -68,7 +68,8 @@
 
 /* ---- system: tray, updates, idle, notifications, power ---- */
 #system { padding: 0 4px 0 8px; }
-#system #tray, #system #custom-updates { padding: 0 6px; }
+#system #tray, #system #custom-updates, #system #custom-sync { padding: 0 6px; }
+#system #custom-updates.none { padding: 0; }
 #system #idle_inhibitor, #system #custom-notifications { padding: 0 6px; }
 #system #custom-power {
     color: @crit;

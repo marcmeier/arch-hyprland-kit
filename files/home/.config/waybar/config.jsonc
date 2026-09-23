@@ -27,7 +27,7 @@
         "custom/claude",
         "battery",
         "network",
-        "custom/updates",
+        "group/upkeep",
         "group/actions",
         "custom/power"
     ],
@@ -210,6 +210,24 @@
         "format-disconnected": " offline",
         "tooltip-format-ethernet": "{ifname}\n{ipaddr}/{cidr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
         "on-click": "ghostty -e nmtui"
+    },
+
+    // What waits to reach this machine: package updates + the kit sync with GitHub, one pill
+    "group/upkeep": {
+        "orientation": "horizontal",
+        "modules": ["custom/updates", "custom/sync"]
+    },
+
+    // Kit sync (auto-snapshot.sh): mode, incoming/outgoing commits, who wrote to GitHub last.
+    // Click: menu (mode auto/review/off, installs, review diff, log) · Right: sync now · Middle: pause/resume
+    "custom/sync": {
+        "exec": "~/.config/waybar/sync.py",
+        "return-type": "json",
+        "interval": 60,
+        "signal": 11,
+        "on-click": "~/.config/waybar/sync-menu.sh",
+        "on-click-right": "~/.config/waybar/sync-menu.sh now",
+        "on-click-middle": "~/.config/waybar/sync-menu.sh toggle"
     },
 
     "custom/updates": {

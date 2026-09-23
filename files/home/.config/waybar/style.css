@@ -38,7 +38,7 @@ tooltip label { color: @text; padding: 2px 4px; }
 #custom-window,
 #datetime,
 #custom-weather,
-#custom-updates,
+#upkeep,
 #actions,
 #audio,
 #custom-claude,
@@ -175,7 +175,18 @@ tooltip label { color: @text; padding: 2px 4px; }
 #custom-updates { color: @accent2; }
 #custom-updates.many { color: @warn; }
 #custom-updates.none { padding: 0; margin: 0; background: transparent; border-color: transparent; }
-#custom-updates:hover, #custom-weather:hover { background: rgba(40, 44, 54, 0.9); }
+#custom-weather:hover { background: rgba(40, 44, 54, 0.9); }
+/* updates + kit sync share one pill (#upkeep); updates collapses when there are none */
+#upkeep { padding: 0 4px; }
+#upkeep:hover { background: rgba(40, 44, 54, 0.9); }
+#custom-updates { padding: 0 8px; }
+#custom-sync { color: @dim; padding: 0 8px; }
+#upkeep #custom-updates:not(.none) { border-right: 1px solid rgba(255, 255, 255, 0.10); padding-right: 10px; }
+#upkeep #custom-sync { padding-left: 10px; }
+#custom-sync.running { color: @accent; }
+#custom-sync.pending { color: @warn; }
+#custom-sync.off { color: @warn; }
+#custom-sync.error { color: @crit; }
 #custom-weather { color: @text; }
 #idle_inhibitor { color: @dim; padding: 0 8px; }
 #idle_inhibitor.activated { color: @accent; }

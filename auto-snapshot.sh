@@ -2,7 +2,9 @@
 # Timer entry point (rebuild-snapshot.timer: a few minutes after login, then hourly). Keeps this
 # machine and GitHub in step, in this order:
 #   1. snapshot: record this machine's changes in the kit (snapshot.sh) and commit them
-#   2. pull:     merge origin/main; where both sides changed the same lines, GitHub wins
+#   2. pull:     merge origin/main; where both sides changed the same lines, GitHub wins. Once
+#                lib/signing.sh set this machine up, only when every incoming commit is signed by
+#                one of your machines (verify_incoming); otherwise nothing is taken over
 #   3. apply:    copy what the merge brought in onto this machine (dotfiles, dconf, Claude notes),
 #                reload Hyprland/Waybar/mako, install listed packages (after the password, see
 #                install_missing) and VS Code extensions that are missing here (never uninstalls)
@@ -47,6 +49,7 @@ main() {
   local old
   if (( ADOPT )); then
     git fetch -q origin main
+    verify_incoming
     git reset -q --hard origin/main
     old=""
   else
@@ -58,6 +61,7 @@ main() {
 
     # 2. pull (offline: skip straight to installing what is missing)
     if git fetch -q origin main; then
+      verify_incoming
       incoming=$(git rev-list --count HEAD..origin/main)
       if [[ $MODE == review ]] && (( incoming && ! NOW )); then
         RESULT=held
@@ -105,6 +109,32 @@ write_status() {
   (( rc )) && [[ $RESULT == ok || $RESULT == offline ]] && RESULT=failed
   printf 'time=%s\nresult=%s\napplied=%s\n' "$(date +%s)" "$RESULT" "$APPLIED" > "$STATE/status"
   pkill -RTMIN+11 -x waybar 2> /dev/null || true
+}
+
+# verify_incoming: stop the run (nothing merged, applied or pushed) while GitHub has a commit that no
+# trusted machine signed (lib/signing.sh). A commit from a machine that published its key in
+# signers/ but is not trusted here yet is a join request: the sync menu offers to trust it.
+# $STATE/untrusted lists what holds the sync back, for the pill and its menu.
+verify_incoming() {
+  local bad sha joining
+  [[ -e $STATE/allowed_signers ]] || { rm -f "$STATE/untrusted"; return 0; }   # not set up here yet
+  bad=$(lib/signing.sh check HEAD..origin/main)
+  [[ -n $bad ]] || { rm -f "$STATE/untrusted"; return 0; }
+  echo "$bad" > "$STATE/untrusted"
+  joining=$(awk '$2 == "U" && $4 != "-" { print $4 }' <<< "$bad" | sort -u | tr '\n' ' ')
+  if [[ -n $joining && -z $(awk '$2 != "U" || $4 == "-"' <<< "$bad") ]]; then RESULT=joining
+  else RESULT=untrusted; fi
+  # one notification per GitHub state, not every hour
+  sha=$(git rev-parse origin/main)
+  if [[ $sha != "$(cat "$STATE/untrusted.notified" 2> /dev/null)" ]]; then
+    if [[ $RESULT == joining ]]; then
+      notify normal "New machine ${joining% }: nothing taken over until you trust it (sync menu: Trust new machine)"
+    else
+      notify critical "$(wc -l <<< "$bad") commit(s) on GitHub are not signed by any of your machines. Nothing taken over. Check them: sync menu, Review incoming changes"
+    fi
+    echo "$sha" > "$STATE/untrusted.notified"
+  fi
+  exit 0
 }
 
 notify() {  # notify URGENCY TEXT

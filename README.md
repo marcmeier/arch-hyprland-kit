@@ -110,6 +110,7 @@ bash ~/rebuild/verify.sh
 cd ~/rebuild && git fetch && git reset --hard origin/main && ./auto-snapshot.sh --adopt
 sudo install -Dm755 files/usr/local/bin/rebuild-install /usr/local/bin/rebuild-install
 sudo install -Dm644 files/usr/share/polkit-1/actions/org.rebuild.install.policy /usr/share/polkit-1/actions/org.rebuild.install.policy
+bash lib/signing.sh setup
 systemctl --user enable --now rebuild-snapshot.timer
 ```
 
@@ -128,7 +129,13 @@ How the details work:
 - **Installing asks for your password, every time.** Missing packages from the official repos come up in a password dialog that names them (`pkexec rebuild-install`, a small root-owned script that only accepts package names and only runs `pacman -S --needed`). The dialog comes once per new set of missing packages; cancel it, or leave it unanswered for 5 minutes, and the packages wait in the [sync pill](#-sync-pill-in-the-bar) until you pick *Install missing packages* there (or *Sync now*, which asks again). `restore.sh` sets the installer up; on a machine from before, see [joining the sync](#-quick-start) for the two `install` lines.
 - **AUR packages are never built unattended.** A PKGBUILD is a script that runs on your machine, so new AUR packages from the lists only wait in the pill. *Install missing packages* opens a terminal with `yay`, which shows each PKGBUILD diff before building.
 - The sync does not upgrade the system. If a package cannot be installed (for example an outdated package database), you get one notification; run `sudo pacman -Syu`.
-- **Nothing runs as root without your password**, not even from a push to the kit repo. What the sync does take over unasked are your dotfiles, and those can run code as your user (Hyprland `exec`, systemd user units, shell configs). So whoever can push to the repo can still run code on your machines, just not as root. Keep the repo private, protect the account (2FA), and give nobody else write access.
+- **Nothing runs as root without your password**, not even from a push to the kit repo. What the sync does take over unasked are your dotfiles, and those can run code as your user (Hyprland `exec`, systemd user units, shell configs). That is why every commit must be signed by one of your machines (next point).
+- **Only commits signed by your own machines are taken over.** Every machine signs its commits with its own SSH key (`~/.ssh/rebuild-signing`) and publishes the public half as `signers/<host>.pub`. Before it merges anything, the sync checks every incoming commit against `~/.local/state/rebuild/allowed_signers`, a list that lives only on the machine and never travels with the kit (`lib/signing.sh`). A stolen GitHub token, a hijacked browser login or an edit in GitHub's web editor can still push, but such a commit is not signed by any of your machines: nothing is taken over, the pill turns red and you get one notification. What stays out of reach: a machine of yours that is itself compromised, since its key signs.
+  - **Set up** once per machine that is already running (`restore.sh` does it on new installs). It takes over the current GitHub state one last time without a check, then pushes the machine's key: `bash ~/rebuild/lib/signing.sh setup`
+  - **A new machine** signs with a key the others do not know yet. They hold its commits back, and the pill offers *Trust new machine: host (fingerprint)*. That opens a terminal: compare the fingerprint with `ssh-keygen -lf ~/.ssh/rebuild-signing.pub` on the new machine and type `yes`. A key that claims the name of a machine you already trust is never offered.
+  - **A reinstalled machine** has a new key. Remove its old line on every other machine first (`sed -i '/^HOST /d' ~/.local/state/rebuild/allowed_signers`), then trust it as a new one.
+  - **Foreign commits on GitHub** block the sync until they are gone. Look at them (*Review incoming changes*), change your GitHub credentials, then drop them from a trusted machine: `git push --force-with-lease=main:origin/main origin HEAD:main`.
+  - Keep the repo private, protect the account (2FA), and give nobody else write access anyway.
 - **`/etc` files are recorded, not applied** (that would need root). A machine only writes one into the kit when the file changed there, so an older copy never overwrites a newer one. `/etc/hostname` differs per machine; the kit keeps its copy only as a fallback name for `restore.sh`.
 - **A machine that fell behind** (for example off for weeks while the other one changed things by hand, or before its first sync run) should take the GitHub state as a whole first. Otherwise its first snapshot would push its old files back:
   ```bash
@@ -153,7 +160,7 @@ The sync shares a pill with the package updates (`group/upkeep`; in the compact 
 | **review first** | records and fetches, but while GitHub has something new it stops before the merge: nothing applied, nothing pushed, one notification. Look at the diff, then *Sync now* takes it over. |
 | **off** | nothing at all |
 
-Separately, **installs off** keeps the sync from installing any package or VS Code extension from the lists (configs are still applied). Click the pill for the menu (modes, installs, *Review incoming changes* as a full diff in a terminal, *Check GitHub now*, log, commits on GitHub); right-click syncs now, middle-click pauses or resumes. When listed packages wait (not confirmed, or AUR), the pill turns yellow and the menu offers *Install missing packages*. Terminal: `~/.config/waybar/sync-menu.sh now|toggle|auto|review|off|installs|install|check|diff|log|github`.
+Separately, **installs off** keeps the sync from installing any package or VS Code extension from the lists (configs are still applied). Click the pill for the menu (modes, installs, *Review incoming changes* as a full diff in a terminal, *Check GitHub now*, log, commits on GitHub); right-click syncs now, middle-click pauses or resumes. When listed packages wait (not confirmed, or AUR), the pill turns yellow and the menu offers *Install missing packages*. A new machine waiting for your trust also shows yellow (*Trust new machine*), commits none of your machines signed show red. Terminal: `~/.config/waybar/sync-menu.sh now|toggle|auto|review|off|installs|install|trust FINGERPRINT|check|diff|log|github`.
 
 The switches are files in `~/.local/state/rebuild` (`mode`, `installs`) and never travel with the kit, so a bad state on GitHub cannot switch them back on. Every run writes its outcome to `status` there and refreshes the pill (signal 11); `sync.py` itself only reads local git refs, the network is used by the run or by *Check GitHub now*.
 
@@ -214,6 +221,7 @@ Stays as configured (not hardware-detected): Hyprland keyboard layout, weather l
 | `verify.sh` | Read-only check of whether the system matches the kit — see [Quick Start](#-quick-start) |
 | `auto-snapshot.sh` | The sync (timer `rebuild-snapshot.timer`): record, pull, apply, push — see [Automatic Sync Between Machines](#-automatic-sync-between-machines) |
 | `snapshot.sh`, `lib/lists.sh` | Record this machine's state in the kit; shared package lists |
+| `lib/signing.sh`, `signers/` | Signed kit commits: each machine's key, trust for new machines, the check the sync runs before every merge |
 | `files/usr/local/bin/rebuild-install`, `files/usr/share/polkit-1/actions/org.rebuild.install.policy` | How the sync installs listed packages: `pkexec rebuild-install PACKAGE…`, a password dialog every time, package names only |
 
 ## ⚙️ What `restore.sh` Also Creates (Step 8b)

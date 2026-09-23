@@ -16,7 +16,8 @@ MARK = {"off": " \U000f03e4", "error": " \U000f0026"}  # 󰏤 󰀦
 MODE_NAME = {"auto": "automatic", "review": "review first", "off": "off"}
 RESULT_NAME = {"ok": "ok", "offline": "GitHub not reachable", "held": "held back for review",
                "paused": "switched off", "conflict": "merge conflict, fix by hand",
-               "push failed": "push failed", "failed": "failed, see the log"}
+               "push failed": "push failed", "failed": "failed, see the log",
+               "joining": "a new machine waits for your trust", "untrusted": "GitHub has commits none of your machines signed"}
 
 def git(*args):
     r = subprocess.run(["git", "-C", REPO, *args], capture_output=True, text=True)
@@ -52,13 +53,16 @@ def main():
     outgoing = int(git("rev-list", "--count", "origin/main..HEAD") or 0) if has_origin else 0
     result, busy = status.get("result", ""), running()
     waiting = [l.split()[1] for l in read("install-pending").splitlines() if len(l.split()) == 2]
+    # lib/signing.sh check lines: sha, %G?, key fingerprint, host from signers/
+    untrusted = [l.split() for l in read("untrusted").splitlines() if len(l.split()) == 4]
+    signing = os.path.exists(STATE + "/allowed_signers")
 
     # bar text + class
     badge = "".join([f" ↓{incoming}" if incoming else "", f" ↑{outgoing}" if outgoing and mode != "auto" else ""])
     if busy: cls = "running"
-    elif result in ("conflict", "failed", "push failed"): cls = "error"
+    elif result in ("conflict", "failed", "push failed", "untrusted"): cls = "error"
     elif mode == "off": cls = "off"
-    elif (incoming and mode == "review") or waiting: cls = "pending"
+    elif (incoming and mode == "review") or waiting or result == "joining": cls = "pending"
     else: cls = "ok"
     icon = ICON + MARK.get(cls, "")
 
@@ -89,6 +93,16 @@ def main():
             t.append(f"  <span color='#ffb454'>new packages: {e(', '.join(new[:10]))}" + (" …" if len(new) > 10 else "") + "</span>")
     if outgoing:
         t.append(f"↑ {outgoing} local commit(s) not on GitHub yet")
+    if untrusted:
+        hosts = sorted({u[3] for u in untrusted if u[1] == "U" and u[3] != "-"})
+        foreign = [u for u in untrusted if u[1] != "U" or u[3] == "-"]
+        t.append("")
+        if hosts:
+            t.append(f"<span color='#ffb454'><b>New machine: {e(', '.join(hosts))}</b></span> (menu: Trust new machine)")
+        if foreign:
+            t.append(f"<span color='#ff6b6b'><b>{len(foreign)} commit(s) on GitHub not signed by your machines</b></span>, nothing taken over")
+    elif not signing:
+        t.append("Commit signatures not checked here (lib/signing.sh setup)")
     if waiting:
         t += ["", f"<span color='#ffb454'><b>{len(waiting)} listed package(s) wait for install</b></span> (menu: Install missing packages)",
               f"  {e(', '.join(waiting[:10]))}" + (" …" if len(waiting) > 10 else "")]

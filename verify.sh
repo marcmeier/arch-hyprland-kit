@@ -77,6 +77,12 @@ fi
 if cmp -s "$KIT/files/usr/local/bin/rebuild-install" /usr/local/bin/rebuild-install \
    && [[ -e /usr/share/polkit-1/actions/org.rebuild.install.policy ]]; then ok "kit sync can install packages (pkexec rebuild-install, with password)"
 else fail "rebuild-install or its polkit action missing or outdated, the sync cannot install packages  ->  see README"; fi
+# signed kit commits (lib/signing.sh): without them, whoever can push to the repo feeds this machine
+ST=${XDG_STATE_HOME:-$HOME/.local/state}/rebuild
+if [[ $(git -C "$KIT" config commit.gpgsign) == true && -f $HOME/.ssh/rebuild-signing && -s $ST/allowed_signers ]] \
+   && grep -qF "$(awk '{ print $2 }' "$HOME/.ssh/rebuild-signing.pub")" "$ST/allowed_signers"; then
+  ok "kit commits are signed and checked ($(grep -c . "$ST/allowed_signers") trusted machine(s))"
+else warn "commit signing not set up: the sync takes over whatever is on GitHub  ->  bash $KIT/lib/signing.sh setup"; fi
 f=$(systemctl --failed --no-legend 2>/dev/null | awk '{print $2}' | tr '\n' ' ')
 [[ -z $f ]] && ok "no failed system units" || warn "failed system units: $f"
 f=$(systemctl --user --failed --no-legend 2>/dev/null | awk '{print $2}' | tr '\n' ' ')

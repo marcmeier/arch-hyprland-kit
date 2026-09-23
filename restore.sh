@@ -351,6 +351,9 @@ UW="$HOME_DIR/.config/systemd/user/timers.target.wants"
 if [[ $KIT == "$HOME_DIR/rebuild" && -d $KIT/.git ]]; then
   sudo -u "$USERNAME" mkdir -p "$UW"
   sudo -u "$USERNAME" ln -sfn "$HOME_DIR/.config/systemd/user/rebuild-snapshot.timer" "$UW/rebuild-snapshot.timer"
+  # signed commits (lib/signing.sh): this machine's key, and trust for the machines in signers/ of
+  # this fresh clone. The first sync pushes the key; the other machines then ask whether to trust it.
+  sudo -u "$USERNAME" -H bash "$KIT/lib/signing.sh" setup --no-sync || warn "commit signing not set up (lib/signing.sh setup)"
 else
   warn "kit sync not enabled: it needs a git clone at $HOME_DIR/rebuild (this kit: $KIT)"
 fi

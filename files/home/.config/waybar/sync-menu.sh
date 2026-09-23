@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Control the rebuild kit sync of THIS machine (auto-snapshot.sh), from the waybar sync pill.
-# Usage: sync-menu.sh [now|toggle|auto|review|off|installs|install|check|diff|log|github]  (no argument: pick in walker)
+# Usage: sync-menu.sh [now|toggle|auto|review|off|installs|install|trust FINGERPRINT|check|diff|log|github]  (no argument: pick in walker)
 # The switches live in ~/.local/state/rebuild (mode, installs) and never travel with the kit.
 REPO=$HOME/rebuild
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/rebuild
@@ -17,6 +17,10 @@ if [ -z "$action" ]; then
     ((incoming)) && items+=("󰈈  Review incoming changes")
     pending=$(grep -c . "$STATE/install-pending" 2>/dev/null)
     ((pending)) && items+=("󰏗  Install missing packages ($pending)")
+    # machines that sign incoming commits but are not trusted here yet (auto-snapshot.sh, lib/signing.sh)
+    while read -r fp host; do
+        items+=("󰒃  Trust new machine: $host ($fp)")
+    done < <(awk '$2 == "U" && $4 != "-" { print $3, $4 }' "$STATE/untrusted" 2>/dev/null | sort -u)
     items+=("$(mark auto)  Mode: automatic"
             "$(mark review)  Mode: review GitHub changes first"
             "$(mark off)  Mode: off"
@@ -33,6 +37,7 @@ if [ -z "$action" ]; then
         *"Mode: off"*)     action=off ;;
         *"Install pack"*)  action=installs ;;
         *"Install miss"*)  action=install ;;
+        *"Trust new"*)     action=trust; fp=${choice##*(}; fp=${fp%)} ;;
         *Check*)           action=check ;;
         *log*)             action=log ;;
         *GitHub)           action=github ;;
@@ -61,6 +66,11 @@ case $action in
             ((${#aur[@]})) && yay -S --needed -- "${aur[@]}"
             while read -r k x; do pacman -Q "$x" >/dev/null 2>&1 || echo "$k $x"; done < "$p" > "$p.new"; mv "$p.new" "$p"
             pkill -RTMIN+11 -x waybar; read -rp "Done. Enter closes this window. "' _ "$STATE/install-pending" ;;
+    # compare the fingerprint in a terminal, then one sync takes over what the machine sent
+    trust)
+        fp=${fp:-$2}
+        ghostty -e bash -c '"$1/lib/signing.sh" trust "$2" && touch "$3/now" && systemctl --user start --no-block rebuild-snapshot.service
+            read -rp "Enter closes this window. "' _ "$REPO" "$fp" "$STATE" ;;
     # fetch only (nothing applied), under the sync's lock so it never races a running sync
     check)
         if flock -n "$STATE/lock" timeout 30 git -C "$REPO" fetch -q origin main; then
@@ -72,5 +82,5 @@ case $action in
     log)    ghostty -e bash -c "journalctl --user -u rebuild-snapshot.service -n 200 --no-pager | less -R +G" ;;
     github) url=$(git -C "$REPO" remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#; s#\.git$##')
             xdg-open "$url/commits/main" ;;
-    *) echo "usage: $0 [now|toggle|auto|review|off|installs|install|check|diff|log|github]" >&2; exit 2 ;;
+    *) echo "usage: $0 [now|toggle|auto|review|off|installs|install|trust FINGERPRINT|check|diff|log|github]" >&2; exit 2 ;;
 esac

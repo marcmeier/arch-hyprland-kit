@@ -154,6 +154,17 @@ journalctl --user -u rebuild-snapshot.service -n 30
 
 The sync shares a pill with the package updates (`group/upkeep`; in the compact bar it sits in the system group). It shows the GitHub logo, set off from the updates by a thin divider; colour and a small mark give the state: dim when all is in step, `↓n` for commits on GitHub this machine has not taken over, `↑n` for local commits not pushed yet, yellow while something waits for review or the sync is off (with a pause mark), red with an alert mark after a merge conflict or a failed run. The tooltip says who wrote to GitHub last, what the incoming commits would change (files and, highlighted, **new packages**) and when every machine last sent a change.
 
+<table>
+<tr>
+<td width="50%"><img src="img/sync-pill-ok.png" alt="Sync pill tooltip: all machines in step"><br><sub><b>All in step:</b> last run, who wrote to GitHub last, and when each machine last sent a change.</sub></td>
+<td width="50%"><img src="img/sync-menu.png" alt="Sync menu in walker"><br><sub><b>The menu</b> (click): sync now, review the incoming diff, install waiting packages, trust a new machine, modes.</sub></td>
+</tr>
+<tr>
+<td><img src="img/sync-pill-new-machine.png" alt="Sync pill tooltip: a new machine waits for trust, packages wait for install"><br><sub><b>Yellow:</b> a new machine signed its first commit and waits for your trust; its new packages are highlighted, and two listed packages wait for your password.</sub></td>
+<td><img src="img/sync-pill-foreign-commit.png" alt="Sync pill tooltip: an unsigned commit on GitHub, nothing taken over"><br><sub><b>Red:</b> someone pushed a commit none of your machines signed (here: an edit in the web editor). Nothing is taken over.</sub></td>
+</tr>
+</table>
+
 | Mode | What the hourly run does |
 |---|---|
 | **automatic** (default) | all four steps, as above |

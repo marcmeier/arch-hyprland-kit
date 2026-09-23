@@ -361,10 +361,13 @@ if [[ -s $KIT/files/dconf.ini ]]; then
   sudo -u "$USERNAME" dbus-run-session -- dconf load / < "$KIT/files/dconf.ini" \
     || warn "dconf load failed (set GTK theme manually)"
 fi
-# the hourly kit sync (auto-snapshot.sh) installs packages other machines added: pacman without password
-sed -E "s/^[a-z_][a-z0-9_-]* ALL=/$USERNAME ALL=/" "$KIT/lib/sudoers-rebuild-sync" > /etc/sudoers.d/10-rebuild-sync
-chmod 440 /etc/sudoers.d/10-rebuild-sync
-visudo -cf /etc/sudoers.d/10-rebuild-sync >/dev/null || { rm -f /etc/sudoers.d/10-rebuild-sync; fail "sudoers rule for the kit sync"; }
+# the hourly kit sync (auto-snapshot.sh) installs packages other machines added: pacman without password.
+# 90-: sudo applies the last matching rule, so it must come after 10-wheel (%wheel ALL, with password).
+# 10-rebuild-sync is where older versions put it, where 10-wheel silently overrode it.
+rm -f /etc/sudoers.d/10-rebuild-sync
+sed -E "s/^[a-z_][a-z0-9_-]* ALL=/$USERNAME ALL=/" "$KIT/lib/sudoers-rebuild-sync" > /etc/sudoers.d/90-rebuild-sync
+chmod 440 /etc/sudoers.d/90-rebuild-sync
+visudo -cf /etc/sudoers.d/90-rebuild-sync >/dev/null || { rm -f /etc/sudoers.d/90-rebuild-sync; fail "sudoers rule for the kit sync"; }
 
 # ---------------------------------------------------------------- 10. AUR
 if (( DO_AUR )); then

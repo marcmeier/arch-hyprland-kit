@@ -68,6 +68,11 @@ for u in vdirsyncer.timer rebuild-snapshot.timer; do
   # "systemctl --user enable"), the timer silently stays disabled forever with no error anywhere
   systemctl --user is-enabled "$u" >/dev/null 2>&1 && ok "enabled: $u" || fail "not enabled: $u (check for a non-symlink file in ~/.config/systemd/user/timers.target.wants/)"
 done
+# the sync installs listed packages with "sudo -n pacman"; sudo applies the last matching rule, so a
+# %wheel rule read later (e.g. 10-wheel after 10-rebuild-sync) silently brings the password back
+if sudo -n pacman -V >/dev/null 2>&1; then ok "kit sync may run pacman without password"
+elif sudo -n -l /usr/bin/pacman >/dev/null 2>&1; then fail "sudo rule for the kit sync is overridden by a later %wheel rule  ->  sudo mv /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/90-rebuild-sync"
+else warn "no sudo rule for the kit sync, it cannot install packages  ->  see README"; fi
 f=$(systemctl --failed --no-legend 2>/dev/null | awk '{print $2}' | tr '\n' ' ')
 [[ -z $f ]] && ok "no failed system units" || warn "failed system units: $f"
 f=$(systemctl --user --failed --no-legend 2>/dev/null | awk '{print $2}' | tr '\n' ' ')

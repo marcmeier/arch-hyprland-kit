@@ -108,7 +108,7 @@ bash ~/rebuild/verify.sh
 
 ```bash
 cd ~/rebuild && git fetch && git reset --hard origin/main && ./auto-snapshot.sh --adopt
-sudo install -m440 lib/sudoers-rebuild-sync /etc/sudoers.d/10-rebuild-sync
+sudo install -m440 lib/sudoers-rebuild-sync /etc/sudoers.d/90-rebuild-sync
 systemctl --user enable --now rebuild-snapshot.timer
 ```
 
@@ -126,7 +126,7 @@ How the details work:
 - **Package lists are shared.** A machine only adds what it installed and drops what it removed since its own last snapshot (`lib/lists.sh`, state in `~/.local/state/rebuild`). A package only one machine has therefore ends up on all of them. The sync **never uninstalls**: a package removed on one machine leaves the list, and the others keep it until you remove it there too. Hardware packages (microcode, GPU drivers, notebook extras) stay out of the lists (`lib/hardware.sh`).
 - **Installing needs pacman without a password**, once per machine (`restore.sh` sets this up on new installs). Without it you only get a notification listing what is missing.
   ```bash
-  sudo install -m440 ~/rebuild/lib/sudoers-rebuild-sync /etc/sudoers.d/10-rebuild-sync
+  sudo install -m440 ~/rebuild/lib/sudoers-rebuild-sync /etc/sudoers.d/90-rebuild-sync
   ```
   The sync does not upgrade the system. If a package cannot be installed (for example an outdated package database), you get one notification; run `sudo pacman -Syu`.
 - **Whoever can push to the kit repo is root on every machine.** pacman without a password is effectively root, and the sync builds new AUR packages from the lists without showing their PKGBUILDs. Keep the repo private, protect the account (2FA), and give nobody else write access.

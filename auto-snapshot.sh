@@ -191,15 +191,22 @@ install_missing() {
   mapfile -t miss_repo < <(comm -23 <(sort -u packages/pacman.txt) <(echo "$have"))
   mapfile -t miss_aur < <(comm -23 <(sort -u packages/aur.txt) <(echo "$have"))
   if (( ${#miss_repo[@]} + ${#miss_aur[@]} )); then
-    if ! sudo -n -l /usr/bin/pacman > /dev/null 2>&1; then
+    # Every sudo call here uses -n: without a terminal a password prompt can only fail, and each
+    # failure counts for pam_faillock (3 lock the account). -n skips PAM when a password is needed.
+    # "sudo -l" is not enough: it lists the rule even when a later %wheel rule overrides it.
+    if ! sudo -n pacman -V > /dev/null 2>&1; then
       failed=("${miss_repo[@]}" "${miss_aur[@]}")
-      msg="${#failed[@]} listed package(s) missing, but the sudo rule for pacman is not set up (see README)"
+      if sudo -n -l /usr/bin/pacman > /dev/null 2>&1; then
+        msg="${#failed[@]} listed package(s) missing: the sudo rule for pacman is there but overridden by a later one. Fix: sudo mv /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/90-rebuild-sync"
+      else
+        msg="${#failed[@]} listed package(s) missing, but the sudo rule for pacman is not set up (see README)"
+      fi
     else
       if (( ${#miss_repo[@]} )) && ! sudo -n pacman -S --needed --noconfirm "${miss_repo[@]}"; then
         for x in "${miss_repo[@]}"; do sudo -n pacman -S --needed --noconfirm "$x" || failed+=("$x"); done
       fi
       for x in "${miss_aur[@]}"; do
-        yay -S --needed --noconfirm --removemake --answerclean None --answerdiff None --answeredit None "$x" || failed+=("$x")
+        yay -S --needed --noconfirm --sudoflags -n --removemake --answerclean None --answerdiff None --answeredit None "$x" || failed+=("$x")
       done
       APPLIED=$((APPLIED + ${#miss_repo[@]} + ${#miss_aur[@]} - ${#failed[@]}))
       msg="Could not install: ${failed[*]} (maybe update the system first: sudo pacman -Syu)"

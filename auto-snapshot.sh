@@ -155,10 +155,11 @@ apply_kit() {
 }
 
 # Without our LC_ALL=C: bash modules like notifications.sh then print $'\U...' icons as literal
-# escapes, which is invalid JSON for waybar.
+# escapes, which is invalid JSON for waybar. Without fd 9 (our lock): waybar would inherit it and
+# hold the lock for as long as it runs, so every later sync ends with "already running".
 detach() {
-  systemd-run --user --scope --quiet --collect env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null \
-    || env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null || true
+  systemd-run --user --scope --quiet --collect env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null 9>&- \
+    || env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null 9>&- || true
 }
 
 reload_changed() {

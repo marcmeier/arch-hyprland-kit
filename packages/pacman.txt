@@ -45,6 +45,7 @@ hyphen-en
 hypridle
 hyprland
 hyprlock
+hyprpicker
 innoextract
 inter-font
 khal

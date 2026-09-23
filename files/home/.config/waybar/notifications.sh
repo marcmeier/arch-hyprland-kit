@@ -9,4 +9,4 @@ else
   icon=$'\U000f009a'; cls=none; tip="No notifications"
 fi
 text="$icon"; (( n > 0 )) && text="$icon $n"
-printf '{"text":"%s","class":"%s","tooltip":"%s\\nClick: do not disturb  ·  Right: clear all  ·  Middle: bring back last"}\n' "$text" "$cls" "$tip"
+printf '{"text":"%s","class":"%s","tooltip":"%s\\nClick: do not disturb  ·  Right: bring back last  ·  Middle: clear all"}\n' "$text" "$cls" "$tip"

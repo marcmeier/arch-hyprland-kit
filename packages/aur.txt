@@ -5,6 +5,7 @@ dxvk-bin
 elephant-calc
 elephant-desktopapplications
 elephant-runner
+localsend-bin
 proton-ge-custom-bin
 protonup-qt
 pwvucontrol

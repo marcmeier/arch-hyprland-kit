@@ -114,6 +114,11 @@ apply_kit() {
   )
 }
 
+detach() {
+  systemd-run --user --scope --quiet --collect setsid -f "$@" > /dev/null 2>&1 < /dev/null \
+    || setsid -f "$@" > /dev/null 2>&1 < /dev/null || true
+}
+
 reload_changed() {
   local r
   for r in $(printf '%s\n' "${RELOAD[@]}" | sort -u); do
@@ -121,10 +126,12 @@ reload_changed() {
       systemd) systemctl --user daemon-reload ;;
       hypr)    hyprctl reload > /dev/null 2>&1 || true ;;
       mako)    makoctl reload 2> /dev/null || true ;;
+      # Own scope: under rebuild-snapshot.service, systemd kills everything left in the service's
+      # cgroup when the oneshot ends (setsid does not leave the cgroup) - that took waybar down.
       waybar)
         pgrep -f 'python3? .*waybar/density-watch.py' > /dev/null \
-          || setsid -f "$HOME/.config/waybar/density-watch.py" > /dev/null 2>&1 < /dev/null || true
-        setsid -f "$HOME/.config/waybar/launch.sh" > /dev/null 2>&1 < /dev/null || true ;;
+          || detach "$HOME/.config/waybar/density-watch.py"
+        detach "$HOME/.config/waybar/launch.sh" ;;
     esac
   done
 }

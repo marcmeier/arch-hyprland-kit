@@ -2,4 +2,5 @@
 MSG="${SMARTD_FAILTYPE}: ${SMARTD_MESSAGE}"
 logger -t smartd-notify "$MSG"
 runuser -u user -- env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus \
-    notify-send -u critical "Disk warning (SMART)" "$MSG" || true
+    notify-send -u critical "Disk warning (SMART)" "$MSG
+<small>$(date +%H:%M)</small>" || true

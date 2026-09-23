@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Waybar: cycle the default audio output through the real sinks (skips the MiniFuse loopback)
 and move running streams along. Announces the new output via notify-send."""
-import json, subprocess
+import json, subprocess, time
 
 def pactl(*a):
     return subprocess.run(["pactl", *a], capture_output=True, text=True).stdout
@@ -17,4 +17,4 @@ for line in pactl("list", "short", "sink-inputs").splitlines():
     pactl("move-sink-input", line.split()[0], nxt["name"])
 subprocess.run(["notify-send", "-a", "audio", "-t", "2000",
                 "-h", "string:x-canonical-private-synchronous:audio-out",
-                "Audio output", nxt["description"]])
+                "Audio output", f"{nxt['description']}\n<small>{time.strftime('%H:%M')}</small>"])

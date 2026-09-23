@@ -114,9 +114,11 @@ apply_kit() {
   )
 }
 
+# Without our LC_ALL=C: bash modules like notifications.sh then print $'\U...' icons as literal
+# escapes, which is invalid JSON for waybar.
 detach() {
-  systemd-run --user --scope --quiet --collect setsid -f "$@" > /dev/null 2>&1 < /dev/null \
-    || setsid -f "$@" > /dev/null 2>&1 < /dev/null || true
+  systemd-run --user --scope --quiet --collect env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null \
+    || env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null || true
 }
 
 reload_changed() {

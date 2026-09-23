@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Control the rebuild kit sync of THIS machine (auto-snapshot.sh), from the waybar sync pill.
-# Usage: sync-menu.sh [now|toggle|auto|review|off|installs|check|diff|log|github]  (no argument: pick in walker)
+# Usage: sync-menu.sh [now|toggle|auto|review|off|installs|install|check|diff|log|github]  (no argument: pick in walker)
 # The switches live in ~/.local/state/rebuild (mode, installs) and never travel with the kit.
 REPO=$HOME/rebuild
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/rebuild
@@ -15,6 +15,8 @@ if [ -z "$action" ]; then
     mark() { [ "$mode" = "$1" ] && echo "●" || echo "○"; }
     items=("󰓦  Sync now$( ((incoming)) && echo " (take over $incoming incoming)")")
     ((incoming)) && items+=("󰈈  Review incoming changes")
+    pending=$(grep -c . "$STATE/install-pending" 2>/dev/null)
+    ((pending)) && items+=("󰏗  Install missing packages ($pending)")
     items+=("$(mark auto)  Mode: automatic"
             "$(mark review)  Mode: review GitHub changes first"
             "$(mark off)  Mode: off"
@@ -30,6 +32,7 @@ if [ -z "$action" ]; then
         *"Mode: review"*)  action=review ;;
         *"Mode: off"*)     action=off ;;
         *"Install pack"*)  action=installs ;;
+        *"Install miss"*)  action=install ;;
         *Check*)           action=check ;;
         *log*)             action=log ;;
         *GitHub)           action=github ;;
@@ -49,6 +52,15 @@ case $action in
         new=$([ "$installs" = on ] && echo off || echo on)
         echo "$new" > "$STATE/installs"; refresh
         notify-send -a rebuild "Rebuild sync" "Installing packages from the lists: $new" ;;
+    # what the sync left waiting (auto-snapshot.sh, install_missing): in a terminal, with the password;
+    # yay shows each AUR package's PKGBUILD before building it
+    install)
+        ghostty -e bash -c '
+            p=$1; repo=($(awk "\$1 == \"repo\" { print \$2 }" "$p")); aur=($(awk "\$1 == \"aur\" { print \$2 }" "$p"))
+            ((${#repo[@]})) && sudo pacman -S --needed -- "${repo[@]}"
+            ((${#aur[@]})) && yay -S --needed -- "${aur[@]}"
+            while read -r k x; do pacman -Q "$x" >/dev/null 2>&1 || echo "$k $x"; done < "$p" > "$p.new"; mv "$p.new" "$p"
+            pkill -RTMIN+11 -x waybar; read -rp "Done. Enter closes this window. "' _ "$STATE/install-pending" ;;
     # fetch only (nothing applied), under the sync's lock so it never races a running sync
     check)
         if flock -n "$STATE/lock" timeout 30 git -C "$REPO" fetch -q origin main; then
@@ -60,5 +72,5 @@ case $action in
     log)    ghostty -e bash -c "journalctl --user -u rebuild-snapshot.service -n 200 --no-pager | less -R +G" ;;
     github) url=$(git -C "$REPO" remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#; s#\.git$##')
             xdg-open "$url/commits/main" ;;
-    *) echo "usage: $0 [now|toggle|auto|review|off|installs|check|diff|log|github]" >&2; exit 2 ;;
+    *) echo "usage: $0 [now|toggle|auto|review|off|installs|install|check|diff|log|github]" >&2; exit 2 ;;
 esac

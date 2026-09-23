@@ -284,6 +284,8 @@ hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("~/.config/hypr/claude-launch
 hl.bind("PRINT", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy'))
 hl.bind("SHIFT + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'))
 hl.bind("CTRL + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim - | tee "$f" | wl-copy'))
+-- Color picker: click a pixel -> hex code in clipboard + notification (Esc cancels)
+hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("pidof hyprpicker || hyprpicker -a -n -q"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("~/.config/hypr/emoji-picker.sh"))
@@ -392,6 +394,14 @@ hl.layer_rule({
 
     blur        = true,
     ignore_alpha = 0.2,
+})
+
+-- hyprpicker: no fade on the frozen overlay, so the picker appears/disappears instantly
+hl.layer_rule({
+    name  = "hyprpicker-no-anim",
+    match = { namespace = "^hyprpicker$" },
+
+    no_anim = true,
 })
 
 -- Hyprland-run windowrule

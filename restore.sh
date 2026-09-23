@@ -361,13 +361,13 @@ if [[ -s $KIT/files/dconf.ini ]]; then
   sudo -u "$USERNAME" dbus-run-session -- dconf load / < "$KIT/files/dconf.ini" \
     || warn "dconf load failed (set GTK theme manually)"
 fi
-# the hourly kit sync (auto-snapshot.sh) installs packages other machines added: pacman without password.
-# 90-: sudo applies the last matching rule, so it must come after 10-wheel (%wheel ALL, with password).
-# 10-rebuild-sync is where older versions put it, where 10-wheel silently overrode it.
-rm -f /etc/sudoers.d/10-rebuild-sync
-sed -E "s/^[a-z_][a-z0-9_-]* ALL=/$USERNAME ALL=/" "$KIT/lib/sudoers-rebuild-sync" > /etc/sudoers.d/90-rebuild-sync
-chmod 440 /etc/sudoers.d/90-rebuild-sync
-visudo -cf /etc/sudoers.d/90-rebuild-sync >/dev/null || { rm -f /etc/sudoers.d/90-rebuild-sync; fail "sudoers rule for the kit sync"; }
+# the hourly kit sync (auto-snapshot.sh) installs packages other machines added through
+# "pkexec rebuild-install": a polkit dialog names them and asks for the password every time.
+# Older versions let the sync run pacman without a password (effectively root); that rule goes.
+rm -f /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/90-rebuild-sync
+install -Dm755 "$KIT/files/usr/local/bin/rebuild-install" /usr/local/bin/rebuild-install
+install -Dm644 "$KIT/files/usr/share/polkit-1/actions/org.rebuild.install.policy" \
+  /usr/share/polkit-1/actions/org.rebuild.install.policy
 
 # ---------------------------------------------------------------- 10. AUR
 if (( DO_AUR )); then

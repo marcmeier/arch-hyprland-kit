@@ -51,13 +51,14 @@ def main():
     incoming = int(git("rev-list", "--count", "HEAD..origin/main") or 0) if has_origin else 0
     outgoing = int(git("rev-list", "--count", "origin/main..HEAD") or 0) if has_origin else 0
     result, busy = status.get("result", ""), running()
+    waiting = [l.split()[1] for l in read("install-pending").splitlines() if len(l.split()) == 2]
 
     # bar text + class
     badge = "".join([f" ↓{incoming}" if incoming else "", f" ↑{outgoing}" if outgoing and mode != "auto" else ""])
     if busy: cls = "running"
     elif result in ("conflict", "failed", "push failed"): cls = "error"
     elif mode == "off": cls = "off"
-    elif incoming and mode == "review": cls = "pending"
+    elif (incoming and mode == "review") or waiting: cls = "pending"
     else: cls = "ok"
     icon = ICON + MARK.get(cls, "")
 
@@ -88,6 +89,9 @@ def main():
             t.append(f"  <span color='#ffb454'>new packages: {e(', '.join(new[:10]))}" + (" …" if len(new) > 10 else "") + "</span>")
     if outgoing:
         t.append(f"↑ {outgoing} local commit(s) not on GitHub yet")
+    if waiting:
+        t += ["", f"<span color='#ffb454'><b>{len(waiting)} listed package(s) wait for install</b></span> (menu: Install missing packages)",
+              f"  {e(', '.join(waiting[:10]))}" + (" …" if len(waiting) > 10 else "")]
 
     seen = {}
     for line in git("log", "-300", "--format=%ct%x1f%s", "origin/main" if has_origin else "HEAD").splitlines():

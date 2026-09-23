@@ -85,6 +85,9 @@ done
 [[ -e files/etc/hostname ]] || install -Dm644 /etc/hostname files/etc/hostname
 # smartd hook (notifies via mako) lives outside /etc
 take_sys /usr/local/bin/smartd-notify files/usr/local/bin/smartd-notify 755
+# the sync's password-guarded package installer (pkexec) and its polkit action
+take_sys /usr/local/bin/rebuild-install files/usr/local/bin/rebuild-install 755
+take_sys /usr/share/polkit-1/actions/org.rebuild.install.policy files/usr/share/polkit-1/actions/org.rebuild.install.policy 644
 # login screen background used by ReGreet
 take_sys /usr/share/backgrounds/login.png files/usr/share/backgrounds/login.png 644
 mv "$STATE/etc.sha256.new" "$STATE/etc.sha256"

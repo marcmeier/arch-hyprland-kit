@@ -1,0 +1,14 @@
+#!/bin/bash
+# Installs packages from the official repos for the kit sync (auto-snapshot.sh), and nothing else.
+# Called through pkexec, so every call asks for the password in a polkit dialog that names the
+# packages (action org.rebuild.install in /usr/share/polkit-1/actions/org.rebuild.install.policy).
+#   pkexec /usr/local/bin/rebuild-install PACKAGE...
+# Only plain package names pass: no options (-U, --config, --hookdir ...), no files, no URLs.
+# Installed by restore.sh; the kit copy is files/usr/local/bin/rebuild-install.
+set -euo pipefail
+export PATH=/usr/bin
+(( $# )) || { echo "usage: rebuild-install PACKAGE..." >&2; exit 2; }
+for p in "$@"; do
+  [[ $p =~ ^[a-z0-9@_+][a-z0-9@._+-]*$ ]] || { echo "rebuild-install: not a package name: $p" >&2; exit 2; }
+done
+exec pacman -S --needed --noconfirm -- "$@"

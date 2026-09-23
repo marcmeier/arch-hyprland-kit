@@ -4,8 +4,8 @@
 #   1. snapshot: record this machine's changes in the kit (snapshot.sh) and commit them
 #   2. pull:     merge origin/main; where both sides changed the same lines, GitHub wins
 #   3. apply:    copy what the merge brought in onto this machine (dotfiles, dconf, Claude notes),
-#                reload Hyprland/Waybar/mako, install listed packages and VS Code extensions that
-#                are missing here (never uninstalls anything)
+#                reload Hyprland/Waybar/mako, install listed packages (after the password, see
+#                install_missing) and VS Code extensions that are missing here (never uninstalls)
 #   4. push, and refresh the zip copy (KIT_ZIP in kit.conf) if anything changed
 #
 #   --adopt  make this machine match GitHub: drop unpushed local commits and copy every kit file
@@ -18,6 +18,7 @@
 #             something new, stop before the merge (nothing applied, nothing pushed) until
 #             "Sync now" · off: the timer does nothing at all
 #   installs  on (default) · off: never install packages or VS Code extensions from the lists
+# install-pending lists the packages that wait (not confirmed, or AUR), for the pill and its menu.
 # Every run leaves its outcome in $STATE/status and refreshes the waybar pill (signal 11).
 #
 # Everything runs inside main(): the pull may rewrite this very file while bash is reading it.
@@ -179,43 +180,49 @@ reload_changed() {
   done
 }
 
-# install_missing: listed packages / extensions this machine does not have yet. Packages need the
-# sudo rule from lib/sudoers-rebuild-sync (pacman without password); without it only a notification.
+# install_missing: listed packages / extensions this machine does not have yet. Nothing here runs as
+# root without the password: official repo packages go through "pkexec rebuild-install", whose polkit
+# dialog names them and asks for it. The dialog comes once per new set of missing packages (and on
+# "Sync now"); cancelled or unanswered within 5 minutes, they wait in the sync pill. AUR packages are
+# never built unattended (their PKGBUILDs deserve a look): they wait for "Install missing packages"
+# in the sync menu, a terminal with yay. $STATE/install-pending lists what waits, for pill and menu.
 install_missing() {
-  local have miss_repo miss_aur miss_code failed=() msg x
+  local have miss_repo miss_aur miss_code msg="" urgency=critical rc x
   if [[ $(cat "$STATE/installs" 2> /dev/null) == off ]]; then
     echo "rebuild sync: installs switched off on this machine, not installing anything"
+    rm -f "$STATE/install-pending"
     return 0
   fi
   have=$(pacman -Qq | sort)
   mapfile -t miss_repo < <(comm -23 <(sort -u packages/pacman.txt) <(echo "$have"))
   mapfile -t miss_aur < <(comm -23 <(sort -u packages/aur.txt) <(echo "$have"))
-  if (( ${#miss_repo[@]} + ${#miss_aur[@]} )); then
-    # Every sudo call here uses -n: without a terminal a password prompt can only fail, and each
-    # failure counts for pam_faillock (3 lock the account). -n skips PAM when a password is needed.
-    # "sudo -l" is not enough: it lists the rule even when a later %wheel rule overrides it.
-    if ! sudo -n pacman -V > /dev/null 2>&1; then
-      failed=("${miss_repo[@]}" "${miss_aur[@]}")
-      if sudo -n -l /usr/bin/pacman > /dev/null 2>&1; then
-        msg="${#failed[@]} listed package(s) missing: the sudo rule for pacman is there but overridden by a later one. Fix: sudo mv /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/90-rebuild-sync"
-      else
-        msg="${#failed[@]} listed package(s) missing, but the sudo rule for pacman is not set up (see README)"
+  if (( ${#miss_repo[@]} )); then
+    if [[ ! -x /usr/local/bin/rebuild-install || ! -e /usr/share/polkit-1/actions/org.rebuild.install.policy ]]; then
+      msg="rebuild-install is not set up here, so listed packages cannot be installed (see README)"
+    elif (( NOW )) || [[ "${miss_repo[*]}" != "$(cat "$STATE/install-asked" 2> /dev/null)" ]]; then
+      echo "${miss_repo[*]}" > "$STATE/install-asked"
+      echo "rebuild sync: asking to install ${miss_repo[*]}"
+      rc=0; timeout 300 pkexec /usr/local/bin/rebuild-install "${miss_repo[@]}" || rc=$?
+      # 126: dialog cancelled, 127: no polkit agent (no desktop session), 124: nobody answered
+      if (( rc == 124 || rc == 126 || rc == 127 )); then
+        echo "rebuild sync: install not confirmed (exit $rc)"
+      elif (( rc )); then
+        msg="Could not install: ${miss_repo[*]} (maybe update the system first: sudo pacman -Syu)"
       fi
-    else
-      if (( ${#miss_repo[@]} )) && ! sudo -n pacman -S --needed --noconfirm "${miss_repo[@]}"; then
-        for x in "${miss_repo[@]}"; do sudo -n pacman -S --needed --noconfirm "$x" || failed+=("$x"); done
-      fi
-      for x in "${miss_aur[@]}"; do
-        yay -S --needed --noconfirm --sudoflags -n --removemake --answerclean None --answerdiff None --answeredit None "$x" || failed+=("$x")
-      done
-      APPLIED=$((APPLIED + ${#miss_repo[@]} + ${#miss_aur[@]} - ${#failed[@]}))
-      msg="Could not install: ${failed[*]} (maybe update the system first: sudo pacman -Syu)"
+      have=$(pacman -Qq | sort)
+      APPLIED=$((APPLIED + ${#miss_repo[@]}))
+      mapfile -t miss_repo < <(comm -23 <(sort -u packages/pacman.txt) <(echo "$have"))
+      APPLIED=$((APPLIED - ${#miss_repo[@]}))
     fi
   fi
-  # notify only when the set of failures changes, not every hour
-  if [[ "${failed[*]}" != "$(cat "$STATE/install-failed" 2> /dev/null)" ]]; then
-    (( ${#failed[@]} )) && notify critical "$msg"
-    echo "${failed[*]}" > "$STATE/install-failed"
+  { for x in "${miss_repo[@]}"; do echo "repo $x"; done
+    for x in "${miss_aur[@]}"; do echo "aur $x"; done; } > "$STATE/install-pending"
+  (( ${#miss_repo[@]} + ${#miss_aur[@]} )) && [[ -z $msg ]] \
+    && urgency=normal msg="$(( ${#miss_repo[@]} + ${#miss_aur[@]} )) listed package(s) wait for install: ${miss_repo[*]} ${miss_aur[*]} (sync menu: Install missing packages)"
+  # notify only when the message changes, not every hour
+  if [[ $msg != "$(cat "$STATE/install-notified" 2> /dev/null)" ]]; then
+    [[ -n $msg ]] && notify "$urgency" "$msg"
+    echo "$msg" > "$STATE/install-notified"
   fi
 
   if command -v code > /dev/null && [[ -s packages/vscode-extensions.txt ]]; then

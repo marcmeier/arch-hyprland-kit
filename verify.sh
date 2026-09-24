@@ -69,7 +69,7 @@ done
 # the passwordless pacman rule of older kit versions must be gone (it made any process of this user
 # root). Checked by its effect, since the user cannot read /etc/sudoers.d; -k ignores a cached login.
 if sudo -n -k pacman -V >/dev/null 2>&1; then
-  fail "pacman runs without password (old kit sync rule)  ->  sudo rm -f /etc/sudoers.d/90-rebuild-sync /etc/sudoers.d/10-rebuild-sync"
+  fail "pacman runs without password (rule of an older kit version)  ->  sudo rm -f /etc/sudoers.d/90-rebuild-sync /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/99-restore-nopasswd"
 fi
 if cmp -s "$KIT/files/usr/local/bin/rebuild-install" /usr/local/bin/rebuild-install \
    && [[ -e /usr/share/polkit-1/actions/org.rebuild.install.policy ]]; then ok "kit sync can install packages (pkexec rebuild-install, with password)"

@@ -2,6 +2,17 @@
 
 Versions follow the [releases](../../releases), which have the full notes and upgrade steps.
 
+## v1.4.1 (2026-09-24)
+
+### Security
+- `restore.sh` no longer writes a temporary `NOPASSWD: ALL` sudoers rule for the AUR step. If the script was killed at the wrong moment, that rule stayed and made the user root without a password. Now it asks for the user's password once at the start and keeps that sudo ticket alive until the AUR step is done; the keepalive stops at the latest a minute after the script ends. A leftover rule from an interrupted older run is removed, and `verify.sh` names it.
+
+### Added
+- `restore.sh --review-aur`: yay shows every PKGBUILD and asks before building. Without it, `restore.sh` says up front that the AUR packages are built without review.
+
+### Fixed
+- `restore.sh` reset `ufw` on every run, which deleted your own firewall rules. It now only sets the defaults while the firewall is not enabled yet.
+
 ## v1.4.0 (2026-09-24)
 
 Changes after feedback on r/hyprland.

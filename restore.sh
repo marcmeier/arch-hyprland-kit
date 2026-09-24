@@ -4,7 +4,7 @@
 # on top of a MINIMAL Arch install (btrfs, systemd-boot, network working,
 # a normal user in group wheel).
 #
-#   sudo bash restore.sh [-u USERNAME] [--no-aur] [--no-snapshot]
+#   sudo bash restore.sh [-u USERNAME] [--no-aur] [--review-aur] [--no-snapshot]
 #
 # Idempotent: safe to run multiple times. Existing user configs are moved to
 # <file>.bak-restore before being replaced.
@@ -19,6 +19,7 @@ source "$KIT/lib/hardware.sh"
 source "$KIT/kit.conf"
 USERNAME="${SUDO_USER:-}"   # the user who called sudo; -u overrides
 DO_AUR=1
+REVIEW_AUR=0
 DO_SNAP=1
 FAILED=()
 
@@ -26,6 +27,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -u) USERNAME="$2"; shift 2;;
     --no-aur) DO_AUR=0; shift;;
+    --review-aur) REVIEW_AUR=1; shift;;
     --no-snapshot) DO_SNAP=0; shift;;
     -h|--help) sed -n '2,13p' "$0"; exit 0;;
     *) echo "unknown option: $1"; exit 1;;
@@ -46,6 +48,26 @@ fail() { warn "$*"; FAILED+=("$*"); }
 for _ in 1 2 3 4 5; do ping -c1 -W5 archlinux.org >/dev/null 2>&1 && break; sleep 2; done
 ping -c1 -W5 archlinux.org >/dev/null 2>&1 || { echo "No network/DNS. Connect first (nmtui / iwctl)."; exit 1; }
 
+# AUR packages are built as the user (makepkg refuses root) and installed with the user's sudo.
+# Ask for that password now, while you are here, and keep the ticket alive until the AUR step is
+# done. runuser, unlike sudo, starts no new pseudo-terminal, so every later call sees this ticket.
+# The keepalive stops at the latest a minute after this script ends, however it ends.
+as_user() { runuser -u "$USERNAME" -- env HOME="$HOME_DIR" "$@"; }
+SUDO_KEEPALIVE=""
+start_sudo_keepalive() {
+  echo "The AUR step installs as $USERNAME with sudo. Password for $USERNAME, once:"
+  as_user sudo -v || { warn "no sudo ticket: yay will ask for the password itself"; return 0; }
+  ( while kill -0 $$ 2>/dev/null; do as_user sudo -n -v 2>/dev/null; sleep 60; done ) &
+  SUDO_KEEPALIVE=$!
+  trap stop_sudo_keepalive EXIT
+}
+stop_sudo_keepalive() {
+  [[ -n $SUDO_KEEPALIVE ]] && kill "$SUDO_KEEPALIVE" 2>/dev/null
+  SUDO_KEEPALIVE=""
+  as_user sudo -k 2>/dev/null
+  trap - EXIT
+}
+
 # ---------------------------------------------------------------- 1. user
 say "1/12 User '$USERNAME'"
 if ! id "$USERNAME" >/dev/null 2>&1; then
@@ -56,6 +78,7 @@ fi
 usermod -aG wheel "$USERNAME"
 HOME_DIR="$(getent passwd "$USERNAME" | cut -d: -f6)"
 UGRP="$(id -gn "$USERNAME")"
+(( DO_AUR )) && [[ -s $KIT/packages/aur.txt ]] && start_sudo_keepalive
 # a root-owned home (older install-base.sh) would break everything written there below
 [[ $(stat -c %U "$HOME_DIR") == "$USERNAME" ]] || { chown "$USERNAME:$UGRP" "$HOME_DIR"; chmod 700 "$HOME_DIR"; }
 # the same for a kit copied or cloned as root: git refuses a repo owned by someone else
@@ -271,13 +294,13 @@ if [[ -r $E/smartd.conf ]]; then
   sed -i "s/runuser -u [a-z_][a-z0-9_-]*/runuser -u $USERNAME/; s#/run/user/[0-9]*/bus#/run/user/$(id -u "$USERNAME")/bus#" /usr/local/bin/smartd-notify
   systemctl enable smartd.service fwupd-refresh.timer 2>/dev/null || warn "smartd/fwupd enable"
 fi
-if command -v ufw >/dev/null; then
-  ufw --force reset >/dev/null 2>&1
+# only a firewall that is not on yet gets the defaults; an active one keeps its rules
+if command -v ufw >/dev/null && ! grep -q '^ENABLED=yes' /etc/ufw/ufw.conf; then
   ufw default deny incoming >/dev/null 2>&1
   ufw default allow outgoing >/dev/null 2>&1
   ufw --force enable >/dev/null 2>&1 || sed -i 's/^ENABLED=.*/ENABLED=yes/' /etc/ufw/ufw.conf
-  systemctl enable ufw.service || fail "ufw enable"
 fi
+command -v ufw >/dev/null && { systemctl enable ufw.service || fail "ufw enable"; }
 
 # ----------------------------------------------------- 9. dotfiles (as user)
 say "9/12 Dotfiles -> $HOME_DIR"
@@ -358,8 +381,9 @@ if [[ -s $KIT/files/dconf.ini ]]; then
     || warn "dconf load failed (set GTK theme manually)"
 fi
 # the sync installs listed packages via "pkexec rebuild-install", with a password dialog every
-# time. Also removes the passwordless pacman rule of older kit versions.
-rm -f /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/90-rebuild-sync
+# time. Also removes the passwordless rules of older kit versions (sync, and the AUR step of an
+# interrupted restore.sh run).
+rm -f /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/90-rebuild-sync /etc/sudoers.d/99-restore-nopasswd
 install -Dm755 "$KIT/files/usr/local/bin/rebuild-install" /usr/local/bin/rebuild-install
 install -Dm644 "$KIT/files/usr/share/polkit-1/actions/org.rebuild.install.policy" \
   /usr/share/polkit-1/actions/org.rebuild.install.policy
@@ -367,18 +391,23 @@ install -Dm644 "$KIT/files/usr/share/polkit-1/actions/org.rebuild.install.policy
 # ---------------------------------------------------------------- 10. AUR
 if (( DO_AUR )); then
   say "10/12 AUR: yay + $(grep -c . "$KIT/packages/aur.txt") packages"
-  # makepkg refuses root: the user builds, with passwordless sudo for this step only
-  NOPW=/etc/sudoers.d/99-restore-nopasswd
-  echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > "$NOPW"; chmod 440 "$NOPW"
-  trap 'rm -f "$NOPW"' EXIT
+  if (( REVIEW_AUR )); then
+    echo "   --review-aur: yay shows every PKGBUILD and asks before it builds"
+  else
+    warn "AUR packages are built without showing their PKGBUILDs. To read them first: --review-aur"
+  fi
 
   if ! command -v yay >/dev/null; then
     # building yay needs Go and a fair amount of RAM; yay-bin is the fallback
     for pkg in yay yay-bin; do
-      sudo -u "$USERNAME" bash -c '
+      as_user bash -c '
         set -e; d=$(mktemp -d); cd "$d"
         git clone --depth=1 "https://aur.archlinux.org/$1.git" && cd "$1"
-        makepkg -si --noconfirm --needed' _ "$pkg" && break
+        if (( $2 )); then
+          ${PAGER:-less} PKGBUILD
+          read -rp "Build and install $1? [y/N] " a; [[ $a == [yY]* ]] || exit 1
+        fi
+        makepkg -si --noconfirm --needed' _ "$pkg" "$REVIEW_AUR" && break
       warn "AUR bootstrap with $pkg failed"
     done
     command -v yay >/dev/null || fail "yay bootstrap"
@@ -386,8 +415,12 @@ if (( DO_AUR )); then
 
   # proton-ge-custom-bin ships the same limits.d/10-games.conf that step 5 installed; let it take over
   if command -v yay >/dev/null; then
-    YAY=(sudo -u "$USERNAME" yay -S --needed --noconfirm --removemake --answerclean None --answerdiff None --answeredit None \
-      --overwrite '/etc/security/limits.d/10-games.conf')
+    if (( REVIEW_AUR )); then
+      YAY=(as_user yay -S --needed --removemake --answerclean None --answerdiff All --answeredit None)
+    else
+      YAY=(as_user yay -S --needed --noconfirm --removemake --answerclean None --answerdiff None --answeredit None)
+    fi
+    YAY+=(--overwrite '/etc/security/limits.d/10-games.conf')
     if ! "${YAY[@]}" $(tr '\n' ' ' < "$KIT/packages/aur.txt"); then
       warn "AUR batch failed, retrying package by package"
       while read -r p; do
@@ -396,7 +429,7 @@ if (( DO_AUR )); then
       done < "$KIT/packages/aur.txt"
     fi
   fi
-  rm -f "$NOPW"; trap - EXIT
+  stop_sudo_keepalive
 else
   say "10/12 AUR skipped (--no-aur)"
 fi

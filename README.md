@@ -113,8 +113,9 @@ Then install as described in [Quick start](#quick-start). On every further machi
    It creates GPT with an ESP and one btrfs partition (subvolumes `@`, `@home`, `@log`, `@pkg`, `@snapshots`), installs systemd-boot and the matching CPU microcode, and creates the user. Without a disk argument it lists the disks and asks. Use a clone, not an unpacked zip: the sync needs the `.git` folder.
 2. Reboot, log in as your user, connect to the network (`nmtui`), then restore the kit. It is safe to run more than once.
    ```bash
-   sudo bash ~/rebuild/restore.sh    # options: --no-aur, --no-snapshot, -u USER
+   sudo bash ~/rebuild/restore.sh    # options: --no-aur, --review-aur, --no-snapshot, -u USER
    ```
+   It asks for your password a second time right at the start: AUR packages are built as your user and installed with your sudo, and it keeps that ticket valid until the AUR step is done (no sudoers rule). By default the AUR packages from `packages/aur.txt` are built without showing their PKGBUILDs; with `--review-aur`, yay shows each one and asks before building. An already active `ufw` firewall keeps its rules.
 3. Reboot. ReGreet starts, and Hyprland after login.
 4. Optional: set up the calendar. The Nextcloud app password goes into the keyring, not into the kit.
    ```bash
@@ -265,7 +266,7 @@ Stays as configured (not hardware-detected): Hyprland keyboard layout, weather l
 Generated at runtime rather than shipped as files:
 - snapper config `home` (same retention as `root`)
 - systemd-boot entry `arch-lts.conf`, derived from `arch.conf`, if `linux-lts` is installed
-- firewall `ufw` (deny incoming, allow outgoing)
+- firewall `ufw` (deny incoming, allow outgoing), unless it is already enabled
 - enables `smartd` and `fwupd-refresh.timer`
 
 ## Not in the kit

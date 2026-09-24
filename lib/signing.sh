@@ -58,6 +58,9 @@ check() {
 setup() {
   local host f signer
   host=$(< /etc/hostname)
+  # a fresh install has no git identity: name the machine (only for this repository, no real address)
+  git config user.name > /dev/null || git config user.name "rebuild-kit $host"
+  git config user.email > /dev/null || git config user.email "rebuild-kit@$host.invalid"
   if [[ ! -f $KEY ]]; then
     [[ -d $HOME/.ssh ]] || mkdir -m700 "$HOME/.ssh"
     ssh-keygen -q -t ed25519 -N '' -C "rebuild-kit $host" -f "$KEY"

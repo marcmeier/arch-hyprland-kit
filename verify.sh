@@ -87,10 +87,20 @@ for u in NetworkManager bluetooth greetd systemd-timesyncd ufw smartd snapper-ti
   systemctl is-enabled "$u" > /dev/null 2>&1 && ok "enabled: $u" || fail "not enabled: $u"
 done
 ((HW_LAPTOP)) && { systemctl is-enabled power-profiles-daemon > /dev/null 2>&1 && ok "enabled: power-profiles-daemon" || fail "not enabled: power-profiles-daemon"; }
-for u in vdirsyncer.timer rebuild-snapshot.timer; do
-  # a plain file instead of the *.target.wants/ symlink disables the timer without any error
-  systemctl --user is-enabled "$u" > /dev/null 2>&1 && ok "enabled: $u" || fail "not enabled: $u (check for a non-symlink file in ~/.config/systemd/user/timers.target.wants/)"
-done
+# without a user session (restore.sh runs this via sudo -u) systemctl --user cannot answer: then the
+# symlink in timers.target.wants/ is what "enabled" means. A plain file there disables the timer.
+user_timer_enabled() {
+  if systemctl --user show-environment > /dev/null 2>&1; then # the user manager answers
+    systemctl --user is-enabled "$1" > /dev/null 2>&1
+  else
+    [[ -L $HOME/.config/systemd/user/timers.target.wants/$1 ]]
+  fi
+}
+user_timer_enabled rebuild-snapshot.timer && ok "enabled: rebuild-snapshot.timer" ||
+  fail "not enabled: rebuild-snapshot.timer (check for a non-symlink file in ~/.config/systemd/user/timers.target.wants/)"
+# the calendar is optional: calendar-login.sh enables its timer
+user_timer_enabled vdirsyncer.timer && ok "enabled: vdirsyncer.timer" ||
+  info "vdirsyncer.timer not enabled (calendar not set up: bash $KIT/calendar-login.sh)"
 # the passwordless pacman rule of older kit versions must be gone (it made any process of this user
 # root). Checked by its effect, since the user cannot read /etc/sudoers.d; -k ignores a cached login.
 if sudo -n -k pacman -V > /dev/null 2>&1; then

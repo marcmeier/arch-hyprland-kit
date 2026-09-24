@@ -81,7 +81,8 @@ hw_packages() {
   if ((HW_LAPTOP)); then
     pkgs+=(power-profiles-daemon upower brightnessctl sof-firmware)
   fi
-  printf '%s\n' "${pkgs[@]}"
+  # nothing at all in a VM without microcode or GPU packages: an empty line would be a package name
+  if ((${#pkgs[@]})); then printf '%s\n' "${pkgs[@]}"; fi
 }
 
 # modules for the initramfs (early KMS => Plymouth/console at native resolution)

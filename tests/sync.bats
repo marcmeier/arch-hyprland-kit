@@ -28,6 +28,16 @@ give_A_khal() {
   [ "$(result A)" = ok ]
 }
 
+@test "the sync commits on a fresh install without a git identity" {
+  # a new machine has no user.name/user.email; the sandbox otherwise sets them in the environment
+  unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
+  echo "-- test: fresh machine" >> "$(home A)/.config/hypr/hyprland.lua"
+  run sync_on A --now
+  [ "$status" -eq 0 ]
+  [ "$(result A)" = ok ]
+  github_has files/home/.config/hypr/hyprland.lua "-- test: fresh machine"
+}
+
 @test "the sync works without a notes folder, as in the public template" {
   cd "$(home A)/$KIT_REL"
   sed -i 's/^KIT_NOTES_REL=.*/KIT_NOTES_REL=""/' kit.conf

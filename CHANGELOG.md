@@ -2,6 +2,22 @@
 
 Versions follow the [releases](../../releases), which have the full notes and upgrade steps.
 
+## v1.5.1 (2026-09-24)
+
+Found by installing the template in a fresh VM, following the README.
+
+### Fixed
+- On a fresh install the sync never recorded anything: git had no identity, so every commit failed. The kit now gives its own repository a machine identity (`rebuild-kit <host>`, an address ending in `.invalid`) when none is set. Machines with a git identity are unchanged.
+- `restore.sh` asked for the password three times instead of once: makepkg runs `sudo -k`, which ignores the ticket, so bootstrapping yay asked twice more. If nobody was there to answer, the AUR step failed.
+- In a VM without CPU microcode or GPU packages, `restore.sh` tried to install an empty package name and reported "hardware packages" as failed.
+- `verify.sh` reported the user timers as not enabled when `restore.sh` ran it, since there is no user session then. It now checks the timer symlink. The calendar timer is only a hint, since the calendar is optional.
+- The template no longer starts the Nextcloud client at login.
+
+### Docs
+- The live ISO has no git: the Quick start now installs it first.
+- `restore.sh` turns on the firewall: when installing over SSH, allow SSH first.
+- While the AUR step keeps the sudo ticket, a build script could use it as well (the same trade-off as `yay --sudoloop`); `--review-aur` shows every PKGBUILD first.
+
 ## v1.5.0 (2026-09-24)
 
 ### Fixed

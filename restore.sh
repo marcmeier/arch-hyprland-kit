@@ -481,7 +481,10 @@ if ((DO_AUR)); then
           ${PAGER:-less} PKGBUILD
           read -rp "Build and install $1? [y/N] " a; [[ $a == [yY]* ]] || exit 1
         fi
-        makepkg -si --noconfirm --needed' _ "$pkg" "$REVIEW_AUR" && break
+        # makepkg calls "sudo -k pacman", which ignores the ticket and asks again: plain sudo instead
+        conf=$(mktemp)
+        printf "source /etc/makepkg.conf\nPACMAN_AUTH=(sudo)\n" > "$conf"
+        makepkg --config "$conf" -si --noconfirm --needed' _ "$pkg" "$REVIEW_AUR" && break
       warn "AUR bootstrap with $pkg failed"
     done
     command -v yay > /dev/null || fail "yay bootstrap"

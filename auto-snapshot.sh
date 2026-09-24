@@ -44,6 +44,9 @@ main() {
     exit 0
   fi
   HOST=$(< /etc/hostname)
+  # a fresh install has no git identity, and without one no commit works: name the machine
+  git config user.name > /dev/null || git config user.name "rebuild-kit $HOST"
+  git config user.email > /dev/null || git config user.email "rebuild-kit@$HOST.invalid"
   source ./kit.conf
 
   local old

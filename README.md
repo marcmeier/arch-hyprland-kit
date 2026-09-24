@@ -109,7 +109,7 @@ Then install as described in [Quick start](#quick-start). On every further machi
 
 ## Quick start
 
-1. **Fresh install only, this wipes the disk.** Boot the Arch live ISO, clone your kit repository (`git clone https://github.com/<you>/<repo> /root/rebuild`; for a private repository, a personal access token is the password) and run the base install from the clone:
+1. **Fresh install only, this wipes the disk.** Boot the Arch live ISO, install git there (the ISO does not ship it: `pacman -Sy git`), clone your kit repository (`git clone https://github.com/<you>/<repo> /root/rebuild`; for a private repository, a personal access token is the password) and run the base install from the clone:
    ```bash
    bash install-base.sh [/dev/DISK] [user] [--hostname NAME] [--keymap MAP] [--tz ZONE]
    ```
@@ -118,7 +118,9 @@ Then install as described in [Quick start](#quick-start). On every further machi
    ```bash
    sudo bash ~/rebuild/restore.sh    # options: --no-aur, --review-aur, --no-snapshot, -u USER
    ```
-   It asks for your password a second time right at the start: AUR packages are built as your user and installed with your sudo, and it keeps that ticket valid until the AUR step is done (no sudoers rule). By default the AUR packages from `packages/aur.txt` are built without showing their PKGBUILDs; with `--review-aur`, yay shows each one and asks before building. An already active `ufw` firewall keeps its rules.
+   It asks for your password a second time right at the start: AUR packages are built as your user and installed with your sudo, and it keeps that ticket valid until the AUR step is done (no sudoers rule). While the ticket is valid, a build script could use it too; this is the same trade-off as `yay --sudoloop`. By default the AUR packages from `packages/aur.txt` are built without showing their PKGBUILDs; with `--review-aur`, yay shows each one and asks before building.
+
+   `restore.sh` turns on the `ufw` firewall (incoming connections denied) unless it is already enabled; an enabled one keeps its rules. If you run it over SSH, allow SSH first (`sudo ufw allow ssh`), or the next connection is refused.
 3. Reboot. ReGreet starts, and Hyprland after login.
 4. Optional: set up the calendar. The Nextcloud app password goes into the keyring, not into the kit.
    ```bash

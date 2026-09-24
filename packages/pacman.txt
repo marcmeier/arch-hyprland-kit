@@ -17,6 +17,7 @@ cliphist
 discord
 dnsmasq
 dosfstools
+edk2-ovmf
 evince
 fastfetch
 fd
@@ -103,6 +104,7 @@ python-protobuf
 python-psutil
 python-pyaml
 python-zstandard
+qemu-desktop
 qt6-tools
 qt6ct
 reflector

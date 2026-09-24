@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Refreshes this rebuild kit from the LIVE system (package lists, dotfiles, dconf, VS Code settings).
-# Run as your normal user (no sudo). Re-run after every noteworthy change, then keep the folder safe
-# (git repo, Nextcloud, USB stick ...).
+# Records this machine's live state in the kit: package lists, dotfiles, dconf, VS Code, /etc copies.
+# Run as your normal user; the sync (auto-snapshot.sh) runs it at the start of every run.
 set -euo pipefail
 export LC_ALL=C   # one sort order for the shared lists on every machine and in every session
 cd "$(dirname "$(readlink -f "$0")")"
 H="$HOME"
-# per machine memory of the last snapshot (package lists, /etc checksums), see lib/lists.sh
+# per machine memory of the last snapshot (package lists, kit files, /etc checksums), see lib/lists.sh
 STATE="${XDG_STATE_HOME:-$H/.local/state}/rebuild"
 mkdir -p "$STATE"
 source "$PWD/lib/lists.sh"
@@ -44,7 +43,7 @@ for f in "$H"/.local/share/applications/*.desktop; do
   case "$(basename "$f")" in net.lutris.*|Baldur*|brave-*) continue;; esac
   cp -a "$f" files/home/.local/share/applications/
 done
-# drop all backup copies, they are noise in a rebuild kit
+# no backup copies in the kit
 find files/home \( -name '*.bak*' -o -name 'bak_*' \) -prune -exec rm -rf {} +
 
 # project notes (KIT_NOTES_REL in kit.conf; they live outside the kit)
@@ -53,18 +52,19 @@ if [[ -n ${KIT_NOTES_REL:-} ]]; then
   [[ -r $N/CLAUDE.md ]] && cp -a "$N/CLAUDE.md" files/CLAUDE.md
   if [[ -d $N/docs ]]; then rm -rf files/docs; cp -a "$N/docs" files/docs; fi
 fi
+# a kit file missing here was only deleted if this machine had it before (lib/lists.sh)
+guard_deletions "$STATE/files.base" files/home files/docs
 
 echo "==> dconf + VS Code extensions"
-dconf dump / > files/dconf.ini
+dconf dump / | filter_dconf > files/dconf.ini
 # an empty answer (VS Code missing or broken) must not count as "every extension removed"
 if code --list-extensions > "$STATE/vscode.now" 2>/dev/null && [[ -s $STATE/vscode.now ]]; then
   merge_list packages/vscode-extensions.txt "$STATE/vscode.now" "$STATE/vscode.base"
 fi
 
 echo "==> /etc files (readable ones)"
-# system files are not copied back onto the machines automatically (that needs root), so a machine
-# that still has an older copy must not push it over a newer kit version: a live file is only taken
-# when it changed here since this machine's last snapshot (or the kit has none yet)
+# /etc is never applied to the other machines, so their copies may be old: a live file only goes
+# into the kit when it changed here since the last snapshot (or the kit has none yet)
 : > "$STATE/etc.sha256.new"
 take_sys() {  # take_sys LIVE KITPATH MODE
   local live=$1 kit=$2 mode=$3 old

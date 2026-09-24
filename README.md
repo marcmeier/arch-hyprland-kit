@@ -1,110 +1,132 @@
-# 🏔️ Arch Hyprland Kit
+# arch-hyprland-kit
 
-**Set up one machine, and every other one follows.**
-
-A complete Arch Linux desktop (Hyprland, Waybar, a gaming stack, and a theme generated from your wallpaper) that installs with one command and then keeps all your machines identical. Change a config or install a program on one of them, and within an hour every other machine has it too. The sync runs through your own Git repository.
-
-```mermaid
-flowchart LR
-    D["🖥️ desktop"] <-->|"every hour: send own changes,<br>take over the others'"| G[("your Git repo<br>the reference")]
-    L["💻 notebook"] <-->|"every hour"| G
-    G -->|"restore.sh, once"| N["🆕 new machine"]
-```
+My Arch Linux and Hyprland setup, packaged so that a new machine can be installed with two scripts and several machines stay in sync through a private Git repository.
 
 <table>
 <tr>
-<td width="50%"><img src="img/desktop.png" alt="Desktop: Hyprland with the spacious Waybar on a 3440x1440 ultrawide"><br><sub><b>Desktop</b>, 3440x1440 ultrawide: the spacious Waybar.</sub></td>
-<td width="50%"><img src="img/desktop-notebook.png" alt="Notebook: the same setup on a 1920x1080 panel with the compact Waybar"><br><sub><b>Notebook</b>, 1920x1080: the same setup, and the bar switches to compact on its own (<a href="#-waybar-adapts-to-the-screen">how</a>).</sub></td>
+<td width="50%"><img src="img/desktop.png" alt="Desktop: Hyprland with the spacious Waybar on a 3440x1440 ultrawide"><br><sub>Desktop, 3440x1440 ultrawide.</sub></td>
+<td width="50%"><img src="img/desktop-notebook.png" alt="Notebook: the same setup on a 1920x1080 panel with the compact Waybar"><br><sub>Notebook, 1920x1080: the same setup with a compact bar (<a href="#waybar-adapts-to-the-screen">how</a>).</sub></td>
 </tr>
 </table>
 
-## 🧭 What It Does
+> [!NOTE]
+> This is a personal hobby project. I use it daily on two machines and have tested it on a few more ([tested hardware](#tested-hardware)). Most of the code and this README were written with an AI assistant (Claude). Please read the scripts before running them: `install-base.sh` wipes a disk, and the sync changes files in your home directory every hour.
 
-1. **Records changes.** Every hour, each machine records what changed on it: configs (Hyprland, Waybar, theme …), settings, newly installed programs and VS Code extensions. All of it goes to your repo.
-2. **Spreads them.** The other machines take over what arrives: files are copied, deleted files deleted, and running programs reloaded.
-3. **Installs what is missing.** A program installed on one machine is installed on the others too. Drivers and notebook extras stay on the hardware they belong to.
-4. **Builds new machines.** On a fresh Arch install, `restore.sh` sets up everything in one go: packages, configs, theme, login screen and hardware detection. From then on the machine takes part in the sync.
+## What it is
 
-It stays safe because:
+- **An installer.** `install-base.sh` sets up a minimal Arch system from the live ISO (btrfs with snapper, systemd-boot). `restore.sh` then installs the packages, dotfiles, login screen and hardware-specific drivers on top.
+- **A sync between machines.** A user timer records what changed on a machine (dotfiles, installed packages, VS Code extensions) and commits it to your repository. The other machines show the incoming changes and apply them when you confirm.
+- **A desktop.** Hyprland, Waybar, walker, mako, hyprlock and ReGreet, themed with colours taken from the wallpaper.
 
-- **The repo wins** when two machines contradict each other.
-- **Nothing is uninstalled and nothing is upgraded** automatically; that stays your call.
-- **Machine-specific things stay per machine**: hostname, hardware packages, pinned monitor modes.
-- **Every change can be undone**: git keeps the full history.
+## How it compares
 
-## 🧩 Make It Yours
+None of this is new, and for many people one of these tools is the better choice:
 
-This repo is a template. Your machines push their state every hour, so they need **their own repository, and it should be private** (it will hold your configs and package lists).
+| Tool | Probably the better choice if you … |
+|---|---|
+| NixOS + home-manager | want a fully declarative, reproducible system with rollbacks, and don't mind switching distro and learning Nix. |
+| chezmoi, yadm, stow | mainly want your dotfiles on several machines. chezmoi also covers per-machine differences and can install packages via scripts. |
+| aconfmgr | want your Arch system state (packages, files in `/etc`) tracked in Git, including saving the current state into the config. |
+| Omarchy, HyDE, ML4W, end-4/dots | want a ready-made Hyprland desktop that more people maintain and use. |
 
-1. On GitHub: **Use this template → Create a new repository → Private**.
-2. Clone it to `~/rebuild` on your first machine (the sync timer expects that path).
+The difference here is the direction: nothing is declared up front. You change a machine the usual way (`pacman -S`, editing a config, installing an extension), and the sync records it and offers it to your other machines. That is convenient, but less rigorous than Nix: nothing guarantees that two machines end up identical. `verify.sh` checks the obvious parts.
+
+## What the sync does and doesn't do
+
+- By default, a machine only shows incoming changes (an icon in Waybar) until you apply them. There is also an automatic mode.
+- If two machines changed the same lines, it stops and lists the files. You merge by hand.
+- Before it replaces or deletes a file, it copies it to `~/.local/state/rebuild/backup/` (the last 10 runs are kept).
+- It never uninstalls or upgrades packages. Installing a package from the shared list asks for your password every time (polkit), and AUR packages are only built in a terminal you open.
+- It only applies commits signed by one of your machines' SSH keys, so a leaked GitHub token alone cannot push files onto them.
+- Files in `/etc` are recorded but never applied automatically.
+
+Details: [automatic sync between machines](#automatic-sync-between-machines).
+
+## Known limitations
+
+- `install-base.sh`: UEFI, a single disk, systemd-boot, no disk encryption.
+- Tested with AMD and Intel graphics. The NVIDIA code path exists but is untested.
+- The kit has to live in `~/rebuild`.
+- It ships one person's app selection: a gaming stack (Steam, Lutris), a Waybar widget for Claude usage limits (`waybar/claude-usage.py`, which uses an unofficial endpoint) and a Nextcloud calendar. Remove what you don't need from `packages/*.txt` and `waybar/config.jsonc`.
+- No automated tests yet.
+
+## Make it yours
+
+This repository is a template. Your machines push their state to their repository every hour, so they need their own, and it should be private (it will hold your configs and package lists).
+
+1. On GitHub: *Use this template → Create a new repository → Private*.
+2. Clone it to `~/rebuild` on your first machine.
 3. Adjust what is personal, before or after the first install:
 
 | What | Where |
 |---|---|
 | Keyboard layout | `kb_layout` in `files/home/.config/hypr/hyprland.lua`; console: `install-base.sh --keymap` |
 | Timezone, hostname, user | `install-base.sh --tz … --hostname … [user]` |
-| Wallpaper and colours | `set-wallpaper /path/to/image` (the whole theme follows) |
-| Weather location | automatic from your IP; fixed: `WTTR_LOCATION` in the environment |
+| Wallpaper and colours | `set-wallpaper /path/to/image` (the theme follows) |
+| Weather location | from your IP; to fix it, set `WTTR_LOCATION` in the environment |
 | Name in the bar | your account's full name (`sudo chfn -f "Your Name" $USER`) |
 | Avatar | `files/home/.config/waybar/avatar.png`, `files/etc/greetd/avatar.png` |
-| Programs | `packages/pacman.txt`, `packages/aur.txt` (or just install/uninstall; the sync records it) |
+| Programs | `packages/pacman.txt`, `packages/aur.txt` (or install/uninstall as usual; the sync records it) |
 | Calendar (optional) | `bash calendar-login.sh` asks for your Nextcloud address and login |
 | Notes folder (optional) | `KIT_NOTES_REL` in `kit.conf` |
 
-It is **opinionated**: it ships one person's app selection, including a gaming stack (Steam, Lutris for Battle.net/Diablo 4), a Waybar widget for Claude usage limits (`waybar/claude-usage.py`, reads Claude Code's login and an unofficial usage endpoint) and a Nextcloud calendar. Drop what you don't need from `packages/*.txt` and `waybar/config.jsonc`.
+Then install as described in [Quick start](#quick-start). On every further machine, clone the same repository and run `restore.sh`.
 
-Then install as described in [Quick Start](#-quick-start). On every further machine, clone the same repo and run `restore.sh`; from then on they stay in step.
+## Contents
+- [Theme gallery](#theme-gallery)
+- [Quick start](#quick-start)
+- [Automatic sync between machines](#automatic-sync-between-machines)
+- [Waybar adapts to the screen](#waybar-adapts-to-the-screen)
+- [Display modes (SUPER + SHIFT + P)](#display-modes-super--shift--p)
+- [Hardware detection](#hardware-detection-libhardwaresh)
+- [What's in the kit](#whats-in-the-kit)
+- [What `restore.sh` also creates](#what-restoresh-also-creates)
+- [Not in the kit](#not-in-the-kit)
+- [Tested hardware](#tested-hardware)
 
-## Table of Contents
-- [What It Does](#-what-it-does)
-- [Make It Yours](#-make-it-yours)
-- [Theme Gallery](#-theme-gallery)
-- [Quick Start](#-quick-start)
-- [Automatic Sync Between Machines](#-automatic-sync-between-machines)
-- [Waybar Adapts to the Screen](#-waybar-adapts-to-the-screen)
-- [Display Modes (SUPER + SHIFT + P)](#-display-modes-super--shift--p)
-- [Hardware Detection](#-hardware-detection-libhardwaresh)
-- [What's in the Kit](#-whats-in-the-kit)
-- [What `restore.sh` Also Creates](#-what-restoresh-also-creates-step-8b)
-- [What's NOT in the Kit](#-whats-not-in-the-kit)
-- [Tested Hardware](#-tested-hardware)
+## Theme gallery
 
-## 🎨 Theme Gallery
-
-One palette for everything: `theme/apply.py` derives two accent colours from the wallpaper and renders them into Waybar, walker, wlogout, mako, Ghostty, hyprlock, ReGreet, GTK 3/4, Qt and the Hyprland borders. Everything sits on the same dark, translucent surface with rounded corners and JetBrainsMono Nerd Font. All shots are from the 1920x1080 notebook.
+`theme/apply.py` derives two accent colours from the wallpaper and renders them into Waybar, walker, wlogout, mako, Ghostty, hyprlock, ReGreet, GTK 3/4, Qt and the Hyprland borders. Everything uses the same dark, translucent surface with rounded corners and JetBrainsMono Nerd Font. All screenshots are from the 1920x1080 notebook.
 
 <table>
 <tr>
-<td width="50%"><img src="img/theme-tiled.png" alt="Tiled windows: btop, Nautilus and Ghostty with fastfetch"><br><sub><b>Tiling:</b> btop, Nautilus and Ghostty with fastfetch. The focused window gets the accent border, the terminal palette follows the wallpaper.</sub></td>
-<td width="50%"><img src="img/theme-walker.png" alt="walker app launcher"><br><sub><b>walker</b> (<code>SUPER + SPACE</code>): apps, calculator and web search in one field. Also the menu for clipboard history, emoji and display modes.</sub></td>
+<td width="50%"><img src="img/theme-tiled.png" alt="Tiled windows: btop, Nautilus and Ghostty with fastfetch"><br><sub>Tiling: btop, Nautilus and Ghostty with fastfetch. The terminal palette follows the wallpaper.</sub></td>
+<td width="50%"><img src="img/theme-walker.png" alt="walker app launcher"><br><sub>walker (<code>SUPER + SPACE</code>): apps, calculator and web search. Also the menu for clipboard history, emoji and display modes.</sub></td>
 </tr>
 <tr>
-<td><img src="img/theme-wlogout.png" alt="wlogout power menu"><br><sub><b>wlogout</b> (<code>SUPER + SHIFT + M</code> or the power pill): five centred tiles over a blurred desktop, one-key shortcuts.</sub></td>
-<td><img src="img/theme-mako.png" alt="mako notification"><br><sub><b>mako</b>: notifications top right, below the bar, in the same surface and accent border. The bell pill counts them and toggles do-not-disturb.</sub></td>
+<td><img src="img/theme-wlogout.png" alt="wlogout power menu"><br><sub>wlogout (<code>SUPER + SHIFT + M</code> or the power pill).</sub></td>
+<td><img src="img/theme-mako.png" alt="mako notification"><br><sub>mako notifications. The bell pill counts them and toggles do-not-disturb.</sub></td>
 </tr>
 <tr>
-<td><img src="img/theme-hyprlock.png" alt="hyprlock lock screen"><br><sub><b>hyprlock</b>: blurred, dimmed wallpaper, big clock and a password field with the accent border (via hypridle or the lock tile).</sub></td>
-<td><img src="img/theme-greeter.png" alt="ReGreet login screen"><br><sub><b>ReGreet</b> in cage: the login screen with the wallpaper, avatar and the machine's hostname.</sub></td>
+<td><img src="img/theme-hyprlock.png" alt="hyprlock lock screen"><br><sub>hyprlock, via hypridle or the lock tile.</sub></td>
+<td><img src="img/theme-greeter.png" alt="ReGreet login screen"><br><sub>ReGreet in cage, with the wallpaper, avatar and hostname.</sub></td>
 </tr>
 </table>
 
-## 🚀 Quick Start
+## Quick start
 
-| # | Step | Command |
-|---|---|---|
-| 1 | **Fresh install only** — Arch live ISO, **wipes the disk!** Partitions GPT + btrfs (`@`, `@home`, `@log`, `@pkg`, `@snapshots`), systemd-boot, creates the user. Without a disk argument it lists the drives and asks. Microcode is picked automatically from the detected CPU, always exactly one disk (no multi-disk pool). On the live ISO, clone your kit repo and run the script from the clone (`git clone https://github.com/<you>/<repo> /root/rebuild`; for a private repo, a personal access token is the password). Use a clone, not an unpacked zip: the sync needs the `.git` folder, and `restore.sh` only enables it for a clone. | `bash install-base.sh [/dev/DISK] [user] [--hostname NAME] [--keymap MAP] [--tz ZONE]` |
-| 2 | Reboot, log in as your user, connect to the network (`nmtui`), then restore the kit. Safe to run more than once (idempotent). | `sudo bash ~/rebuild/restore.sh`<br>Options: `--no-aur`, `--no-snapshot`, `-u USER` |
-| 3 | Reboot → graphical ReGreet login with wallpaper → Hyprland starts. | – |
-| 4 | Set up the calendar (Nextcloud app password goes into the keyring, plus sync + timer). The password itself is deliberately **not** in the kit. | `bash ~/rebuild/calendar-login.sh` |
+1. **Fresh install only, this wipes the disk.** Boot the Arch live ISO, clone your kit repository (`git clone https://github.com/<you>/<repo> /root/rebuild`; for a private repository, a personal access token is the password) and run the base install from the clone:
+   ```bash
+   bash install-base.sh [/dev/DISK] [user] [--hostname NAME] [--keymap MAP] [--tz ZONE]
+   ```
+   It creates GPT with an ESP and one btrfs partition (subvolumes `@`, `@home`, `@log`, `@pkg`, `@snapshots`), installs systemd-boot and the matching CPU microcode, and creates the user. Without a disk argument it lists the disks and asks. Use a clone, not an unpacked zip: the sync needs the `.git` folder.
+2. Reboot, log in as your user, connect to the network (`nmtui`), then restore the kit. It is safe to run more than once.
+   ```bash
+   sudo bash ~/rebuild/restore.sh    # options: --no-aur, --no-snapshot, -u USER
+   ```
+3. Reboot. ReGreet starts, and Hyprland after login.
+4. Optional: set up the calendar. The Nextcloud app password goes into the keyring, not into the kit.
+   ```bash
+   bash ~/rebuild/calendar-login.sh
+   ```
 
-At the end, `restore.sh` automatically runs `verify.sh` — a read-only check of whether the system matches the kit (home ownership, packages, dotfiles, `/etc`, services, boot entries, user setup). Exit code = number of FAILs. Can also be run on its own at any time:
+At the end, `restore.sh` runs `verify.sh`, a read-only check of whether the system matches the kit (home ownership, packages, dotfiles, `/etc`, services, boot entries). Its exit code is the number of failed checks. You can run it on its own at any time:
 
 ```bash
 bash ~/rebuild/verify.sh
 ```
 
-**An already installed machine joins the sync** with the repo cloned to `~/rebuild`. First it takes the GitHub state as a whole, then it sets up the package installer the sync uses (it asks for your password every time):
+An already installed machine joins the sync with the repository cloned to `~/rebuild`. It first takes over the GitHub state as a whole, then installs the package installer the sync uses (which asks for your password every time):
 
 ```bash
 cd ~/rebuild && git fetch && git reset --hard origin/main && ./auto-snapshot.sh --adopt
@@ -114,152 +136,154 @@ bash lib/signing.sh setup
 systemctl --user enable --now rebuild-snapshot.timer
 ```
 
-## 🔄 Automatic Sync Between Machines
+## Automatic sync between machines
 
-Every machine runs the same user timer, `rebuild-snapshot.timer`: 3 minutes after login and then hourly. Each run of `auto-snapshot.sh` does four things in a fixed order:
+Every machine runs the same user timer, `rebuild-snapshot.timer`: 3 minutes after login, then hourly. Each run of `auto-snapshot.sh` has four steps. In the default mode, *review first*, it stops after fetching while GitHub has something new (see [modes](#sync-pill-in-the-bar)).
 
-1. **Snapshot.** `snapshot.sh` records this machine's changes in the kit (dotfiles, dconf, Claude notes, package lists, VS Code extensions, readable `/etc` files) and commits them as `Automatic snapshot <host> <time>`.
-2. **Pull.** It merges `origin/main`. Where both machines changed the same lines, **GitHub wins** (`-X theirs`). If git still cannot merge, nothing is applied or pushed and a notification asks for a manual fix.
-3. **Apply.** It copies every kit file the merge changed onto this machine (`files/home` → `~`, `files/dconf.ini` → `dconf load`, `files/CLAUDE.md` and `files/docs` → the notes folder set in `kit.conf`). Files deleted in the kit are deleted here. Hyprland, Waybar, mako and systemd are reloaded as needed. Packages and VS Code extensions from the lists that are missing here get installed.
-4. **Push**, then refresh the zip copy set as `KIT_ZIP` in `kit.conf` (for example in a cloud folder), if the kit changed.
+1. Snapshot: `snapshot.sh` records this machine's changes in the kit (dotfiles, dconf, notes, package lists, VS Code extensions, readable `/etc` files) and commits them as `Automatic snapshot <host> <time>`.
+2. Pull: it merges `origin/main`. If both machines changed the same lines, nothing is applied or pushed; the pill turns red and names the files, and you merge by hand (`git merge origin/main` in the kit). The package lists are the exception: git keeps both sides' lines there (`merge=union` in `.gitattributes`).
+3. Apply: it copies every kit file the merge changed onto this machine (`files/home` → `~`, `files/dconf.ini` → `dconf load`, `files/CLAUDE.md` and `files/docs` → the notes folder set in `kit.conf`) and deletes files that were deleted in the kit. Each live file it replaces or deletes is copied to `~/.local/state/rebuild/backup/<time>/` first. Hyprland, Waybar, mako and systemd are reloaded as needed, and missing packages and VS Code extensions from the lists are installed.
+4. Push, then refresh the zip copy (`KIT_ZIP` in `kit.conf`) if the kit changed.
 
-How the details work:
+The details:
 
-- **Package lists are shared.** A machine only adds what it installed and drops what it removed since its own last snapshot (`lib/lists.sh`, state in `~/.local/state/rebuild`). A package only one machine has therefore ends up on all of them. The sync **never uninstalls**: a package removed on one machine leaves the list, and the others keep it until you remove it there too. Hardware packages (microcode, GPU drivers, notebook extras) stay out of the lists (`lib/hardware.sh`).
-- **Installing asks for your password, every time.** Missing packages from the official repos come up in a password dialog that names them (`pkexec rebuild-install`, a small root-owned script that only accepts package names and only runs `pacman -S --needed`). The dialog comes once per new set of missing packages; cancel it, or leave it unanswered for 5 minutes, and the packages wait in the [sync pill](#-sync-pill-in-the-bar) until you pick *Install missing packages* there (or *Sync now*, which asks again). `restore.sh` sets the installer up; on a machine from before, see [joining the sync](#-quick-start) for the two `install` lines.
-- **AUR packages are never built unattended.** A PKGBUILD is a script that runs on your machine, so new AUR packages from the lists only wait in the pill. *Install missing packages* opens a terminal with `yay`, which shows each PKGBUILD diff before building.
-- The sync does not upgrade the system. If a package cannot be installed (for example an outdated package database), you get one notification; run `sudo pacman -Syu`.
-- **Nothing runs as root without your password**, not even from a push to the kit repo. What the sync does take over unasked are your dotfiles, and those can run code as your user (Hyprland `exec`, systemd user units, shell configs). That is why every commit must be signed by one of your machines (next point).
-- **Only commits signed by your own machines are taken over.** Every machine signs its commits with its own SSH key (`~/.ssh/rebuild-signing`) and publishes the public half as `signers/<host>.pub`. Before it merges anything, the sync checks every incoming commit against `~/.local/state/rebuild/allowed_signers`, a list that lives only on the machine and never travels with the kit (`lib/signing.sh`). A stolen GitHub token, a hijacked browser login or an edit in GitHub's web editor can still push, but such a commit is not signed by any of your machines: nothing is taken over, the pill turns red and you get one notification. What stays out of reach: a machine of yours that is itself compromised, since its key signs.
-  - **Set up** once per machine that is already running (`restore.sh` does it on new installs). It takes over the current GitHub state one last time without a check, then pushes the machine's key: `bash ~/rebuild/lib/signing.sh setup`
-  - **A new machine** signs with a key the others do not know yet. They hold its commits back, and the pill offers *Trust new machine: host (fingerprint)*. That opens a terminal: compare the fingerprint with `ssh-keygen -lf ~/.ssh/rebuild-signing.pub` on the new machine and type `yes`. A key that claims the name of a machine you already trust is never offered.
-  - **A reinstalled machine** has a new key. Remove its old line on every other machine first (`sed -i '/^HOST /d' ~/.local/state/rebuild/allowed_signers`), then trust it as a new one.
-  - **Foreign commits on GitHub** block the sync until they are gone. Look at them (*Review incoming changes*), change your GitHub credentials, then drop them from a trusted machine: `git push --force-with-lease=main:origin/main origin HEAD:main`.
-  - Keep the repo private, protect the account (2FA), and give nobody else write access anyway.
-- **`/etc` files are recorded, not applied** (that would need root). A machine only writes one into the kit when the file changed there, so an older copy never overwrites a newer one. `/etc/hostname` differs per machine; the kit keeps its copy only as a fallback name for `restore.sh`.
-- **A machine that fell behind** (for example off for weeks while the other one changed things by hand, or before its first sync run) should take the GitHub state as a whole first. Otherwise its first snapshot would push its old files back:
+- Package lists are shared. A machine only adds what it installed and drops what it removed since its own last snapshot (`lib/lists.sh`, state in `~/.local/state/rebuild`). A package that only one machine has therefore ends up on all of them. The sync never uninstalls: a package removed on one machine leaves the list, and the others keep it until you remove it there too. Hardware packages (microcode, GPU drivers, notebook extras) stay out of the lists (`lib/hardware.sh`).
+- Deletions work the same way. A file missing on one machine only counts as deleted if that machine had it at its last snapshot (or got it from the sync since). A machine that never had a file does not delete it everywhere else (`guard_deletions` in `lib/lists.sh`).
+- Window sizes stay per machine: `files/dconf.ini` leaves out window geometry (`filter_dconf` in `lib/lists.sh`), which differs per screen and only caused noise and merge conflicts.
+- Installing asks for your password, every time. Missing packages from the official repositories come up in a polkit dialog that names them (`pkexec rebuild-install`, a small root-owned script that only accepts package names and only runs `pacman -S --needed`). The dialog comes once per new set of missing packages. If you cancel it or leave it for 5 minutes, the packages wait in the [sync pill](#sync-pill-in-the-bar) until you pick *Install missing packages* (or *Sync now*, which asks again).
+- AUR packages are never built unattended, since a PKGBUILD is a script that runs on your machine. They wait in the pill, and *Install missing packages* opens a terminal with `yay`, which shows each PKGBUILD diff before building.
+- The sync does not upgrade the system. If a package cannot be installed (for example because the package database is outdated), you get one notification; run `sudo pacman -Syu`.
+- Nothing runs as root without your password, even after a push to the kit repository. What the sync does take over without asking in automatic mode are your dotfiles, and those can run code as your user (Hyprland `exec`, systemd user units, shell configs). That is why every commit must be signed by one of your machines:
+  - Every machine signs its commits with its own SSH key (`~/.ssh/rebuild-signing`) and publishes the public half as `signers/<host>.pub`. Before merging, the sync checks every incoming commit against `~/.local/state/rebuild/allowed_signers`, a list that only exists on the machine and never travels with the kit (`lib/signing.sh`). A stolen GitHub token, a hijacked browser login or an edit in GitHub's web editor can still push, but nothing it pushes is taken over: the pill turns red and you get one notification. A compromised machine of yours is not covered, since its key signs.
+  - Set up once per machine that is already running (`restore.sh` does it on new installs): `bash ~/rebuild/lib/signing.sh setup`. It takes over the current GitHub state one last time without a check, then pushes the machine's key.
+  - A new machine signs with a key the others don't know yet. They hold its commits back, and the pill offers *Trust new machine: host (fingerprint)*. That opens a terminal: compare the fingerprint with `ssh-keygen -lf ~/.ssh/rebuild-signing.pub` on the new machine and type `yes`. A key that claims the name of a machine you already trust is never offered.
+  - A reinstalled machine has a new key. Remove its old line on every other machine first (`sed -i '/^HOST /d' ~/.local/state/rebuild/allowed_signers`), then trust it as a new one.
+  - Foreign commits on GitHub block the sync until they are gone. Look at them (*Review incoming changes*), change your GitHub credentials, then drop them from a trusted machine: `git push --force-with-lease=main:origin/main origin HEAD:main`.
+  - Keep the repository private, use 2FA, and give nobody else write access.
+- `/etc` files are recorded, not applied (that would need root). A machine only writes one into the kit when the file changed there, so an older copy never overwrites a newer one. `/etc/hostname` differs per machine; the kit keeps its copy only as a fallback name for `restore.sh`.
+- A machine that fell behind (for example, switched off for weeks) should take over the GitHub state as a whole first. Otherwise its first snapshot would push its old files back:
   ```bash
   ~/rebuild/auto-snapshot.sh --adopt
   ```
   This drops unpushed local commits and copies every kit file over the live one.
 
-Run the sync by hand at any time, for example right after a bigger config change, and read its log:
+To run the sync by hand, for example right after a bigger config change, and read its log:
 
 ```bash
 systemctl --user start rebuild-snapshot.service
 journalctl --user -u rebuild-snapshot.service -n 30
 ```
 
-### 🎛️ Sync Pill in the Bar
+### Sync pill in the bar
 
-The sync shares a pill with the package updates (`group/upkeep`; in the compact bar it sits in the system group). It shows the GitHub logo, set off from the updates by a thin divider; colour and a small mark give the state: dim when all is in step, `↓n` for commits on GitHub this machine has not taken over, `↑n` for local commits not pushed yet, yellow while something waits for review or the sync is off (with a pause mark), red with an alert mark after a merge conflict or a failed run. The tooltip says who wrote to GitHub last, what the incoming commits would change (files and, highlighted, **new packages**) and when every machine last sent a change.
+The sync shares a pill with the package updates (`group/upkeep`; in the compact bar it sits in the system group). It shows the GitHub logo. It is dim when everything is in step, shows `↓n` for commits on GitHub this machine has not taken over and `↑n` for local commits not pushed yet, turns yellow while something waits for review or the sync is off, and red after a merge conflict or a failed run. The tooltip says who wrote to GitHub last, what the incoming commits would change (files, and new packages highlighted) and when each machine last sent a change.
 
 <table>
 <tr>
-<td width="50%"><img src="img/sync-pill-ok.png" alt="Sync pill tooltip: all machines in step"><br><sub><b>All in step:</b> last run, who wrote to GitHub last, and when each machine last sent a change.</sub></td>
-<td width="50%"><img src="img/sync-menu.png" alt="Sync menu in walker"><br><sub><b>The menu</b> (click): sync now, review the incoming diff, install waiting packages, trust a new machine, modes.</sub></td>
+<td width="50%"><img src="img/sync-pill-ok.png" alt="Sync pill tooltip: all machines in step"><br><sub>All in step: last run, who wrote to GitHub last, and when each machine last sent a change.</sub></td>
+<td width="50%"><img src="img/sync-menu.png" alt="Sync menu in walker"><br><sub>The menu (click): sync now, review the incoming diff, install waiting packages, trust a new machine, modes.</sub></td>
 </tr>
 <tr>
-<td><img src="img/sync-pill-new-machine.png" alt="Sync pill tooltip: a new machine waits for trust, packages wait for install"><br><sub><b>Yellow:</b> a new machine signed its first commit and waits for your trust; its new packages are highlighted, and two listed packages wait for your password.</sub></td>
-<td><img src="img/sync-pill-foreign-commit.png" alt="Sync pill tooltip: an unsigned commit on GitHub, nothing taken over"><br><sub><b>Red:</b> someone pushed a commit none of your machines signed (here: an edit in the web editor). Nothing is taken over.</sub></td>
+<td><img src="img/sync-pill-new-machine.png" alt="Sync pill tooltip: a new machine waits for trust, packages wait for install"><br><sub>Yellow: a new machine signed its first commit and waits for your trust; two listed packages wait for your password.</sub></td>
+<td><img src="img/sync-pill-foreign-commit.png" alt="Sync pill tooltip: an unsigned commit on GitHub, nothing taken over"><br><sub>Red: someone pushed a commit none of your machines signed (here: an edit in the web editor). Nothing is taken over.</sub></td>
 </tr>
 </table>
 
 | Mode | What the hourly run does |
 |---|---|
-| **automatic** (default) | all four steps, as above |
-| **review first** | records and fetches, but while GitHub has something new it stops before the merge: nothing applied, nothing pushed, one notification. Look at the diff, then *Sync now* takes it over. |
-| **off** | nothing at all |
+| review first (default) | records and fetches, but while GitHub has something new it stops before the merge: nothing applied, nothing pushed, one notification. Look at the diff, then *Sync now* takes it over. |
+| automatic | all four steps every run |
+| off | nothing |
 
-Separately, **installs off** keeps the sync from installing any package or VS Code extension from the lists (configs are still applied). Click the pill for the menu (modes, installs, *Review incoming changes* as a full diff in a terminal, *Check GitHub now*, log, commits on GitHub); right-click syncs now, middle-click pauses or resumes. When listed packages wait (not confirmed, or AUR), the pill turns yellow and the menu offers *Install missing packages*. A new machine waiting for your trust also shows yellow (*Trust new machine*), commits none of your machines signed show red. Terminal: `~/.config/waybar/sync-menu.sh now|toggle|auto|review|off|installs|install|trust FINGERPRINT|check|diff|log|github`.
+Separately, *installs off* keeps the sync from installing any package or VS Code extension from the lists (configs are still applied). Click the pill for the menu (modes, installs, *Review incoming changes* as a full diff in a terminal, *Check GitHub now*, log, commits on GitHub); right-click syncs now, middle-click pauses or resumes in the previous mode. From a terminal: `~/.config/waybar/sync-menu.sh now|toggle|auto|review|off|installs|install|trust FINGERPRINT|check|diff|log|github`.
 
-The switches are files in `~/.local/state/rebuild` (`mode`, `installs`) and never travel with the kit, so a bad state on GitHub cannot switch them back on. Every run writes its outcome to `status` there and refreshes the pill (signal 11); `sync.py` itself only reads local git refs, the network is used by the run or by *Check GitHub now*.
+The switches are files in `~/.local/state/rebuild` (`mode`, `installs`) and never travel with the kit, so nothing pushed to GitHub can switch them. Every run writes its outcome to `status` there and refreshes the pill (signal 11). `sync.py` only reads local git refs; the network is used by the run or by *Check GitHub now*.
 
-## 🖥️ Waybar Adapts to the Screen
+## Waybar adapts to the screen
 
-The bar was designed for the 3440px desktop monitor. On a 1920px notebook panel the same pills would sit shoulder to shoulder, so every monitor gets its own bar in the layout that fits its width. A notebook docked to an ultrawide shows the compact bar on its panel and the spacious one on the big screen at the same time, and follows plugging, unplugging and display mode changes with no manual step.
+The bar was designed for a 3440px monitor. On a 1920px notebook panel the same pills would be too crowded, so every monitor gets its own bar in the layout that fits its width. A notebook docked to an ultrawide shows the compact bar on its panel and the spacious one on the big screen, and follows plugging, unplugging and display mode changes.
 
 | Monitor width (logical px) | Layout of that monitor's bar |
 |---|---|
-| ≥ 2560 | **Spacious**: `config.jsonc` + `style.css`, exactly as written |
-| < 2560 | **Compact**: `config-compact.jsonc` merged over `config.jsonc`, `style-compact.css` applied on top of `style.css` |
+| ≥ 2560 | spacious: `config.jsonc` + `style.css` as written |
+| < 2560 | compact: `config-compact.jsonc` merged over `config.jsonc`, `style-compact.css` on top of `style.css` |
 
-What compact changes: avatar without name, the window pill shows only the app (the media pill already shows the title), clock, weather and calendar share one island in the middle (the calendar icon lights up when an event is coming), Claude usage shows only the limit that runs out first, and network/volume/mic/battery plus tray/updates/notifications/power are grouped into one pill each. Numbers and full texts stay in the tooltips.
+In the compact layout, the avatar has no name next to it, the window pill shows only the app, clock, weather and calendar share one pill in the middle, Claude usage shows only the limit that runs out first, and network/volume/mic/battery and tray/updates/notifications/power are grouped into one pill each. Numbers and full texts stay in the tooltips.
 
 How it works (all in `files/home/.config/waybar/`):
-- `density-watch.py` runs from the Hyprland autostart, follows Hyprland's monitor events and renders the effective `config.jsonc` (one bar per active monitor, pinned via `output`) + `style.css` into `~/.cache/waybar/`. Disabled and mirrored monitors get no bar. When the layout changes it restarts Waybar; style-only edits are picked up by Waybar itself. `SIGUSR1` forces a re-render (used by `display-mode.sh`, since mirroring fires no monitor event).
-- Compact bars are named `compact`, and every rule of `style-compact.css` is scoped to `window#waybar.compact` when rendered, so the compact styling never leaks onto a spacious bar. Write it as plain selectors.
-- `launch.sh` renders once and starts Waybar from the cache. Always start Waybar through it (autostart and `set-wallpaper` do), never as plain `waybar`.
+- `density-watch.py` runs from the Hyprland autostart, follows Hyprland's monitor events and renders the effective `config.jsonc` (one bar per active monitor, pinned via `output`) and `style.css` into `~/.cache/waybar/`. Disabled and mirrored monitors get no bar. When the layout changes it restarts Waybar; style-only edits are picked up by Waybar itself. `SIGUSR1` forces a re-render (used by `display-mode.sh`, since mirroring fires no monitor event).
+- Compact bars are named `compact`, and every rule of `style-compact.css` is scoped to `window#waybar.compact` when rendered, so compact styling never leaks onto a spacious bar. Write it as plain selectors.
+- `launch.sh` renders once and starts Waybar from the cache. Always start Waybar through it (autostart and `set-wallpaper` do).
 - The overlay merges objects key by key and replaces lists; modules without a definition (e.g. `battery` on a desktop) are dropped. `window.py`, `media.py`, `calendar.sh` and `claude-usage.py` take a `compact` argument.
-- Edit the sources in `~/.config/waybar/`, never the generated files in `~/.cache/waybar/`.
+- Edit the sources in `~/.config/waybar/`, not the generated files in `~/.cache/waybar/`.
 
-## 🔀 Display Modes (SUPER + SHIFT + P)
+## Display modes (SUPER + SHIFT + P)
 
-Like Win+P: `SUPER + SHIFT + P` (or the notebook's display key) opens a walker menu with **Extend / Mirror / Laptop only / External only**. The same works from a terminal: `~/.config/hypr/display-mode.sh extend|mirror|internal|external`.
+`SUPER + SHIFT + P` (or the notebook's display key) opens a walker menu with Extend, Mirror, Laptop only and External only. From a terminal: `~/.config/hypr/display-mode.sh extend|mirror|internal|external`.
 
-- The panel is `eDP-1`, the external monitor is the first other connected output. Extend puts the external monitor to the right, Mirror shows the panel's content on it.
+- The panel is `eDP-1`; the external monitor is the first other connected output. Extend puts it to the right, Mirror shows the panel's content on it.
 - The mode is applied at runtime via `hyprctl eval` and lasts until the next config reload; after that Hyprland is back to extend.
-- Safety net in `hyprland.lua`: if the last active monitor goes away (external unplugged in "external only" mode), the panel is switched back on.
-- Waybar follows every mode change (see above).
+- If the last active monitor goes away (external unplugged in "external only" mode), `hyprland.lua` switches the panel back on.
+- Waybar follows every mode change.
 
-## 🔍 Hardware Detection (`lib/hardware.sh`)
+## Hardware detection (`lib/hardware.sh`)
 
-`install-base.sh` and `restore.sh` read CPU/GPU/chassis from `/proc` and sysfs (no `lspci` needed) and pick the matching hardware packages per machine. These packages never end up in `packages/pacman.txt` — `snapshot.sh` filters them out via `HW_PKG_REGEX`.
+`install-base.sh` and `restore.sh` read CPU, GPU and chassis from `/proc` and sysfs (no `lspci` needed) and pick the matching hardware packages per machine. These packages never end up in `packages/pacman.txt`; `snapshot.sh` filters them out via `HW_PKG_REGEX`.
 
-| Component | Detection → Result |
+| Component | Detection → result |
 |---|---|
-| CPU | `amd-ucode` / `intel-ucode`, matching boot entry (none in VMs) |
-| GPU | AMD `vulkan-radeon` (+lib32) · Intel `vulkan-intel` (+lib32, `intel-media-driver`) · NVIDIA `nvidia-open-dkms` (+utils, lib32, headers for `linux`/`linux-lts`; Turing/RTX 20+) · Hybrid additionally `nvidia-prime`. Early-KMS modules in `/etc/mkinitcpio.conf.d/10-gpu.conf`, `nvidia-drm.modeset=1` on the boot entry. |
-| Notebook | (chassis type or battery present) `power-profiles-daemon`, `upower`, `brightnessctl`, `sof-firmware`, Waybar battery pill (`laptop/`). Brightness keys & touchpad scrolling already live in `hyprland.lua`. |
-| Monitor | `hyprland.lua` lets Hyprland pick mode and position for every monitor (`preferred`/`auto`). Pin a monitor's mode with an extra rule matched by its description (`output = "desc:…"`, see `hyprctl monitors`), so it never catches any other monitor. The login image gets cropped to the real screen size the next time `set-wallpaper --current` runs inside Hyprland. |
-| Hostname | `restore.sh` no longer overwrites the name `install-base.sh` set. |
-| Surface | (DMI `Microsoft Corporation`/`Surface*`) Step 4c installs `linux-surface` + `iptsd` from `pkg.surfacelinux.com` (key in `laptop/`), creates `arch-surface.conf`; Marvell WiFi firmware is already in the base install. |
+| CPU | `amd-ucode` / `intel-ucode` (none in VMs) |
+| GPU | AMD: `vulkan-radeon` (+lib32). Intel: `vulkan-intel` (+lib32, `intel-media-driver`). NVIDIA: `nvidia-open-dkms` (+utils, lib32, headers for `linux`/`linux-lts`; Turing/RTX 20 and newer). Hybrid: additionally `nvidia-prime`. Early-KMS modules in `/etc/mkinitcpio.conf.d/10-gpu.conf`, `nvidia-drm.modeset=1` on the boot entry. |
+| Notebook | (chassis type or battery) `power-profiles-daemon`, `upower`, `brightnessctl`, `sof-firmware`, Waybar battery pill (`laptop/`). Brightness keys and touchpad scrolling are in `hyprland.lua`. |
+| Monitor | `hyprland.lua` lets Hyprland pick mode and position for every monitor (`preferred`/`auto`). Pin a monitor's mode with an extra rule matched by its description (`output = "desc:…"`, see `hyprctl monitors`), so it never catches any other monitor. The login image is cropped to the real screen size the next time `set-wallpaper --current` runs inside Hyprland. |
+| Hostname | `restore.sh` keeps the name `install-base.sh` set. |
+| Surface | (DMI `Microsoft Corporation`/`Surface*`) step 4c installs `linux-surface` and `iptsd` from `pkg.surfacelinux.com` (key in `laptop/`, fingerprint checked) and creates `arch-surface.conf`. The Marvell WiFi firmware is already in the base install. |
 
 Stays as configured (not hardware-detected): Hyprland keyboard layout, weather location, app selection.
 
-## 📦 What's in the Kit
+## What's in the kit
 
 | Path | Contents |
 |---|---|
 | `packages/{pacman,aur,vscode-extensions}.txt` | Package lists shared by all machines (explicitly installed only, no hardware packages) |
-| `files/etc/` | System configs: greetd incl. ReGreet config/CSS and login profile picture (`avatar.png`), PAM, sysctl, zram, reflector, NetworkManager, locale, hostname, `smartd.conf`, coredump limit |
-| `files/home/` | Dotfiles: Hyprland, Waybar, wlogout, mako, walker, ghostty, qt6ct, GTK, starship, wallpaper, launchers |
-| `files/usr/` | Login background for ReGreet (`/usr/share/backgrounds/login.png`), `local/bin/smartd-notify` (SMART warning as a mako notification) and the sync's package installer (below) |
+| `files/etc/` | System configs: greetd with ReGreet config/CSS and avatar, PAM, sysctl, zram, reflector, NetworkManager, locale, hostname, `smartd.conf`, coredump limit |
+| `files/home/` | Dotfiles: Hyprland, Waybar, wlogout, mako, walker, Ghostty, qt6ct, GTK, starship, wallpaper, launchers |
+| `files/usr/` | Login background for ReGreet, `smartd-notify` (SMART warnings as mako notifications) and the sync's package installer |
 | `kit.conf` | Personal settings, e.g. an optional notes folder (`KIT_NOTES_REL`) synced as `files/CLAUDE.md` + `files/docs/` |
-| `files/dconf.ini` | GNOME/GTK settings (`dconf dump /`): theme, cursor, font, app settings |
+| `files/dconf.ini` | GNOME/GTK settings (`dconf dump /` without window geometry): theme, cursor, font, app settings |
 | `calendar-login.sh` | Sets up the Nextcloud calendar (vdirsyncer/khal) |
-| `cfg-backup` | Small helper: `cfg-backup FILE...` backs up each file as `FILE.bak-YYYYMMDD-HHMMSS`, never overwriting |
-| `verify.sh` | Read-only check of whether the system matches the kit — see [Quick Start](#-quick-start) |
-| `auto-snapshot.sh` | The sync (timer `rebuild-snapshot.timer`): record, pull, apply, push — see [Automatic Sync Between Machines](#-automatic-sync-between-machines) |
-| `snapshot.sh`, `lib/lists.sh` | Record this machine's state in the kit; shared package lists |
-| `lib/signing.sh`, `signers/` | Signed kit commits: each machine's key, trust for new machines, the check the sync runs before every merge |
+| `cfg-backup` | `cfg-backup FILE...` copies each file to `FILE.bak-YYYYMMDD-HHMMSS` |
+| `verify.sh` | Read-only check of whether the system matches the kit |
+| `auto-snapshot.sh` | The sync (timer `rebuild-snapshot.timer`): record, pull, apply, push |
+| `snapshot.sh`, `lib/lists.sh` | Record this machine's state in the kit; merge rules for shared lists and files |
+| `lib/signing.sh`, `signers/` | Signed kit commits: each machine's key, trust for new machines, the check before every merge |
 | `files/usr/local/bin/rebuild-install`, `files/usr/share/polkit-1/actions/org.rebuild.install.policy` | How the sync installs listed packages: `pkexec rebuild-install PACKAGE…`, a password dialog every time, package names only |
 
-## ⚙️ What `restore.sh` Also Creates (Step 8b)
+## What `restore.sh` also creates
 
-Not shipped as a file in the kit, generated by logic at runtime instead:
+Generated at runtime rather than shipped as files:
 - snapper config `home` (same retention as `root`)
 - systemd-boot entry `arch-lts.conf`, derived from `arch.conf`, if `linux-lts` is installed
 - firewall `ufw` (deny incoming, allow outgoing)
 - enables `smartd` and `fwupd-refresh.timer`
 
-## 🚫 What's NOT in the Kit
+## Not in the kit
 
-Personal data — back this up yourself:
+Personal data, which you back up yourself:
 - Steam library
-- Lutris prefixes (reinstall Battle.net/Diablo 4)
-- Brave/Thunderbird profiles
+- Lutris prefixes
+- Brave and Thunderbird profiles
 - `~/.ssh`, keyrings, Nextcloud login, `~/.claude`
 
-Snapper configs (`root`, `home`) get recreated on every rebuild (retention 5h/7d/2w/1m/0y). ufw rules are just the defaults, no special allowances.
+Snapper configs (`root`, `home`) are created on every rebuild (retention 5h/7d/2w/1m/0y). The ufw rules are the defaults, with no extra allowances.
 
-## ✅ Tested Hardware
+## Tested hardware
 
 | Machine | Status |
 |---|---|
-| Desktop PC (AMD) | ✅ Working |
-| QEMU/KVM VM (no GPU path) | ✅ Working (2026-09-22) |
-| Surface Pro 5 (Intel, Marvell WiFi) | ✅ Working, step 4c now fully automatic |
-| Dell Latitude (Intel) | ✅ Working |
-| NVIDIA desktop | ⬜ Untested |
-| Hybrid notebook (NVIDIA+Intel/AMD) | ⬜ Untested |
+| Desktop PC (AMD) | works, in daily use |
+| QEMU/KVM VM (no GPU path) | works |
+| Surface Pro 5 (Intel, Marvell WiFi) | works |
+| Dell Latitude (Intel) | works |
+| NVIDIA desktop | untested |
+| Hybrid notebook (NVIDIA + Intel/AMD) | untested |

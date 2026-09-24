@@ -46,7 +46,7 @@ def who(subject, author):
 def main():
     if not os.path.isdir(REPO + "/.git"):
         print('{"text":"","class":"none","tooltip":false}'); return
-    mode = read("mode", "auto"); installs = read("installs", "on")
+    mode = read("mode", "review"); installs = read("installs", "on")
     status = dict(l.split("=", 1) for l in read("status").splitlines() if "=" in l)
     has_origin = bool(git("rev-parse", "-q", "--verify", "origin/main"))
     incoming = int(git("rev-list", "--count", "HEAD..origin/main") or 0) if has_origin else 0
@@ -55,6 +55,7 @@ def main():
     waiting = [l.split()[1] for l in read("install-pending").splitlines() if len(l.split()) == 2]
     # lib/signing.sh check lines: sha, %G?, key fingerprint, host from signers/
     untrusted = [l.split() for l in read("untrusted").splitlines() if len(l.split()) == 4]
+    conflict = read("conflict").split() if result == "conflict" else []
     signing = os.path.exists(STATE + "/allowed_signers")
 
     # bar text + class
@@ -93,6 +94,9 @@ def main():
             t.append(f"  <span color='#ffb454'>new packages: {e(', '.join(new[:10]))}" + (" …" if len(new) > 10 else "") + "</span>")
     if outgoing:
         t.append(f"↑ {outgoing} local commit(s) not on GitHub yet")
+    if conflict:
+        t += ["", f"<span color='#ff6b6b'><b>Changed here and on GitHub:</b></span> {e(', '.join(conflict))}",
+              f"  nothing taken over; merge by hand: cd {e(REPO)} &amp;&amp; git merge origin/main"]
     if untrusted:
         hosts = sorted({u[3] for u in untrusted if u[1] == "U" and u[3] != "-"})
         foreign = [u for u in untrusted if u[1] != "U" or u[3] == "-"]

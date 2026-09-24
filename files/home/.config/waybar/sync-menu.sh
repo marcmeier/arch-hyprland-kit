@@ -4,10 +4,15 @@
 # The switches live in ~/.local/state/rebuild (mode, installs) and never travel with the kit.
 REPO=$HOME/rebuild
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/rebuild
-mode=$(cat "$STATE/mode" 2>/dev/null || echo auto)
+mode=$(cat "$STATE/mode" 2>/dev/null || echo review)
 installs=$(cat "$STATE/installs" 2>/dev/null || echo on)
 refresh() { pkill -RTMIN+11 -x waybar; }
-set_mode() { mkdir -p "$STATE"; echo "$1" > "$STATE/mode"; refresh; notify-send -a rebuild "Rebuild sync" "$2"; }
+set_mode() {
+    mkdir -p "$STATE"
+    # pausing remembers the mode, resuming brings it back
+    [ "$1" = off ] && [ "$mode" != off ] && echo "$mode" > "$STATE/mode.resume"
+    echo "$1" > "$STATE/mode"; refresh; notify-send -a rebuild "Rebuild sync" "$2"
+}
 
 action=$1
 if [ -z "$action" ]; then
@@ -21,8 +26,8 @@ if [ -z "$action" ]; then
     while read -r fp host; do
         items+=("󰒃  Trust new machine: $host ($fp)")
     done < <(awk '$2 == "U" && $4 != "-" { print $3, $4 }' "$STATE/untrusted" 2>/dev/null | sort -u)
-    items+=("$(mark auto)  Mode: automatic"
-            "$(mark review)  Mode: review GitHub changes first"
+    items+=("$(mark review)  Mode: review GitHub changes first"
+            "$(mark auto)  Mode: automatic"
             "$(mark off)  Mode: off"
             "󰏔  Install packages from the lists: $installs → $([ "$installs" = on ] && echo off || echo on)"
             "󰑓  Check GitHub now"
@@ -48,7 +53,9 @@ fi
 case $action in
     # the service consumes $STATE/now: one full run, whatever the mode (review: takes over what waits)
     now)    touch "$STATE/now"; systemctl --user start --no-block rebuild-snapshot.service; refresh ;;
-    toggle) if [ "$mode" = off ]; then set_mode auto "Sync resumed (automatic)"
+    toggle) if [ "$mode" = off ]; then
+                resume=$(cat "$STATE/mode.resume" 2>/dev/null || echo review)
+                set_mode "$resume" "Sync resumed ($([ "$resume" = auto ] && echo automatic || echo review first))"
             else set_mode off "Sync switched off on this machine"; fi ;;
     auto)   set_mode auto "Sync mode: automatic" ;;
     review) set_mode review "Sync mode: review first. GitHub changes wait for \"Sync now\"" ;;

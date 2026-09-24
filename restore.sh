@@ -32,8 +32,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# small helpers used throughout: say = section header, warn = non-fatal problem,
-# fail = non-fatal problem that also gets listed in the summary at the very end
+# say: section header · warn: non-fatal problem · fail: the same, also listed in the summary
 say()  { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 warn() { printf '\033[1;33m!!  %s\033[0m\n' "$*"; }
 fail() { warn "$*"; FAILED+=("$*"); }
@@ -43,7 +42,7 @@ fail() { warn "$*"; FAILED+=("$*"); }
 [[ $EUID -eq 0 ]] || { echo "Run as root: sudo bash $0"; exit 1; }
 [[ -f /etc/arch-release ]] || { echo "This is not Arch Linux."; exit 1; }
 [[ -d $KIT/files && -d $KIT/packages ]] || { echo "Kit incomplete: $KIT"; exit 1; }
-# retry a few times: right after booting, DHCP/DNS may not be ready yet
+# DHCP/DNS may still be coming up right after boot
 for _ in 1 2 3 4 5; do ping -c1 -W5 archlinux.org >/dev/null 2>&1 && break; sleep 2; done
 ping -c1 -W5 archlinux.org >/dev/null 2>&1 || { echo "No network/DNS. Connect first (nmtui / iwctl)."; exit 1; }
 
@@ -57,10 +56,9 @@ fi
 usermod -aG wheel "$USERNAME"
 HOME_DIR="$(getent passwd "$USERNAME" | cut -d: -f6)"
 UGRP="$(id -gn "$USERNAME")"
-# the home directory itself may be root-owned (older install-base.sh): fix it before anything writes there
+# a root-owned home (older install-base.sh) would break everything written there below
 [[ $(stat -c %U "$HOME_DIR") == "$USERNAME" ]] || { chown "$USERNAME:$UGRP" "$HOME_DIR"; chmod 700 "$HOME_DIR"; }
-# same for the kit when it lives in the home (copied in as root by install-base.sh or a root clone):
-# the sync runs git and snapshot.sh as the user, which fail on root-owned files ("dubious ownership")
+# the same for a kit copied or cloned as root: git refuses a repo owned by someone else
 if [[ $KIT == "$HOME_DIR"/* ]] && find "$KIT" ! -user "$USERNAME" -print -quit | grep -q .; then
   chown -R "$USERNAME:$UGRP" "$KIT"
   [[ $(dirname "$KIT") != "$HOME_DIR" ]] && chown "$USERNAME:$UGRP" "$(dirname "$KIT")"
@@ -222,7 +220,7 @@ else
   warn "root is not btrfs, snapper skipped"
 fi
 
-# ------------------------------------------ 8b. base hardening (added 20.09.2026)
+# ------------------------------------------ 8b. base hardening
 say "8b/12 /home snapshots, LTS fallback kernel, firewall, SMART, coredump limit"
 # a) snapper config for /home (same retention as root)
 if [[ $(findmnt -no FSTYPE /home 2>/dev/null) == btrfs && ! -f /etc/snapper/configs/home ]]; then
@@ -237,9 +235,8 @@ if [[ -f /boot/loader/entries/arch.conf ]] && ! grep -q '\bsplash\b' /boot/loade
   sed -i '/^options /s/$/ quiet splash loglevel=3 vt.global_cursor_default=0 rd.udev.log_level=3/' /boot/loader/entries/arch.conf
 fi
 [[ -f /boot/loader/loader.conf ]] && sed -i 's/^timeout.*/timeout 0/' /boot/loader/loader.conf
-# microcode: initrd lines for images that do not exist on this CPU would stop the boot. With the
-# microcode hook in mkinitcpio.conf (step 5) it is already in the initramfs, so a separate line would
-# load it twice; only without the hook (encrypted root, HOOKS left alone) add the right one.
+# microcode: the mkinitcpio hook (step 5) already loads it; an initrd line is only needed without
+# the hook (encrypted root), and a line for the other vendor's image would stop the boot
 if [[ -f /boot/loader/entries/arch.conf ]]; then
   sed -i -E '/^initrd .*\/(amd|intel)-ucode\.img$/d' /boot/loader/entries/arch.conf
   U="$(hw_ucode_pkg)"
@@ -292,7 +289,7 @@ STAMP="$(date +%s)"
   if [[ -e $dst ]] && ! cmp -s "$KIT/files/home/$f" "$dst"; then mv "$dst" "$dst.bak-restore-$STAMP"; fi
   cp -a "$KIT/files/home/$f" "$dst"
 done
-mkdir -p "$HOME_DIR/.local/bin"   # nothing in the kit ships an actual file there, so the dotfiles loop above never creates it
+mkdir -p "$HOME_DIR/.local/bin"   # for the set-wallpaper link; the kit ships no file there
 chown -R "$USERNAME:$UGRP" "$HOME_DIR/.config" "$HOME_DIR/.local" "$HOME_DIR/.bashrc" "$HOME_DIR/.bash_profile"
 chmod 700 "$HOME_DIR/.config/gtk-3.0" "$HOME_DIR/.config/gtk-4.0" 2>/dev/null || true
 chmod +x "$HOME_DIR/.config/wlogout/wlogout.sh" 2>/dev/null || true
@@ -340,13 +337,8 @@ PY
   fi
   systemctl enable power-profiles-daemon.service 2>/dev/null || warn "power-profiles-daemon enable"
 fi
-# standard XDG folders: created directly with $HOME_DIR (resolved via getent), not by relying on
-# $HOME inside "sudo -u USER ...". Plain sudo -u does NOT set $HOME to the target user's home
-# unless sudo has set_home/-H, so both xdg-user-dirs-update and a "source $HOME/.config/user-dirs.dirs"
-# silently ran against the invoking (root) user's $HOME and created nothing (seen on a Dell Latitude).
-# the hourly kit sync: enabled the way "systemctl --user enable" does it (a symlink in timers.target.wants;
-# no user session is running here). The unit starts the kit from ~/rebuild and needs a git
-# clone there, not an unpacked zip.
+# the hourly sync: enabled by hand as "systemctl --user enable" would (no user session here). The
+# unit runs the kit from ~/rebuild, and it has to be a git clone, not an unpacked zip.
 UW="$HOME_DIR/.config/systemd/user/timers.target.wants"
 if [[ $KIT == "$HOME_DIR/rebuild" && -d $KIT/.git ]]; then
   sudo -u "$USERNAME" mkdir -p "$UW"
@@ -357,6 +349,7 @@ if [[ $KIT == "$HOME_DIR/rebuild" && -d $KIT/.git ]]; then
 else
   warn "kit sync not enabled: it needs a git clone at $HOME_DIR/rebuild (this kit: $KIT)"
 fi
+# XDG folders by path: plain "sudo -u" keeps root's $HOME, so they must not rely on $HOME
 sudo -u "$USERNAME" mkdir -p "$HOME_DIR"/{Desktop,Downloads,Documents,Music,Pictures,Videos,Templates,Public,Projects,Games}
 sudo -u "$USERNAME" -H xdg-user-dirs-update 2>/dev/null || true
 # dconf (GTK dark theme, cursor, font); needs a session bus
@@ -364,9 +357,8 @@ if [[ -s $KIT/files/dconf.ini ]]; then
   sudo -u "$USERNAME" dbus-run-session -- dconf load / < "$KIT/files/dconf.ini" \
     || warn "dconf load failed (set GTK theme manually)"
 fi
-# the hourly kit sync (auto-snapshot.sh) installs packages other machines added through
-# "pkexec rebuild-install": a polkit dialog names them and asks for the password every time.
-# Older versions let the sync run pacman without a password (effectively root); that rule goes.
+# the sync installs listed packages via "pkexec rebuild-install", with a password dialog every
+# time. Also removes the passwordless pacman rule of older kit versions.
 rm -f /etc/sudoers.d/10-rebuild-sync /etc/sudoers.d/90-rebuild-sync
 install -Dm755 "$KIT/files/usr/local/bin/rebuild-install" /usr/local/bin/rebuild-install
 install -Dm644 "$KIT/files/usr/share/polkit-1/actions/org.rebuild.install.policy" \
@@ -375,13 +367,13 @@ install -Dm644 "$KIT/files/usr/share/polkit-1/actions/org.rebuild.install.policy
 # ---------------------------------------------------------------- 10. AUR
 if (( DO_AUR )); then
   say "10/12 AUR: yay + $(grep -c . "$KIT/packages/aur.txt") packages"
-  # AUR builds run as the normal user (makepkg refuses root); give it passwordless sudo just for this step
+  # makepkg refuses root: the user builds, with passwordless sudo for this step only
   NOPW=/etc/sudoers.d/99-restore-nopasswd
   echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > "$NOPW"; chmod 440 "$NOPW"
   trap 'rm -f "$NOPW"' EXIT
 
   if ! command -v yay >/dev/null; then
-    # building yay needs Go and plenty of RAM; if that fails, fall back to the prebuilt yay-bin
+    # building yay needs Go and a fair amount of RAM; yay-bin is the fallback
     for pkg in yay yay-bin; do
       sudo -u "$USERNAME" bash -c '
         set -e; d=$(mktemp -d); cd "$d"
@@ -392,10 +384,7 @@ if (( DO_AUR )); then
     command -v yay >/dev/null || fail "yay bootstrap"
   fi
 
-  # proton-ge-custom-bin ships its own /etc/security/limits.d/10-games.conf (content happens to be
-  # identical to step 5's, both just "@games - nice -11") - pacman refuses to overwrite a path it
-  # doesn't already own, so a fresh install always failed there (seen on a Dell Latitude). Let
-  # pacman claim it; the content pacman then installs is the same either way.
+  # proton-ge-custom-bin ships the same limits.d/10-games.conf that step 5 installed; let it take over
   if command -v yay >/dev/null; then
     YAY=(sudo -u "$USERNAME" yay -S --needed --noconfirm --removemake --answerclean None --answerdiff None --answeredit None \
       --overwrite '/etc/security/limits.d/10-games.conf')

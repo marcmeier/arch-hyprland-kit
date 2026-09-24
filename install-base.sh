@@ -14,17 +14,14 @@
 set -euo pipefail
 KIT="$(dirname "$(readlink -f "$0")")"
 
-# Safety copy: this script later does "umount -R /mnt" and mounts the fresh target filesystem
-# there. If the kit itself is running from under /mnt (e.g. a USB stick mounted at /mnt/kit, seen
-# on a Dell Latitude), that unmounts the kit out from under itself mid-script ("cp: cannot stat '/mnt/kit/rebuild'"). Take our own copy on the
-# live medium's own tmpfs first, regardless of where we were started from, so this can't happen.
+# work from a copy: the kit may live under /mnt (e.g. a USB stick), which "umount -R /mnt" below
+# would pull away mid-run
 SAFE_KIT=/root/.rebuild-kit-safe-copy
 rm -rf "$SAFE_KIT"; cp -a "$KIT" "$SAFE_KIT"; KIT="$SAFE_KIT"
 # shellcheck source=lib/hardware.sh
 source "$KIT/lib/hardware.sh"
 
-# ---------------------------------------------------------------- argument parsing
-# Defaults, overridable by the flags/positional args handled below.
+# ---------------------------------------------------------------- arguments
 DISK=""; USERNAME="user"; HOSTNAME_NEW="archlinux"; KEYMAP="us"; TZONE="UTC"
 POS=()
 while [[ $# -gt 0 ]]; do
@@ -32,11 +29,11 @@ while [[ $# -gt 0 ]]; do
     --hostname) HOSTNAME_NEW="$2"; shift 2;;
     --keymap)   KEYMAP="$2"; shift 2;;
     --tz)       TZONE="$2"; shift 2;;
-    -h|--help)  sed -n '2,15p' "$0"; exit 0;;
+    -h|--help)  sed -n '2,13p' "$0"; exit 0;;
     *)          POS+=("$1"); shift;;
   esac
 done
-# remaining positional args: first one starting with /dev/ is the disk, the next is the username
+# positional: an optional /dev/... disk, then the username
 [[ ${POS[0]:-} == /dev/* ]] && { DISK="${POS[0]}"; POS=("${POS[@]:1}"); }
 [[ -n ${POS[0]:-} ]] && USERNAME="${POS[0]}"
 
@@ -47,13 +44,11 @@ if [[ -z $DISK ]]; then
   read -rp "Install onto which disk (e.g. nvme0n1 or sda)? " d
   DISK="/dev/${d#/dev/}"
 fi
-# accept /dev/disk/by-id/..., by-label/..., by-uuid/... too: resolve to the real device node
-# (e.g. /dev/nvme0n1). Without this, the "${DISK}p1"/"${DISK}p2" logic below would silently build
-# a nonsense path out of an alias and fail confusingly deep inside partitioning/formatting.
+# resolve /dev/disk/by-id/... and similar to the device node; the partition names below need it
 [[ -e $DISK ]] && DISK="$(readlink -f "$DISK")"
 [[ -b $DISK ]] || { echo "block device not found: '$DISK'"; exit 1; }
 [[ -d /sys/firmware/efi ]] || { echo "not booted in UEFI mode"; exit 1; }
-# retry a few times: right after booting the live ISO, DHCP/DNS may not be ready yet
+# DHCP/DNS may still be coming up right after boot
 for _ in 1 2 3 4 5; do ping -c1 -W5 archlinux.org >/dev/null 2>&1 && break; sleep 2; done
 ping -c1 -W5 archlinux.org >/dev/null 2>&1 || { echo "no network (connect first: LAN cable, or iwctl for WLAN; test: ping archlinux.org)"; exit 1; }
 
@@ -67,15 +62,13 @@ read -rsp "Password for $USERNAME (also root): " PW; echo
 # ---------------------------------------------------------------- hardware detection
 hw_detect; echo "Hardware: $(hw_summary)"
 UCODE="$(hw_ucode_pkg)"
-FWPKGS="$(hw_firmware_packages | tr '\n' ' ')"   # e.g. linux-firmware-marvell: WiFi works on the first boot
+FWPKGS="$(hw_firmware_packages | tr '\n' ' ')"   # e.g. WiFi firmware, needed on the first boot
 
 # ---------------------------------------------------------------- partition layout and mount options
-# nvme/mmcblk devices need a "p" before the partition number (nvme0n1p1); plain disks don't (sda1)
+# nvme0n1p1, mmcblk0p1, but sda1
 P=""; [[ $DISK == *nvme* || $DISK == *mmcblk* ]] && P="p"
 ESP="${DISK}${P}1"; ROOT="${DISK}${P}2"
-# ssd flag only for non-rotational disks (btrfs detects it itself, but be explicit)
 SSD=""; [[ $(cat "/sys/block/${DISK#/dev/}/queue/rotational" 2>/dev/null) == 0 ]] && SSD=",ssd,discard=async"
-# noatime (no write-per-read), zstd level 1 compression, discard=async on SSDs, the v2 space cache
 MO="rw,noatime,compress=zstd:1${SSD},space_cache=v2"
 
 # ---------------------------------------------------------------- partition, format, mount
@@ -87,8 +80,7 @@ partprobe "$DISK"; sleep 1
 mkfs.fat -F32 -n ESP "$ESP"
 mkfs.btrfs -f -L arch "$ROOT"
 
-# btrfs subvolumes: @ (root), @home, @log, @pkg (pacman cache), @snapshots - each mounted
-# separately below so snapper can snapshot @ without dragging /home, logs or the package cache along
+# separate subvolumes so snapshots of @ leave out /home, logs and the package cache
 mount "$ROOT" /mnt
 for s in @ @home @log @pkg @snapshots; do btrfs subvolume create "/mnt/$s"; done
 umount /mnt
@@ -106,42 +98,28 @@ pacstrap -K /mnt base linux linux-firmware $UCODE $FWPKGS btrfs-progs networkman
   sudo git nano base-devel man-db
 genfstab -U /mnt >> /mnt/etc/fstab
 
-# put the kit where it will be found after the first boot
 mkdir -p "/mnt/home/$USERNAME"
 cp -a "$KIT" "/mnt/home/$USERNAME/rebuild"
 
 ROOT_UUID="$(blkid -s UUID -o value "$ROOT")"
-# NOT "bash -e": on some firmware (seen on a Dell Latitude) bootctl install fails to register the
-# NVRAM boot entry (Secure Boot / NVRAM full / vendor quirk) even though the ESP files it copies
-# are fine. With -e that single failure used to abort the whole block silently, before loader.conf,
-# the arch.conf boot entry and "systemctl enable NetworkManager" were ever written - the firmware
-# then had nothing bootable to find at all. Now every step runs regardless, and a failed bootctl is
-# reported loudly with a recovery hint instead of vanishing.
+# no -e in the chroot: a failing bootctl must not skip the boot entry and services after it
 arch-chroot /mnt /bin/bash <<CHROOT
 set -uo pipefail
-# locale, keymap, hostname
 ln -sf /usr/share/zoneinfo/$TZONE /etc/localtime
 sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen; locale-gen
 echo LANG=en_US.UTF-8 > /etc/locale.conf
 echo KEYMAP=$KEYMAP > /etc/vconsole.conf
 echo $HOSTNAME_NEW > /etc/hostname
-# user + sudo (the home dir was already created above as the kit's destination)
 useradd -m -G wheel -s /bin/bash "$USERNAME"
-# the home dir and the kit copy in it were created as root before the user existed; useradd -m
-# leaves them root-owned, and git/snapshot.sh would then fail as the user ("dubious ownership")
+# the home and the kit in it were created as root above; git refuses a repo owned by someone else
 chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"; chmod 700 "/home/$USERNAME"
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel; chmod 440 /etc/sudoers.d/10-wheel
-# initramfs: systemd hooks instead of the legacy busybox ones
 sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block filesystems fsck)/' /etc/mkinitcpio.conf
 mkinitcpio -P
-# bootctl, run inside arch-chroot, always refuses to touch EFI/NVRAM variables here ("Not booted
-# with EFI or running in a container, skipping EFI variable modifications" - confirmed on a Dell
-# Latitude): it still writes the ESP files fine (incl. the generic EFI/BOOT/BOOTX64.EFI fallback
-# every firmware recognises), just not the NVRAM boot entry. That is registered further down,
-# after leaving the chroot, with efibootmgr instead.
+# inside a chroot bootctl writes the ESP files but no NVRAM entry; efibootmgr adds that below
 bootctl install || echo "==> !! bootctl install reported a problem (see above). The ESP files may be incomplete."
 printf 'default arch.conf\ntimeout 2\nconsole-mode max\n' > /boot/loader/loader.conf
-# no separate microcode initrd line: the microcode hook above already puts it into the initramfs
+# no microcode initrd line: the microcode hook puts it into the initramfs
 cat > /boot/loader/entries/arch.conf <<ENTRY
 title Arch Linux
 linux /vmlinuz-linux
@@ -151,18 +129,14 @@ ENTRY
 systemctl enable NetworkManager systemd-timesyncd
 CHROOT
 
-# passwords outside the heredoc above: that one is unquoted, so a password with $, ` or \ would be
-# expanded (or break the whole block) inside the chroot. chpasswd reads them verbatim from stdin.
+# not in the unquoted heredoc above, where $, ` or \ in a password would be expanded
 printf '%s:%s\n' "$USERNAME" "$PW" root "$PW" | arch-chroot /mnt chpasswd \
   || echo "==> !! setting the passwords failed. Before rebooting: arch-chroot /mnt passwd $USERNAME (and passwd for root)"
 
-# register the NVRAM boot entry from OUT HERE, not from inside the chroot (see above): the live
-# medium's own EFI variables work normally. The ESP fallback file makes the disk bootable even if
-# this fails or efibootmgr is missing, but firmware may then need the disk picked once from its
-# one-time boot menu (F12/F2 on Dell) instead of booting it by default.
+# NVRAM boot entry, from outside the chroot. Without it the disk still boots via the ESP fallback
+# EFI/BOOT/BOOTX64.EFI, but may have to be picked in the firmware's boot menu.
 if command -v efibootmgr >/dev/null; then
-  # idempotent: a re-run (repair, second attempt) must not pile up duplicate "Linux Boot Manager"
-  # entries (seen on a Dell Latitude after two install-base.sh runs) - drop any old ones first
+  # drop entries from earlier runs first
   while read -r bn; do efibootmgr -b "$bn" -B >/dev/null 2>&1; done \
     < <(efibootmgr | awk -F'[ *]' '/Linux Boot Manager/{sub(/^Boot/,"",$1); print $1}')
   if efibootmgr -c -d "$DISK" -p 1 -L "Linux Boot Manager" -l '\EFI\systemd\systemd-bootx64.efi'; then

@@ -63,14 +63,11 @@ for u in NetworkManager bluetooth greetd systemd-timesyncd ufw smartd snapper-ti
 done
 (( HW_LAPTOP )) && { systemctl is-enabled power-profiles-daemon >/dev/null 2>&1 && ok "enabled: power-profiles-daemon" || fail "not enabled: power-profiles-daemon"; }
 for u in vdirsyncer.timer rebuild-snapshot.timer; do
-  # a "systemctl --failed" scan does not catch this: if the *.target.wants/ symlink for a
-  # user timer was ever replaced by a plain file (e.g. by a naive dotfile copy instead of
-  # "systemctl --user enable"), the timer silently stays disabled forever with no error anywhere
+  # a plain file instead of the *.target.wants/ symlink disables the timer without any error
   systemctl --user is-enabled "$u" >/dev/null 2>&1 && ok "enabled: $u" || fail "not enabled: $u (check for a non-symlink file in ~/.config/systemd/user/timers.target.wants/)"
 done
-# the sync installs listed packages with "pkexec rebuild-install" (password every time); the pacman
-# rule without password from older versions must be gone, it made any process of this user root
-# (checked by its effect: /etc/sudoers.d is not readable for the user; -k ignores a cached sudo login)
+# the passwordless pacman rule of older kit versions must be gone (it made any process of this user
+# root). Checked by its effect, since the user cannot read /etc/sudoers.d; -k ignores a cached login.
 if sudo -n -k pacman -V >/dev/null 2>&1; then
   fail "pacman runs without password (old kit sync rule)  ->  sudo rm -f /etc/sudoers.d/90-rebuild-sync /etc/sudoers.d/10-rebuild-sync"
 fi

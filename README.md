@@ -73,6 +73,7 @@ This repository is a template. Your machines push their state to their repositor
 Then install as described in [Quick start](#quick-start). On every further machine, clone the same repository and run `restore.sh`.
 
 ## Contents
+- [Changelog](CHANGELOG.md)
 - [Theme gallery](#theme-gallery)
 - [Quick start](#quick-start)
 - [Automatic sync between machines](#automatic-sync-between-machines)

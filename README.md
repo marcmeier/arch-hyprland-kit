@@ -11,8 +11,14 @@ My Arch Linux and Hyprland setup, packaged so that a new machine can be installe
 </tr>
 </table>
 
-> [!NOTE]
-> This is a personal hobby project. I use it daily on two machines and have tested it on a few more ([tested hardware](#tested-hardware)). Most of the code and this README were written with an AI assistant (Claude). Please read the scripts before running them: `install-base.sh` wipes a disk, and the sync changes files in your home directory every hour.
+> [!WARNING]
+> **Work in progress.** This is a personal hobby project, public since September 2026 and tested on only a few machines ([tested hardware](#tested-hardware)). Expect bugs: a fresh VM install found several in its first run, including one that kept the sync from ever committing. Most of the code and this README were written with an AI assistant (Claude).
+>
+> Before you rely on it:
+> - Read the scripts first. `install-base.sh` wipes a disk, and the sync changes files in your home directory every hour.
+> - Try it in a VM before real hardware.
+> - Keep your own backup. btrfs snapshots and the sync's backup folder are not a backup.
+> - Keep the sync in *review first* (the default) until you trust it.
 
 ## What it is
 

@@ -18,8 +18,8 @@ import subprocess
 import sys
 import time
 
-CFG = os.path.expanduser("~/.config/waybar")
-OUT = os.path.expanduser("~/.cache/waybar")
+SRC_DIR = os.path.expanduser("~/.config/waybar")
+OUT_DIR = os.path.expanduser("~/.cache/waybar")
 SOURCES = ["config.jsonc", "style.css", "config-compact.jsonc", "style-compact.css"]
 THRESHOLD = 2560
 EVENTS = ("monitoradded", "monitoraddedv2", "monitorremoved", "monitorremovedv2", "configreloaded")
@@ -40,10 +40,10 @@ def load_jsonc(path):
     return json.loads(TRAILING.sub(keep_str, COMMENT.sub(keep_str, open(path).read())))
 
 
-def merge(a, b):
-    for k, v in b.items():
-        a[k] = merge(a[k], v) if isinstance(v, dict) and isinstance(a.get(k), dict) else v
-    return a
+def merge(base, overlay):
+    for key, value in overlay.items():
+        base[key] = merge(base[key], value) if isinstance(value, dict) and isinstance(base.get(key), dict) else value
+    return base
 
 
 def prune(cfg):
@@ -100,7 +100,7 @@ def write(path, text):
             return False
     except OSError:
         pass
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(OUT_DIR, exist_ok=True)
     tmp = f"{path}.{os.getpid()}.tmp"
     open(tmp, "w").write(text)
     os.replace(tmp, path)
@@ -108,8 +108,8 @@ def write(path, text):
 
 
 def render():
-    base = load_jsonc(f"{CFG}/config.jsonc")
-    compact = load_jsonc(f"{CFG}/config-compact.jsonc")
+    base = load_jsonc(f"{SRC_DIR}/config.jsonc")
+    compact = load_jsonc(f"{SRC_DIR}/config-compact.jsonc")
     mons = monitors()
     if not mons:  # unknown layout: one plain bar on every output
         bars = base
@@ -121,10 +121,10 @@ def render():
                 bar = prune(merge(bar, json.loads(json.dumps(compact))))
             bar.update(output=name, name="compact" if width < THRESHOLD else "spacious")
             bars.append(bar)
-    css = open(f"{CFG}/style.css").read() + "\n" + scope(open(f"{CFG}/style-compact.css").read(), "compact")
-    css = REL_URL.sub(lambda m: f'url("file://{CFG}/{m.group(1)}")', css)
-    write(f"{OUT}/style.css", css)
-    return write(f"{OUT}/config.jsonc", json.dumps(bars, indent=2))
+    css = open(f"{SRC_DIR}/style.css").read() + "\n" + scope(open(f"{SRC_DIR}/style-compact.css").read(), "compact")
+    css = REL_URL.sub(lambda m: f'url("file://{SRC_DIR}/{m.group(1)}")', css)
+    write(f"{OUT_DIR}/style.css", css)
+    return write(f"{OUT_DIR}/config.jsonc", json.dumps(bars, indent=2))
 
 
 if "--once" in sys.argv:
@@ -141,7 +141,7 @@ def safe_render():
 
 
 def mtimes():
-    return [os.path.getmtime(f"{CFG}/{f}") if os.path.exists(f"{CFG}/{f}") else 0 for f in SOURCES]
+    return [os.path.getmtime(f"{SRC_DIR}/{f}") if os.path.exists(f"{SRC_DIR}/{f}") else 0 for f in SOURCES]
 
 
 poked = False
@@ -153,22 +153,22 @@ def poke(*_):
 
 
 signal.signal(signal.SIGUSR1, poke)
-os.makedirs(OUT, exist_ok=True)
-open(f"{OUT}/density-watch.pid", "w").write(str(os.getpid()))
+os.makedirs(OUT_DIR, exist_ok=True)
+open(f"{OUT_DIR}/density-watch.pid", "w").write(str(os.getpid()))
 
 safe_render()
 seen = mtimes()
-s = socket.socket(socket.AF_UNIX)
-s.connect(f"{os.environ['XDG_RUNTIME_DIR']}/hypr/{os.environ['HYPRLAND_INSTANCE_SIGNATURE']}/.socket2.sock")
+sock = socket.socket(socket.AF_UNIX)
+sock.connect(f"{os.environ['XDG_RUNTIME_DIR']}/hypr/{os.environ['HYPRLAND_INSTANCE_SIGNATURE']}/.socket2.sock")
 buf = b""
 while True:
-    ready, _, _ = select.select([s], [], [], 2)
+    ready, _, _ = select.select([sock], [], [], 2)
     changed = False
     if ready:
-        d = s.recv(4096)
-        if not d:
+        chunk = sock.recv(4096)
+        if not chunk:
             break
-        buf += d
+        buf += chunk
         *lines, buf = buf.split(b"\n")
         if any(raw.decode(errors="replace").partition(">>")[0] in EVENTS for raw in lines):
             time.sleep(0.5)  # let Hyprland settle mode/scale of the new monitor
@@ -182,5 +182,5 @@ while True:
         subprocess.run(["pkill", "-x", "waybar"])
         time.sleep(0.3)
         subprocess.Popen(
-            [f"{CFG}/launch.sh"], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            [f"{SRC_DIR}/launch.sh"], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )

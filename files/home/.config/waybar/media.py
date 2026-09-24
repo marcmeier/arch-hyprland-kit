@@ -20,15 +20,15 @@ PLAY, PAUSE = "\U000f040a", "\U000f03e4"  # 󰐊 󰏤 (icon shows the current st
 PREV, NEXT = "\U000f04ae", "\U000f04ad"  # 󰒮 󰒭
 
 
-def cut(s, n):
-    return s if len(s) <= n else s[: n - 1].rstrip() + "…"
+def cut(text, limit):
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
-def emit(d):
-    print(json.dumps(d, ensure_ascii=False), flush=True)
+def emit(data):
+    print(json.dumps(data, ensure_ascii=False), flush=True)
 
 
-p = subprocess.Popen(
+player = subprocess.Popen(
     ["playerctl", "--follow", "metadata", "--format", FMT], stdout=subprocess.PIPE, text=True, stderr=subprocess.DEVNULL
 )
 
@@ -38,15 +38,15 @@ def run_info():
     cur = {"line": None}
 
     def reader():
-        for raw in p.stdout:
+        for raw in player.stdout:
             cur["line"] = raw
 
     threading.Thread(target=reader, daemon=True).start()
-    last_line, off, hold, last_out = None, 0, HOLD, None
-    while p.poll() is None:
+    last_line, offset, hold, last_out = None, 0, HOLD, None
+    while player.poll() is None:
         line = cur["line"]
         if line is not last_line:
-            last_line, off, hold = line, 0, HOLD
+            last_line, offset, hold = line, 0, HOLD
         parts = (line or "").rstrip("\n").split("\t")
         if len(parts) < 4 or parts[0] not in ("Playing", "Paused") or not parts[2]:
             out = {"text": "", "class": "none"}
@@ -56,13 +56,13 @@ def run_info():
                 shown = title
             else:
                 loop_s = title + GAP
-                shown = (loop_s * 2)[off : off + WIDTH]
+                shown = (loop_s * 2)[offset : offset + WIDTH]
                 if status == "Playing":
-                    if off == 0 and hold > 0:
+                    if offset == 0 and hold > 0:
                         hold -= 1
                     else:
-                        off = (off + 1) % len(loop_s)
-                        hold = HOLD if off == 0 else 0
+                        offset = (offset + 1) % len(loop_s)
+                        hold = HOLD if offset == 0 else 0
             text = html.escape(shown)
             if artist and not COMPACT:
                 text += f"  <span size='small' alpha='60%'>{html.escape(cut(artist, 18))}</span>"
@@ -78,7 +78,7 @@ if MODE == "info":
     run_info()
     sys.exit(0)
 
-for line in p.stdout:
+for line in player.stdout:
     parts = line.rstrip("\n").split("\t")
     if len(parts) < 4 or parts[0] not in ("Playing", "Paused") or not parts[2]:
         emit({"text": "", "class": "none"})

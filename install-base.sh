@@ -29,7 +29,7 @@ USERNAME="user"
 HOSTNAME_NEW="archlinux"
 KEYMAP="us"
 TZONE="UTC"
-POS=()
+POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --hostname)
@@ -49,17 +49,17 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      POS+=("$1")
+      POSITIONAL+=("$1")
       shift
       ;;
   esac
 done
 # positional: an optional /dev/... disk, then the username
-[[ ${POS[0]:-} == /dev/* ]] && {
-  DISK="${POS[0]}"
-  POS=("${POS[@]:1}")
+[[ ${POSITIONAL[0]:-} == /dev/* ]] && {
+  DISK="${POSITIONAL[0]}"
+  POSITIONAL=("${POSITIONAL[@]:1}")
 }
-[[ -n ${POS[0]:-} ]] && USERNAME="${POS[0]}"
+[[ -n ${POSITIONAL[0]:-} ]] && USERNAME="${POSITIONAL[0]}"
 
 # ---------------------------------------------------------------- preflight checks
 [[ $EUID -eq 0 ]] || {
@@ -116,13 +116,13 @@ mapfile -t FWPKGS < <(hw_firmware_packages) # e.g. WiFi firmware, needed on the 
 
 # ---------------------------------------------------------------- partition layout and mount options
 # nvme0n1p1, mmcblk0p1, but sda1
-P=""
-[[ $DISK == *nvme* || $DISK == *mmcblk* ]] && P="p"
-ESP="${DISK}${P}1"
-ROOT="${DISK}${P}2"
-SSD=""
-[[ $(cat "/sys/block/${DISK#/dev/}/queue/rotational" 2> /dev/null) == 0 ]] && SSD=",ssd,discard=async"
-MO="rw,noatime,compress=zstd:1${SSD},space_cache=v2"
+PART_SEP=""
+if [[ $DISK == *nvme* || $DISK == *mmcblk* ]]; then PART_SEP="p"; fi
+ESP="${DISK}${PART_SEP}1"
+ROOT="${DISK}${PART_SEP}2"
+SSD_OPTS=""
+if [[ $(cat "/sys/block/${DISK#/dev/}/queue/rotational" 2> /dev/null) == 0 ]]; then SSD_OPTS=",ssd,discard=async"; fi
+MOUNT_OPTS="rw,noatime,compress=zstd:1${SSD_OPTS},space_cache=v2"
 
 # ---------------------------------------------------------------- partition, format, mount
 timedatectl set-ntp true
@@ -138,12 +138,12 @@ mkfs.btrfs -f -L arch "$ROOT"
 mount "$ROOT" /mnt
 for s in @ @home @log @pkg @snapshots; do btrfs subvolume create "/mnt/$s"; done
 umount /mnt
-mount -o "$MO,subvol=@" "$ROOT" /mnt
+mount -o "$MOUNT_OPTS,subvol=@" "$ROOT" /mnt
 mkdir -p /mnt/{boot,home,var/log,var/cache/pacman/pkg,.snapshots}
-mount -o "$MO,subvol=@home" "$ROOT" /mnt/home
-mount -o "$MO,subvol=@log" "$ROOT" /mnt/var/log
-mount -o "$MO,subvol=@pkg" "$ROOT" /mnt/var/cache/pacman/pkg
-mount -o "$MO,subvol=@snapshots" "$ROOT" /mnt/.snapshots
+mount -o "$MOUNT_OPTS,subvol=@home" "$ROOT" /mnt/home
+mount -o "$MOUNT_OPTS,subvol=@log" "$ROOT" /mnt/var/log
+mount -o "$MOUNT_OPTS,subvol=@pkg" "$ROOT" /mnt/var/cache/pacman/pkg
+mount -o "$MOUNT_OPTS,subvol=@snapshots" "$ROOT" /mnt/.snapshots
 mount "$ESP" /mnt/boot
 
 # ---------------------------------------------------------------- base system (pacstrap)

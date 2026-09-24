@@ -3,7 +3,7 @@
 # Sets ~/.config/wall.png, derives accent colours from it, renders all themed configs and reloads
 # the running programs. The login screen needs root (one sudo prompt at the end).
 set -euo pipefail
-TH="$HOME/.config/theme"
+THEME_DIR="$HOME/.config/theme"
 arg="${1:-}"
 [[ -n $arg ]] || {
   echo "usage: set-wallpaper.sh <image>|--current|--default" >&2
@@ -11,7 +11,7 @@ arg="${1:-}"
 }
 
 if [[ $arg == --current || $arg == --default ]]; then
-  python3 "$TH/apply.py" "$arg"
+  python3 "$THEME_DIR/apply.py" "$arg"
 else
   [[ -f $arg ]] || {
     echo "not a file: $arg" >&2
@@ -24,7 +24,7 @@ else
   # always store as PNG (hyprlock/greeter read it by path)
   python3 -c 'import sys; from PIL import Image; Image.open(sys.argv[1]).convert("RGB").save(sys.argv[2], "PNG")' "$arg" "$HOME/.config/wall.png.new"
   mv -f "$HOME/.config/wall.png.new" "$HOME/.config/wall.png"
-  python3 "$TH/apply.py" "$HOME/.config/wall.png"
+  python3 "$THEME_DIR/apply.py" "$HOME/.config/wall.png"
 fi
 
 # reload running programs (each step optional)

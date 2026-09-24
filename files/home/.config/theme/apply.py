@@ -19,8 +19,8 @@ import sys
 from pathlib import Path
 
 HOME = Path.home()
-CFG = HOME / ".config"
-TH = CFG / "theme"
+CONFIG = HOME / ".config"
+THEME = CONFIG / "theme"
 BASE = (0x14, 0x16, 0x1C)
 DEFAULT = {"primary": "#33ccff", "secondary": "#00ff99"}
 
@@ -38,43 +38,46 @@ TARGETS = {
 }
 
 
-def rgb(h):
-    h = h.lstrip("#")
-    return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
+def rgb(hex_color):
+    digits = hex_color.lstrip("#")
+    return tuple(int(digits[i : i + 2], 16) for i in (0, 2, 4))
 
 
-def colors(pal):
-    out = {}
-    for n in ("primary", "secondary"):
-        c = rgb(pal[n])
-        out[n] = c
-        out[n + "_dim"] = tuple(round(b + (a - b) * 0.33) for a, b in zip(c, BASE, strict=False))
-    return out
+def colors(palette):
+    """RGB tuples for every template name: the accents and their dimmed variants."""
+    result = {}
+    for name in ("primary", "secondary"):
+        color = rgb(palette[name])
+        result[name] = color
+        result[name + "_dim"] = tuple(
+            round(base + (channel - base) * 0.33) for channel, base in zip(color, BASE, strict=False)
+        )
+    return result
 
 
 TOKEN = re.compile(r"@(primary|secondary)(_dim)?(_hex|_rgba)?(?:(\+[0-9a-f]{2})|:([0-9.]+)|(~))?@")
 
 
-def render(text, cols):
-    def sub(m):
-        name = m.group(1) + (m.group(2) or "")
-        r, g, b = cols[name]
-        hx = f"{r:02x}{g:02x}{b:02x}"
-        kind, plus, alpha, argb = m.group(3), m.group(4), m.group(5), m.group(6)
+def render(text, rgb_colors):
+    def replace(match):
+        name = match.group(1) + (match.group(2) or "")
+        r, g, b = rgb_colors[name]
+        hex_rgb = f"{r:02x}{g:02x}{b:02x}"
+        kind, plus, alpha, argb = match.group(3), match.group(4), match.group(5), match.group(6)
         if alpha:
             return f"rgba({r}, {g}, {b}, {alpha})"
         if argb:
-            return "#ff" + hx
+            return "#ff" + hex_rgb
         if kind == "_hex":
-            return hx
+            return hex_rgb
         if kind == "_rgba":
-            return f"rgba({hx}{(plus or '+ff')[1:]})"
-        return "#" + hx + (plus[1:] if plus else "")
+            return f"rgba({hex_rgb}{(plus or '+ff')[1:]})"
+        return "#" + hex_rgb + (plus[1:] if plus else "")
 
-    return TOKEN.sub(sub, text)
+    return TOKEN.sub(replace, text)
 
 
-ICONS = CFG / "wlogout" / "icons"
+ICONS = CONFIG / "wlogout" / "icons"
 # keep in step with the background block in hypr/hyprlock.conf (blur_passes 3, blur_size 6)
 BLUR_SIGMA, BRIGHTNESS, CONTRAST = 22, 0.45, 0.9
 
@@ -82,9 +85,9 @@ BLUR_SIGMA, BRIGHTNESS, CONTRAST = 22, 0.45, 0.9
 def _screen_size():
     """Size of the first monitor (login image is cropped to it); desktop PC size as fallback."""
     try:
-        out = subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True, timeout=3).stdout
-        m = json.loads(out)[0]
-        return (int(m["width"]), int(m["height"]))
+        answer = subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True, timeout=3).stdout
+        monitor = json.loads(answer)[0]
+        return (int(monitor["width"]), int(monitor["height"]))
     except Exception:
         return (3440, 1440)
 
@@ -92,16 +95,16 @@ def _screen_size():
 SCREEN = _screen_size()
 
 
-def recolor_icons(cols):
+def recolor_icons(rgb_colors):
     """The wlogout hover icons are flat single-colour PNGs: swap the colour, keep the alpha."""
     from PIL import Image
 
-    r, g, b = cols["primary"]
-    for f in ICONS.glob("*-hover.png"):
-        a = Image.open(f).convert("RGBA").getchannel("A")
-        out = Image.new("RGBA", a.size, (r, g, b, 0))
-        out.putalpha(a)
-        out.save(f)
+    r, g, b = rgb_colors["primary"]
+    for icon in ICONS.glob("*-hover.png"):
+        alpha = Image.open(icon).convert("RGBA").getchannel("A")
+        recolored = Image.new("RGBA", alpha.size, (r, g, b, 0))
+        recolored.putalpha(alpha)
+        recolored.save(icon)
 
 
 def make_login_image(src):
@@ -110,15 +113,17 @@ def make_login_image(src):
 
     # crop/scale to the screen first (like swaybg "fill"): hyprlock blurs at screen resolution,
     # so the blur strength must not depend on the size of the source photo
-    im = ImageOps.fit(Image.open(src).convert("RGB"), SCREEN, Image.LANCZOS)
-    w, h = im.size
-    small = im.resize((w // 4, h // 4), Image.LANCZOS).filter(ImageFilter.GaussianBlur(BLUR_SIGMA / 4))
-    im = small.resize((w, h), Image.BICUBIC)
-    lut = [round(max(0, min(255, ((v / 255 - 0.5) * CONTRAST + 0.5) * BRIGHTNESS * 255))) for v in range(256)]
-    im = im.point(lut * 3)
+    image = ImageOps.fit(Image.open(src).convert("RGB"), SCREEN, Image.LANCZOS)
+    width, height = image.size
+    small = image.resize((width // 4, height // 4), Image.LANCZOS).filter(ImageFilter.GaussianBlur(BLUR_SIGMA / 4))
+    image = small.resize((width, height), Image.BICUBIC)
+    levels = [
+        round(max(0, min(255, ((value / 255 - 0.5) * CONTRAST + 0.5) * BRIGHTNESS * 255))) for value in range(256)
+    ]
+    image = image.point(levels * 3)
     out = HOME / ".cache" / "theme" / "login.png"
     out.parent.mkdir(parents=True, exist_ok=True)
-    im.save(out.with_name("login.png.tmp"), "PNG")
+    image.save(out.with_name("login.png.tmp"), "PNG")
     os.replace(out.with_name("login.png.tmp"), out)
 
 
@@ -133,25 +138,25 @@ def write(dest, text):
 
 def main(argv):
     if argv and argv[0] == "--default":
-        pal = dict(DEFAULT)
+        palette = dict(DEFAULT)
     elif argv and argv[0] == "--current":
-        pal = json.loads((TH / "colors.json").read_text())
+        palette = json.loads((THEME / "colors.json").read_text())
     elif argv:
-        pal = json.loads(subprocess.check_output([sys.executable, str(TH / "palette.py"), argv[0]]))
+        palette = json.loads(subprocess.check_output([sys.executable, str(THEME / "palette.py"), argv[0]]))
     else:
         sys.exit(__doc__)
-    pal = {k: pal[k] for k in ("primary", "secondary")} | {"source": pal.get("source", "default")}
-    write(TH / "colors.json", json.dumps(pal, indent=1) + "\n")
-    cols = colors(pal)
-    for tpl, dest in TARGETS.items():
-        write(CFG / dest, render((TH / "templates" / tpl).read_text(), cols))
-    recolor_icons(cols)
+    palette = {key: palette[key] for key in ("primary", "secondary")} | {"source": palette.get("source", "default")}
+    write(THEME / "colors.json", json.dumps(palette, indent=1) + "\n")
+    rgb_colors = colors(palette)
+    for template, dest in TARGETS.items():
+        write(CONFIG / dest, render((THEME / "templates" / template).read_text(), rgb_colors))
+    recolor_icons(rgb_colors)
     # login screen (root-owned): rendered here, installed by set-wallpaper.sh
     cache = HOME / ".cache" / "theme"
     cache.mkdir(parents=True, exist_ok=True)
-    write(cache / "regreet.css", render((TH / "templates" / "regreet.css").read_text(), cols))
-    make_login_image(CFG / "wall.png")
-    print(f"primary {pal['primary']}  secondary {pal['secondary']}  ({pal['source']})")
+    write(cache / "regreet.css", render((THEME / "templates" / "regreet.css").read_text(), rgb_colors))
+    make_login_image(CONFIG / "wall.png")
+    print(f"primary {palette['primary']}  secondary {palette['secondary']}  ({palette['source']})")
 
 
 if __name__ == "__main__":

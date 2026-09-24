@@ -27,12 +27,12 @@ fingerprint() { ssh-keygen -lf - 2> /dev/null | awk '{ print $2 }'; } # public k
 # Nothing for a name this machine already trusts: a trusted machine never gets a second key this
 # way, so such a file is someone claiming to be it (drop the old line by hand for a real new key).
 host_of() {
-  local f h
+  local f signer
   [[ -n $1 && $1 != - ]] || return 0
   for f in $(git ls-tree --name-only origin/main signers/ 2> /dev/null); do
     [[ $(git show "origin/main:$f" | fingerprint) == "$1" ]] || continue
-    h=$(basename "$f" .pub)
-    awk -v h="$h" '$1 == h { found = 1 } END { exit !found }' "$ALLOWED" 2> /dev/null || echo "$h"
+    signer=$(basename "$f" .pub)
+    awk -v h="$signer" '$1 == h { found = 1 } END { exit !found }' "$ALLOWED" 2> /dev/null || echo "$signer"
     return 0
   done
   return 0
@@ -56,7 +56,7 @@ check() {
 }
 
 setup() {
-  local host f h
+  local host f signer
   host=$(< /etc/hostname)
   if [[ ! -f $KEY ]]; then
     [[ -d $HOME/.ssh ]] || mkdir -m700 "$HOME/.ssh"
@@ -75,9 +75,9 @@ setup() {
   add_signer "$host" "$KEY.pub"
   echo "==> trusted on this machine:"
   for f in signers/*.pub; do
-    h=$(basename "$f" .pub)
-    [[ $h == "$host" ]] || add_signer "$h" "$f"
-    echo "    $h  $(fingerprint < "$f")"
+    signer=$(basename "$f" .pub)
+    [[ $signer == "$host" ]] || add_signer "$signer" "$f"
+    echo "    $signer  $(fingerprint < "$f")"
   done
   git add "signers/$host.pub"
   git diff --cached --quiet -- "signers/$host.pub" || git commit -q -m "Signing key of $host" -- "signers/$host.pub"

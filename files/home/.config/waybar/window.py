@@ -40,26 +40,28 @@ def app(cls):
     return DEFAULT, name or "Window"
 
 
-def cut(s, n):
-    return s if len(s) <= n else s[: n - 1].rstrip() + "…"
+def cut(text, limit):
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
 def emit():
     try:
-        w = json.loads(subprocess.run(["hyprctl", "-j", "activewindow"], capture_output=True, text=True).stdout or "{}")
+        window = json.loads(
+            subprocess.run(["hyprctl", "-j", "activewindow"], capture_output=True, text=True).stdout or "{}"
+        )
     except Exception:
         return
-    if not w or not w.get("class"):
+    if not window or not window.get("class"):
         print(json.dumps({"text": "", "class": "none"}), flush=True)
         return
-    glyph, name = app(w["class"])
-    title = TITLE_SUFFIX.sub("", w.get("title", "")).strip()
+    glyph, name = app(window["class"])
+    title = TITLE_SUFFIX.sub("", window.get("title", "")).strip()
     text = f"{glyph}  "
     if title and title.lower() != name.lower() and not COMPACT:
         text += html.escape(cut(title, 40))
     else:
         text += html.escape(name)
-    tip = "\n".join(x for x in (w.get("title", ""), w["class"]) if x)
+    tip = "\n".join(x for x in (window.get("title", ""), window["class"]) if x)
     print(json.dumps({"text": text, "class": "active", "tooltip": html.escape(tip)}, ensure_ascii=False), flush=True)
 
 
@@ -68,14 +70,14 @@ sock_path = (
     or f"{os.environ['XDG_RUNTIME_DIR']}/hypr/{os.environ['HYPRLAND_INSTANCE_SIGNATURE']}/.socket2.sock"
 )
 emit()
-s = socket.socket(socket.AF_UNIX)
-s.connect(sock_path)
+sock = socket.socket(socket.AF_UNIX)
+sock.connect(sock_path)
 buf = b""
 while True:
-    d = s.recv(4096)
-    if not d:
+    chunk = sock.recv(4096)
+    if not chunk:
         break
-    buf += d
+    buf += chunk
     *lines, buf = buf.split(b"\n")
     if any(
         raw.decode(errors="replace").partition(">>")[0]

@@ -7,19 +7,19 @@ import subprocess
 import time
 
 
-def pactl(*a):
-    return subprocess.run(["pactl", *a], capture_output=True, text=True).stdout
+def pactl(*args):
+    return subprocess.run(["pactl", *args], capture_output=True, text=True).stdout
 
 
 sinks = [s for s in json.loads(pactl("--format=json", "list", "sinks")) if "Line2" not in s["name"]]
 if len(sinks) < 2:
     raise SystemExit
-cur = pactl("get-default-sink").strip()
+current = pactl("get-default-sink").strip()
 names = [s["name"] for s in sinks]
-nxt = sinks[(names.index(cur) + 1) % len(sinks)] if cur in names else sinks[0]
-pactl("set-default-sink", nxt["name"])
+next_sink = sinks[(names.index(current) + 1) % len(sinks)] if current in names else sinks[0]
+pactl("set-default-sink", next_sink["name"])
 for line in pactl("list", "short", "sink-inputs").splitlines():
-    pactl("move-sink-input", line.split()[0], nxt["name"])
+    pactl("move-sink-input", line.split()[0], next_sink["name"])
 subprocess.run(
     [
         "notify-send",
@@ -30,6 +30,6 @@ subprocess.run(
         "-h",
         "string:x-canonical-private-synchronous:audio-out",
         "Audio output",
-        f"{nxt['description']}\n<small>{time.strftime('%H:%M')}</small>",
+        f"{next_sink['description']}\n<small>{time.strftime('%H:%M')}</small>",
     ]
 )

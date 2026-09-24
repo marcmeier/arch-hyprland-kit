@@ -21,9 +21,9 @@ export LC_ALL=C # same sort order as snapshot.sh, whatever locale the session ha
 
 main() {
   cd "$(dirname "$(readlink -f "$0")")"
-  local H=$HOME ADOPT=0 NOW=0 OFFLINE=0 incoming sha
+  local ADOPT=0 NOW=0 OFFLINE=0 incoming sha
   case ${1:-} in --adopt) ADOPT=1 ;; --now) NOW=1 ;; esac
-  STATE="${XDG_STATE_HOME:-$H/.local/state}/rebuild"
+  STATE="${XDG_STATE_HOME:-$HOME/.local/state}/rebuild"
   mkdir -p "$STATE"
   exec 9> "$STATE/lock"
   flock -n 9 || {

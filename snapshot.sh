@@ -4,9 +4,8 @@
 set -euo pipefail
 export LC_ALL=C # one sort order for the shared lists on every machine and in every session
 cd "$(dirname "$(readlink -f "$0")")"
-H="$HOME"
 # per machine memory of the last snapshot (package lists, kit files, /etc checksums), see lib/lists.sh
-STATE="${XDG_STATE_HOME:-$H/.local/state}/rebuild"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/rebuild"
 mkdir -p "$STATE"
 source "$PWD/lib/lists.sh"
 source "$PWD/kit.conf"
@@ -26,10 +25,10 @@ wc -l packages/*.txt
 
 echo "==> dotfiles -> files/home"
 rm -rf files/home && mkdir -p files/home/.config files/home/.local/share/applications
-CFG=(hypr emoji waybar wlogout mako walker ghostty qt6ct gtk-3.0 gtk-4.0 theme nwg-displays autostart yay vdirsyncer khal systemd)
-for d in "${CFG[@]}"; do [[ -e $H/.config/$d ]] && cp -a "$H/.config/$d" files/home/.config/; done
+CONFIG_DIRS=(hypr emoji waybar wlogout mako walker ghostty qt6ct gtk-3.0 gtk-4.0 theme nwg-displays autostart yay vdirsyncer khal systemd)
+for d in "${CONFIG_DIRS[@]}"; do [[ -e $HOME/.config/$d ]] && cp -a "$HOME/.config/$d" files/home/.config/; done
 for f in starship.toml wall.png mimeapps.list user-dirs.dirs user-dirs.locale QtProject.conf; do
-  [[ -e $H/.config/$f ]] && cp -a "$H/.config/$f" files/home/.config/
+  [[ -e $HOME/.config/$f ]] && cp -a "$HOME/.config/$f" files/home/.config/
 done
 # a user-dirs.dirs whose folders all point at bare $HOME/ (xdg-user-dirs-update ran before the folders
 # existed) must not end up in the kit: keep the committed one instead
@@ -37,11 +36,11 @@ done
 if grep -q '^XDG_DOWNLOAD_DIR="\$HOME/"$' files/home/.config/user-dirs.dirs 2> /dev/null; then
   git show HEAD:files/home/.config/user-dirs.dirs > files/home/.config/user-dirs.dirs 2> /dev/null || rm -f files/home/.config/user-dirs.dirs
 fi
-cp -a "$H/.bashrc" "$H/.bash_profile" files/home/
+cp -a "$HOME/.bashrc" "$HOME/.bash_profile" files/home/
 mkdir -p files/home/.config/Code/User
-cp -a "$H/.config/Code/User/settings.json" files/home/.config/Code/User/ 2> /dev/null || true
+cp -a "$HOME/.config/Code/User/settings.json" files/home/.config/Code/User/ 2> /dev/null || true
 # custom launchers (no game-/profile-bound ones)
-for f in "$H"/.local/share/applications/*.desktop; do
+for f in "$HOME"/.local/share/applications/*.desktop; do
   case "$(basename "$f")" in net.lutris.* | Baldur* | brave-*) continue ;; esac
   cp -a "$f" files/home/.local/share/applications/
 done
@@ -50,11 +49,11 @@ find files/home \( -name '*.bak*' -o -name 'bak_*' \) -prune -exec rm -rf {} +
 
 # project notes (KIT_NOTES_REL in kit.conf; they live outside the kit)
 if [[ -n ${KIT_NOTES_REL:-} ]]; then
-  N="$H/$KIT_NOTES_REL"
-  [[ -r $N/CLAUDE.md ]] && cp -a "$N/CLAUDE.md" files/CLAUDE.md
-  if [[ -d $N/docs ]]; then
+  NOTES="$HOME/$KIT_NOTES_REL"
+  [[ -r $NOTES/CLAUDE.md ]] && cp -a "$NOTES/CLAUDE.md" files/CLAUDE.md
+  if [[ -d $NOTES/docs ]]; then
     rm -rf files/docs
-    cp -a "$N/docs" files/docs
+    cp -a "$NOTES/docs" files/docs
   fi
 fi
 # a kit file missing here was only deleted if this machine had it before (lib/lists.sh)

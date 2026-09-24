@@ -11,31 +11,31 @@ import os
 import re
 import sys
 
-p = sys.argv[1]
-s = open(p).read()
-orig = s
+path = sys.argv[1]
+config = open(path).read()
+orig = config
 
 # the desktop PC has a fixed ethernet interface name; other machines don't, so drop that line
 if not os.path.exists("/sys/class/net/eno1"):
-    s = re.sub(r'\n[ \t]*"interface": "eno1",', "", s, count=1)
+    config = re.sub(r'\n[ \t]*"interface": "eno1",', "", config, count=1)
 
 # any network device with a "wireless" subdirectory in sysfs is a WiFi adapter
 has_wifi = any(os.path.isdir(d + "/wireless") for d in glob.glob("/sys/class/net/*"))
-if has_wifi and '"format-wifi"' not in s:
+if has_wifi and '"format-wifi"' not in config:
     # insert the WiFi format right after the existing ethernet format, so it's only added once
-    s = re.sub(
+    config = re.sub(
         r'([ \t]*"format-ethernet": "",[^\n]*\n)',
         lambda m: (
             m.group(1)
             + '        "format-wifi": "\\uf1eb {signalStrength}%",\n'
             + '        "tooltip-format-wifi": "{essid}\\n{ipaddr}/{cidr}",\n'
         ),
-        s,
+        config,
         count=1,
     )
 
-if s != orig:
-    open(p, "w").write(s)
+if config != orig:
+    open(path, "w").write(config)
     print("waybar network module adapted")
 else:
     print("waybar network module unchanged")

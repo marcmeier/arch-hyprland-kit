@@ -63,25 +63,25 @@ hw_ucode_pkg() {
 }
 
 hw_packages() {
-  local p=()
+  local pkgs=()
   local ucode
   ucode=$(hw_ucode_pkg)
-  if [[ -n $ucode ]]; then p+=("$ucode"); fi
-  if hw_has_gpu amd; then p+=(vulkan-radeon lib32-vulkan-radeon); fi
-  if hw_has_gpu intel; then p+=(vulkan-intel lib32-vulkan-intel intel-media-driver); fi
+  if [[ -n $ucode ]]; then pkgs+=("$ucode"); fi
+  if hw_has_gpu amd; then pkgs+=(vulkan-radeon lib32-vulkan-radeon); fi
+  if hw_has_gpu intel; then pkgs+=(vulkan-intel lib32-vulkan-intel intel-media-driver); fi
   if hw_has_gpu nvidia; then
     # -open: Turing (RTX 20 / GTX 16) and newer. DKMS so linux and linux-lts both get a module.
-    p+=(nvidia-open-dkms nvidia-utils lib32-nvidia-utils linux-headers linux-lts-headers)
+    pkgs+=(nvidia-open-dkms nvidia-utils lib32-nvidia-utils linux-headers linux-lts-headers)
     # hybrid notebook: prime-run to start single programs on the dGPU
-    { hw_has_gpu intel || hw_has_gpu amd; } && p+=(nvidia-prime)
+    { hw_has_gpu intel || hw_has_gpu amd; } && pkgs+=(nvidia-prime)
   fi
   # Marvell PCI devices (e.g. the 88W8897 WiFi in Surface Pro/Book/Laptop): the firmware is only an
   # optional dependency of linux-firmware, so a fresh install has no WiFi without it
-  grep -qsx '0x11ab' /sys/bus/pci/devices/*/vendor && p+=(linux-firmware-marvell)
+  grep -qsx '0x11ab' /sys/bus/pci/devices/*/vendor && pkgs+=(linux-firmware-marvell)
   if ((HW_LAPTOP)); then
-    p+=(power-profiles-daemon upower brightnessctl sof-firmware)
+    pkgs+=(power-profiles-daemon upower brightnessctl sof-firmware)
   fi
-  printf '%s\n' "${p[@]}"
+  printf '%s\n' "${pkgs[@]}"
 }
 
 # modules for the initramfs (early KMS => Plymouth/console at native resolution)

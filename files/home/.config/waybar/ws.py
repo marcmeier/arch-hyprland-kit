@@ -13,8 +13,8 @@ N = 0 if MORE else int(sys.argv[1])
 LAST = 5
 
 
-def hc(*a):
-    return json.loads(subprocess.run(["hyprctl", "-j", *a], capture_output=True, text=True).stdout or "null")
+def hyprctl(*args):
+    return json.loads(subprocess.run(["hyprctl", "-j", *args], capture_output=True, text=True).stdout or "null")
 
 
 urgent = set()  # addresses (without 0x) of windows that asked for attention
@@ -22,9 +22,9 @@ urgent = set()  # addresses (without 0x) of windows that asked for attention
 
 def emit():
     try:
-        active = (hc("activeworkspace") or {}).get("id")
-        wins = {w["id"]: w["windows"] for w in (hc("workspaces") or [])}
-        clients = {c["address"][2:]: c["workspace"]["id"] for c in (hc("clients") or [])}
+        active = (hyprctl("activeworkspace") or {}).get("id")
+        wins = {w["id"]: w["windows"] for w in (hyprctl("workspaces") or [])}
+        clients = {c["address"][2:]: c["workspace"]["id"] for c in (hyprctl("clients") or [])}
     except Exception:
         return
     # focused workspace or closed window clears the urgent state
@@ -63,14 +63,14 @@ sock_path = (
     or f"{os.environ['XDG_RUNTIME_DIR']}/hypr/{os.environ['HYPRLAND_INSTANCE_SIGNATURE']}/.socket2.sock"
 )
 emit()
-s = socket.socket(socket.AF_UNIX)
-s.connect(sock_path)
+sock = socket.socket(socket.AF_UNIX)
+sock.connect(sock_path)
 buf = b""
 while True:
-    d = s.recv(4096)
-    if not d:
+    chunk = sock.recv(4096)
+    if not chunk:
         break
-    buf += d
+    buf += chunk
     *lines, buf = buf.split(b"\n")
     dirty = False
     for raw in lines:

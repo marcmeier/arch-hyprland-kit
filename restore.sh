@@ -188,14 +188,14 @@ hw_has_gpu nvidia && warn "NVIDIA: nvidia-open needs Turing (GTX 16 / RTX 20) or
 # ------------------------------------------------ 4c. Microsoft Surface
 if ((HW_SURFACE)); then
   say "4c/12 Surface: linux-surface kernel + iptsd (third-party repo pkg.surfacelinux.com)"
-  SKEY="$KIT/laptop/surface-signing-key.gpg"
-  SFPR=87DEFA4AB94A99A4C8C3112556C464BAAC421453
+  SURFACE_KEY="$KIT/laptop/surface-signing-key.gpg"
+  SURFACE_FPR=87DEFA4AB94A99A4C8C3112556C464BAAC421453
   # verify the key's fingerprint before trusting it, not just that a file with that name exists
-  if [[ $(gpg --show-keys --with-colons "$SKEY" 2> /dev/null | awk -F: '$1=="fpr"{print $10; exit}') != "$SFPR" ]]; then
+  if [[ $(gpg --show-keys --with-colons "$SURFACE_KEY" 2> /dev/null | awk -F: '$1=="fpr"{print $10; exit}') != "$SURFACE_FPR" ]]; then
     fail "Surface signing key file missing or fingerprint mismatch, kernel not installed"
   else
     if ! grep -q '^\[linux-surface\]' /etc/pacman.conf; then
-      if ! { pacman-key --add "$SKEY" && pacman-key --lsign-key "$SFPR" &&
+      if ! { pacman-key --add "$SURFACE_KEY" && pacman-key --lsign-key "$SURFACE_FPR" &&
         printf '\n[linux-surface]\nServer = https://pkg.surfacelinux.com/arch/\n' >> /etc/pacman.conf; }; then
         fail "linux-surface repo/key"
       fi
@@ -206,22 +206,22 @@ fi
 
 # ----------------------------------------------------------- 5. system config
 say "5/12 System configuration"
-E="$KIT/files/etc"
+KIT_ETC="$KIT/files/etc"
 # hostname: keep what install-base.sh set; only fall back to the kit's name on an unnamed system
 CUR_HOST="$(cat /etc/hostname 2> /dev/null)"
-if [[ -z $CUR_HOST || $CUR_HOST == archiso || $CUR_HOST == localhost ]]; then cp "$E/hostname" /etc/hostname; fi
+if [[ -z $CUR_HOST || $CUR_HOST == archiso || $CUR_HOST == localhost ]]; then cp "$KIT_ETC/hostname" /etc/hostname; fi
 # language, console keymap and timezone: keep what install-base.sh (or the installer) set; the
 # kit's values only fill in what is missing
-[[ -s /etc/locale.conf ]] || cp "$E/locale.conf" /etc/locale.conf
-[[ -s /etc/vconsole.conf ]] || cp "$E/vconsole.conf" /etc/vconsole.conf
+[[ -s /etc/locale.conf ]] || cp "$KIT_ETC/locale.conf" /etc/locale.conf
+[[ -s /etc/vconsole.conf ]] || cp "$KIT_ETC/vconsole.conf" /etc/vconsole.conf
 sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen && locale-gen
 [[ -e /etc/localtime ]] || ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 hwclock --systohc 2> /dev/null || true
 # static /etc files that just get copied in as-is
-install -Dm644 "$E/sysctl.d/99-gaming.conf" /etc/sysctl.d/99-gaming.conf
-install -Dm644 "$E/security/limits.d/10-games.conf" /etc/security/limits.d/10-games.conf
-install -Dm644 "$E/NetworkManager/conf.d/hostname.conf" /etc/NetworkManager/conf.d/hostname.conf
-install -Dm644 "$E/systemd/zram-generator.conf" /etc/systemd/zram-generator.conf
+install -Dm644 "$KIT_ETC/sysctl.d/99-gaming.conf" /etc/sysctl.d/99-gaming.conf
+install -Dm644 "$KIT_ETC/security/limits.d/10-games.conf" /etc/security/limits.d/10-games.conf
+install -Dm644 "$KIT_ETC/NetworkManager/conf.d/hostname.conf" /etc/NetworkManager/conf.d/hostname.conf
+install -Dm644 "$KIT_ETC/systemd/zram-generator.conf" /etc/systemd/zram-generator.conf
 install -Dm440 /dev/stdin /etc/sudoers.d/10-wheel <<< '%wheel ALL=(ALL:ALL) ALL'
 visudo -cf /etc/sudoers.d/10-wheel > /dev/null || {
   rm -f /etc/sudoers.d/10-wheel
@@ -251,15 +251,15 @@ fi
 say "6/12 Login: greetd + ReGreet (graphical, runs in cage) + gnome-keyring PAM"
 pacman -S --needed --noconfirm greetd greetd-regreet cage || fail "greetd/regreet/cage"
 cp -n /etc/greetd/config.toml /etc/greetd/config.toml.bak-default 2> /dev/null || true
-install -Dm644 "$E/greetd/config.toml" /etc/greetd/config.toml
-install -Dm644 "$E/greetd/regreet.toml" /etc/greetd/regreet.toml
+install -Dm644 "$KIT_ETC/greetd/config.toml" /etc/greetd/config.toml
+install -Dm644 "$KIT_ETC/greetd/regreet.toml" /etc/greetd/regreet.toml
 # the greeting is this machine's hostname, not the one the kit was snapshotted on
 sed -i "s/^greeting_msg = .*/greeting_msg = \"$(cat /etc/hostname)\"/" /etc/greetd/regreet.toml
-install -Dm644 "$E/greetd/regreet.css" /etc/greetd/regreet.css
-[[ -r $E/greetd/avatar.png ]] && install -Dm644 "$E/greetd/avatar.png" /etc/greetd/avatar.png
+install -Dm644 "$KIT_ETC/greetd/regreet.css" /etc/greetd/regreet.css
+[[ -r $KIT_ETC/greetd/avatar.png ]] && install -Dm644 "$KIT_ETC/greetd/avatar.png" /etc/greetd/avatar.png
 install -Dm644 "$KIT/files/usr/share/backgrounds/login.png" /usr/share/backgrounds/login.png
 cp -n /etc/pam.d/greetd /etc/pam.d/greetd.bak-restore 2> /dev/null || true
-install -Dm644 "$E/pam.d/greetd" /etc/pam.d/greetd
+install -Dm644 "$KIT_ETC/pam.d/greetd" /etc/pam.d/greetd
 # lets the login keyring unlock automatically when it shares the login password (see summary at the end)
 if ! grep -q pam_gnome_keyring /etc/pam.d/login; then
   cp -n /etc/pam.d/login /etc/pam.d/login.bak-restore
@@ -332,9 +332,9 @@ fi
 # the hook (encrypted root), and a line for the other vendor's image would stop the boot
 if [[ -f /boot/loader/entries/arch.conf ]]; then
   sed -i -E '/^initrd .*\/(amd|intel)-ucode\.img$/d' /boot/loader/entries/arch.conf
-  U="$(hw_ucode_pkg)"
-  if ! grep -qE '^HOOKS=.*\bmicrocode\b' /etc/mkinitcpio.conf && [[ -n $U && -f /boot/$U.img ]]; then
-    sed -i "0,/^initrd /s##initrd /$U.img\ninitrd #" /boot/loader/entries/arch.conf
+  UCODE="$(hw_ucode_pkg)"
+  if ! grep -qE '^HOOKS=.*\bmicrocode\b' /etc/mkinitcpio.conf && [[ -n $UCODE && -f /boot/$UCODE.img ]]; then
+    sed -i "0,/^initrd /s##initrd /$UCODE.img\ninitrd #" /boot/loader/entries/arch.conf
   fi
   if hw_has_gpu nvidia && ! grep -q 'nvidia-drm.modeset' /boot/loader/entries/arch.conf; then
     sed -i '/^options /s/$/ nvidia-drm.modeset=1/' /boot/loader/entries/arch.conf
@@ -356,9 +356,9 @@ if [[ -f /boot/vmlinuz-linux-surface && -f /boot/loader/entries/arch.conf && ! -
   sed -i 's/^default.*/default arch-surface.conf/' /boot/loader/loader.conf
 fi
 # c) coredump limit, smartd (config + mako notify hook), firewall
-install -Dm644 "$E/systemd/coredump.conf.d/10-limit.conf" /etc/systemd/coredump.conf.d/10-limit.conf
-if [[ -r $E/smartd.conf ]]; then
-  install -Dm644 "$E/smartd.conf" /etc/smartd.conf
+install -Dm644 "$KIT_ETC/systemd/coredump.conf.d/10-limit.conf" /etc/systemd/coredump.conf.d/10-limit.conf
+if [[ -r $KIT_ETC/smartd.conf ]]; then
+  install -Dm644 "$KIT_ETC/smartd.conf" /etc/smartd.conf
   install -Dm755 "$KIT/files/usr/local/bin/smartd-notify" /usr/local/bin/smartd-notify
   # the hook notifies the desktop user: point it at this user and uid
   sed -i "s/runuser -u [a-z_][a-z0-9_-]*/runuser -u $USERNAME/; s#/run/user/[0-9]*/bus#/run/user/$(id -u "$USERNAME")/bus#" /usr/local/bin/smartd-notify
@@ -404,22 +404,22 @@ if [[ -n ${KIT_NOTES_REL:-} ]]; then
 fi
 
 # --- machine specific Hyprland / Waybar adjustments
-HL="$HOME_DIR/.config/hypr/hyprland.lua"
-if [[ -f $HL ]]; then
+HYPR_CONF="$HOME_DIR/.config/hypr/hyprland.lua"
+if [[ -f $HYPR_CONF ]]; then
   # NVIDIA-only (no AMD/Intel iGPU alongside it): force the NVIDIA GL/VA-API vendor libs
-  if hw_has_gpu nvidia && ! hw_has_gpu intel && ! hw_has_gpu amd && ! grep -q GLX_VENDOR "$HL"; then
-    sed -i '0,/^hl.env(/s##hl.env("LIBVA_DRIVER_NAME", "nvidia")\nhl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")\nhl.env(#' "$HL"
+  if hw_has_gpu nvidia && ! hw_has_gpu intel && ! hw_has_gpu amd && ! grep -q GLX_VENDOR "$HYPR_CONF"; then
+    sed -i '0,/^hl.env(/s##hl.env("LIBVA_DRIVER_NAME", "nvidia")\nhl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")\nhl.env(#' "$HYPR_CONF"
   fi
 fi
-WB="$HOME_DIR/.config/waybar"
+WAYBAR_DIR="$HOME_DIR/.config/waybar"
 # drop the desktop's fixed network interface name / add a WiFi format on machines that have WiFi
-if [[ -f $WB/config.jsonc ]]; then
-  python3 "$KIT/lib/waybar-network.py" "$WB/config.jsonc" || warn "waybar network module not adjusted"
+if [[ -f $WAYBAR_DIR/config.jsonc ]]; then
+  python3 "$KIT/lib/waybar-network.py" "$WAYBAR_DIR/config.jsonc" || warn "waybar network module not adjusted"
 fi
 if ((HW_LAPTOP)) && [[ -d $KIT/laptop ]]; then
   # add the battery module + its CSS only on laptops, and only if not already present (idempotent)
-  if [[ -f $WB/config.jsonc ]] && ! grep -q '"battery"' "$WB/config.jsonc"; then
-    python3 - "$WB/config.jsonc" "$KIT/laptop/waybar-battery.jsonc" << 'PY' || fail "waybar battery module"
+  if [[ -f $WAYBAR_DIR/config.jsonc ]] && ! grep -q '"battery"' "$WAYBAR_DIR/config.jsonc"; then
+    python3 - "$WAYBAR_DIR/config.jsonc" "$KIT/laptop/waybar-battery.jsonc" << 'PY' || fail "waybar battery module"
 import sys
 cfg, snip = sys.argv[1], open(sys.argv[2]).read()
 s = open(cfg).read()
@@ -427,17 +427,17 @@ s = s.replace('        "network",\n', '        "battery",\n        "network",\n'
 s = s.replace('    "network": {', snip.rstrip() + '\n\n    "network": {', 1)
 open(cfg, 'w').write(s)
 PY
-    cat "$KIT/laptop/waybar-battery.css" >> "$WB/style.css"
-    chown "$USERNAME:$UGRP" "$WB/config.jsonc" "$WB/style.css"
+    cat "$KIT/laptop/waybar-battery.css" >> "$WAYBAR_DIR/style.css"
+    chown "$USERNAME:$UGRP" "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css"
   fi
   systemctl enable power-profiles-daemon.service 2> /dev/null || warn "power-profiles-daemon enable"
 fi
 # the hourly sync: enabled by hand as "systemctl --user enable" would (no user session here). The
 # unit runs the kit from ~/rebuild, and it has to be a git clone, not an unpacked zip.
-UW="$HOME_DIR/.config/systemd/user/timers.target.wants"
+TIMER_WANTS="$HOME_DIR/.config/systemd/user/timers.target.wants"
 if [[ $KIT == "$HOME_DIR/rebuild" && -d $KIT/.git ]]; then
-  sudo -u "$USERNAME" mkdir -p "$UW"
-  sudo -u "$USERNAME" ln -sfn "$HOME_DIR/.config/systemd/user/rebuild-snapshot.timer" "$UW/rebuild-snapshot.timer"
+  sudo -u "$USERNAME" mkdir -p "$TIMER_WANTS"
+  sudo -u "$USERNAME" ln -sfn "$HOME_DIR/.config/systemd/user/rebuild-snapshot.timer" "$TIMER_WANTS/rebuild-snapshot.timer"
   # signed commits (lib/signing.sh): this machine's key, and trust for the machines in signers/ of
   # this fresh clone. The first sync pushes the key; the other machines then ask whether to trust it.
   sudo -u "$USERNAME" -H bash "$KIT/lib/signing.sh" setup --no-sync || warn "commit signing not set up (lib/signing.sh setup)"

@@ -5,10 +5,14 @@ The dark base, text and warn/crit colours stay fixed on purpose (readability,
 semantics); only the accents follow the image. Falls back to the classic
 cyan/green pair when the image has too little colour.
 """
-import colorsys, json, sys
+
+import colorsys
+import json
+import sys
+
 from PIL import Image
 
-BASE = (0x14, 0x16, 0x1c)
+BASE = (0x14, 0x16, 0x1C)
 FALLBACK = ("#00ff99", "#33ccff")
 
 
@@ -16,6 +20,7 @@ def lum(rgb):
     def f(c):
         c /= 255
         return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
     r, g, b = (f(c) for c in rgb)
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
@@ -26,7 +31,7 @@ def contrast(a, b):
 
 
 def hexc(rgb):
-    return "#%02x%02x%02x" % rgb
+    return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
 def make_accent(h):

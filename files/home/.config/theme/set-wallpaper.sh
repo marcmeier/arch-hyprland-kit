@@ -5,12 +5,18 @@
 set -euo pipefail
 TH="$HOME/.config/theme"
 arg="${1:-}"
-[[ -n $arg ]] || { echo "usage: set-wallpaper.sh <image>|--current|--default" >&2; exit 1; }
+[[ -n $arg ]] || {
+  echo "usage: set-wallpaper.sh <image>|--current|--default" >&2
+  exit 1
+}
 
 if [[ $arg == --current || $arg == --default ]]; then
   python3 "$TH/apply.py" "$arg"
 else
-  [[ -f $arg ]] || { echo "not a file: $arg" >&2; exit 1; }
+  [[ -f $arg ]] || {
+    echo "not a file: $arg" >&2
+    exit 1
+  }
   # validate before touching anything
   python3 -c 'import sys; from PIL import Image; Image.open(sys.argv[1]).verify()' "$arg"
   mkdir -p "$HOME/.cache/theme"
@@ -22,20 +28,22 @@ else
 fi
 
 # reload running programs (each step optional)
-pkill swaybg 2>/dev/null || true
-setsid swaybg -i "$HOME/.config/wall.png" -m fill >/dev/null 2>&1 &
-pkill waybar 2>/dev/null || true; sleep 0.3
-setsid "$HOME/.config/waybar/launch.sh" >/dev/null 2>&1 &
-makoctl reload 2>/dev/null || true
-hyprctl reload >/dev/null 2>&1 || true
-pkill -USR2 -x ghostty 2>/dev/null || true
+pkill swaybg 2> /dev/null || true
+setsid swaybg -i "$HOME/.config/wall.png" -m fill > /dev/null 2>&1 &
+pkill waybar 2> /dev/null || true
+sleep 0.3
+setsid "$HOME/.config/waybar/launch.sh" > /dev/null 2>&1 &
+makoctl reload 2> /dev/null || true
+hyprctl reload > /dev/null 2>&1 || true
+pkill -USR2 -x ghostty 2> /dev/null || true
 
 # login screen: blurred wallpaper + css (root). sudo in a terminal, else a graphical polkit prompt.
+# shellcheck disable=SC2016 # expanded by the root shell that runs it
 install_login='install -Dm644 "$1/login.png" /usr/share/backgrounds/login.png && install -Dm644 "$1/regreet.css" /etc/greetd/regreet.css'
 if [[ -t 0 ]]; then
   echo "Login screen: sudo needed"
   sudo sh -c "$install_login" _ "$HOME/.cache/theme" && echo "login screen updated" || echo "login screen NOT updated" >&2
-elif command -v pkexec >/dev/null; then
+elif command -v pkexec > /dev/null; then
   pkexec sh -c "$install_login" _ "$HOME/.cache/theme" && echo "login screen updated" || echo "login screen NOT updated (prompt cancelled?)" >&2
 else
   echo "Login screen NOT updated (no terminal, no pkexec). Run:"

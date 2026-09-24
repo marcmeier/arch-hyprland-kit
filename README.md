@@ -1,5 +1,7 @@
 # arch-hyprland-kit
 
+[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+
 My Arch Linux and Hyprland setup, packaged so that a new machine can be installed with two scripts and several machines stay in sync through a private Git repository.
 
 <table>
@@ -48,7 +50,7 @@ Details: [automatic sync between machines](#automatic-sync-between-machines).
 - Tested with AMD and Intel graphics. The NVIDIA code path exists but is untested.
 - The kit has to live in `~/rebuild`.
 - It ships one person's app selection: a gaming stack (Steam, Lutris), a Waybar widget for Claude usage limits (`waybar/claude-usage.py`, which uses an unofficial endpoint) and a Nextcloud calendar. Remove what you don't need from `packages/*.txt` and `waybar/config.jsonc`.
-- No automated tests yet.
+- Automated tests cover the sync logic, with two simulated machines in a sandbox (`tests/`). `install-base.sh` and `restore.sh` are only tested by hand, on the hardware listed below.
 
 ## Make it yours
 
@@ -83,6 +85,7 @@ Then install as described in [Quick start](#quick-start). On every further machi
 - [What's in the kit](#whats-in-the-kit)
 - [What `restore.sh` also creates](#what-restoresh-also-creates)
 - [Not in the kit](#not-in-the-kit)
+- [Checks and tests](#checks-and-tests)
 - [Tested hardware](#tested-hardware)
 
 ## Theme gallery
@@ -278,6 +281,15 @@ Personal data, which you back up yourself:
 - `~/.ssh`, keyrings, Nextcloud login, `~/.claude`
 
 Snapper configs (`root`, `home`) are created on every rebuild (retention 5h/7d/2w/1m/0y). The ufw rules are the defaults, with no extra allowances.
+
+## Checks and tests
+
+```bash
+tests/lint.sh    # shellcheck and shfmt on every shell script, ruff on every Python file
+bats tests/      # unit tests for lib/lists.sh and rebuild-install, and the sync between two machines
+```
+
+The sync tests run `auto-snapshot.sh` for real, on two machines with their own fake home and a bare repository as GitHub, all in a temporary directory. `pacman`, `dconf`, `notify-send` and the other system tools are replaced by stubs, so nothing touches the machine running the tests. Formatting follows `.editorconfig` (shfmt) and `ruff.toml`.
 
 ## Tested hardware
 

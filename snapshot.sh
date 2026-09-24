@@ -2,7 +2,7 @@
 # Records this machine's live state in the kit: package lists, dotfiles, dconf, VS Code, /etc copies.
 # Run as your normal user; the sync (auto-snapshot.sh) runs it at the start of every run.
 set -euo pipefail
-export LC_ALL=C   # one sort order for the shared lists on every machine and in every session
+export LC_ALL=C # one sort order for the shared lists on every machine and in every session
 cd "$(dirname "$(readlink -f "$0")")"
 H="$HOME"
 # per machine memory of the last snapshot (package lists, kit files, /etc checksums), see lib/lists.sh
@@ -19,7 +19,8 @@ echo "==> package lists"
 pacman -Qqen | grep -Ev "$HW_PKG_REGEX" > "$STATE/pacman.now"
 merge_list packages/pacman.txt "$STATE/pacman.now" "$STATE/pacman.base"
 # yay-debug is a build by-product; yay itself is bootstrapped by restore.sh
-pacman -Qqem | grep -vx 'yay-debug' > "$STATE/aur.now"
+# grep finds nothing on a machine without AUR packages, which is fine (pipefail would stop here)
+pacman -Qqem | { grep -vx 'yay-debug' || true; } > "$STATE/aur.now"
 merge_list packages/aur.txt "$STATE/aur.now" "$STATE/aur.base"
 wc -l packages/*.txt
 
@@ -32,15 +33,16 @@ for f in starship.toml wall.png mimeapps.list user-dirs.dirs user-dirs.locale Qt
 done
 # a user-dirs.dirs whose folders all point at bare $HOME/ (xdg-user-dirs-update ran before the folders
 # existed) must not end up in the kit: keep the committed one instead
-if grep -q '^XDG_DOWNLOAD_DIR="\$HOME/"$' files/home/.config/user-dirs.dirs 2>/dev/null; then
-  git show HEAD:files/home/.config/user-dirs.dirs > files/home/.config/user-dirs.dirs 2>/dev/null || rm -f files/home/.config/user-dirs.dirs
+# shellcheck disable=SC2016 # a literal $HOME in the file
+if grep -q '^XDG_DOWNLOAD_DIR="\$HOME/"$' files/home/.config/user-dirs.dirs 2> /dev/null; then
+  git show HEAD:files/home/.config/user-dirs.dirs > files/home/.config/user-dirs.dirs 2> /dev/null || rm -f files/home/.config/user-dirs.dirs
 fi
 cp -a "$H/.bashrc" "$H/.bash_profile" files/home/
 mkdir -p files/home/.config/Code/User
-cp -a "$H/.config/Code/User/settings.json" files/home/.config/Code/User/ 2>/dev/null || true
+cp -a "$H/.config/Code/User/settings.json" files/home/.config/Code/User/ 2> /dev/null || true
 # custom launchers (no game-/profile-bound ones)
 for f in "$H"/.local/share/applications/*.desktop; do
-  case "$(basename "$f")" in net.lutris.*|Baldur*|brave-*) continue;; esac
+  case "$(basename "$f")" in net.lutris.* | Baldur* | brave-*) continue ;; esac
   cp -a "$f" files/home/.local/share/applications/
 done
 # no backup copies in the kit
@@ -50,7 +52,10 @@ find files/home \( -name '*.bak*' -o -name 'bak_*' \) -prune -exec rm -rf {} +
 if [[ -n ${KIT_NOTES_REL:-} ]]; then
   N="$H/$KIT_NOTES_REL"
   [[ -r $N/CLAUDE.md ]] && cp -a "$N/CLAUDE.md" files/CLAUDE.md
-  if [[ -d $N/docs ]]; then rm -rf files/docs; cp -a "$N/docs" files/docs; fi
+  if [[ -d $N/docs ]]; then
+    rm -rf files/docs
+    cp -a "$N/docs" files/docs
+  fi
 fi
 # a kit file missing here was only deleted if this machine had it before (lib/lists.sh)
 guard_deletions "$STATE/files.base" files/home files/docs
@@ -58,7 +63,7 @@ guard_deletions "$STATE/files.base" files/home files/docs
 echo "==> dconf + VS Code extensions"
 dconf dump / | filter_dconf > files/dconf.ini
 # an empty answer (VS Code missing or broken) must not count as "every extension removed"
-if code --list-extensions > "$STATE/vscode.now" 2>/dev/null && [[ -s $STATE/vscode.now ]]; then
+if code --list-extensions > "$STATE/vscode.now" 2> /dev/null && [[ -s $STATE/vscode.now ]]; then
   merge_list packages/vscode-extensions.txt "$STATE/vscode.now" "$STATE/vscode.base"
 fi
 
@@ -66,19 +71,19 @@ echo "==> /etc files (readable ones)"
 # /etc is never applied to the other machines, so their copies may be old: a live file only goes
 # into the kit when it changed here since the last snapshot (or the kit has none yet)
 : > "$STATE/etc.sha256.new"
-take_sys() {  # take_sys LIVE KITPATH MODE
+take_sys() { # take_sys LIVE KITPATH MODE
   local live=$1 kit=$2 mode=$3 old
   [[ -r $live ]] || return 0
-  old=$(awk -v p="$live" '$2 == p { print $1 }' "$STATE/etc.sha256" 2>/dev/null || true)
-  if [[ ! -e $kit || ( -n $old && $old != "$(sha256sum < "$live" | cut -d' ' -f1)" ) ]]; then
+  old=$(awk -v p="$live" '$2 == p { print $1 }' "$STATE/etc.sha256" 2> /dev/null || true)
+  if [[ ! -e $kit || (-n $old && $old != "$(sha256sum < "$live" | cut -d' ' -f1)") ]]; then
     install -Dm"$mode" "$live" "$kit"
   fi
   sha256sum "$live" >> "$STATE/etc.sha256.new"
 }
 for f in sysctl.d/99-gaming.conf greetd/config.toml greetd/regreet.toml greetd/regreet.css greetd/avatar.png security/limits.d/10-games.conf \
-         xdg/reflector/reflector.conf NetworkManager/conf.d/hostname.conf \
-         systemd/zram-generator.conf systemd/coredump.conf.d/10-limit.conf smartd.conf \
-         pam.d/greetd locale.conf vconsole.conf; do
+  xdg/reflector/reflector.conf NetworkManager/conf.d/hostname.conf \
+  systemd/zram-generator.conf systemd/coredump.conf.d/10-limit.conf smartd.conf \
+  pam.d/greetd locale.conf vconsole.conf; do
   take_sys "/etc/$f" "files/etc/$f" 644
 done
 # the hostname differs per machine by design; the kit's copy is only restore.sh's fallback name

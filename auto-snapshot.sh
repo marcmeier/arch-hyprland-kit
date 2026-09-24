@@ -17,7 +17,7 @@
 #
 # Everything runs inside main(): the pull may rewrite this file while bash is reading it.
 set -euo pipefail
-export LC_ALL=C   # same sort order as snapshot.sh, whatever locale the session has
+export LC_ALL=C # same sort order as snapshot.sh, whatever locale the session has
 
 main() {
   cd "$(dirname "$(readlink -f "$0")")"
@@ -26,20 +26,28 @@ main() {
   STATE="${XDG_STATE_HOME:-$H/.local/state}/rebuild"
   mkdir -p "$STATE"
   exec 9> "$STATE/lock"
-  flock -n 9 || { echo "rebuild sync: already running"; exit 0; }
+  flock -n 9 || {
+    echo "rebuild sync: already running"
+    exit 0
+  }
   RESULT=failed APPLIED=0 BACKUP=""
   trap write_status EXIT
-  [[ -e $STATE/now ]] && { NOW=1; rm -f "$STATE/now"; }
+  [[ -e $STATE/now ]] && {
+    NOW=1
+    rm -f "$STATE/now"
+  }
   MODE=$(cat "$STATE/mode" 2> /dev/null || echo review)
-  pkill -RTMIN+11 -x waybar 2> /dev/null || true   # the pill shows the run
-  if [[ $MODE == off ]] && (( ! NOW && ! ADOPT )); then
-    RESULT=paused; echo "rebuild sync: switched off on this machine (waybar sync pill)"; exit 0
+  pkill -RTMIN+11 -x waybar 2> /dev/null || true # the pill shows the run
+  if [[ $MODE == off ]] && ((!NOW && !ADOPT)); then
+    RESULT=paused
+    echo "rebuild sync: switched off on this machine (waybar sync pill)"
+    exit 0
   fi
   HOST=$(< /etc/hostname)
   source ./kit.conf
 
   local old
-  if (( ADOPT )); then
+  if ((ADOPT)); then
     git fetch -q origin main
     verify_incoming
     git reset -q --hard origin/main
@@ -56,7 +64,7 @@ main() {
     if git fetch -q origin main; then
       verify_incoming
       incoming=$(git rev-list --count HEAD..origin/main)
-      if [[ $MODE == review ]] && (( incoming && ! NOW )); then
+      if [[ $MODE == review ]] && ((incoming && !NOW)); then
         RESULT=held
         # one notification per new GitHub state, not every hour
         sha=$(git rev-parse origin/main)
@@ -92,23 +100,29 @@ main() {
 
   # 4. push + zip
   RESULT=ok
-  (( OFFLINE )) && RESULT=offline
-  if git rev-parse -q --verify origin/main > /dev/null && (( $(git rev-list --count origin/main..HEAD) )); then
-    if git push -q origin main; then echo "rebuild sync: pushed to GitHub"
-    else RESULT="push failed"; echo "rebuild sync: git push failed, will retry next run" >&2; fi
+  ((OFFLINE)) && RESULT=offline
+  if git rev-parse -q --verify origin/main > /dev/null && (($(git rev-list --count origin/main..HEAD))); then
+    if git push -q origin main; then
+      echo "rebuild sync: pushed to GitHub"
+    else
+      RESULT="push failed"
+      echo "rebuild sync: git push failed, will retry next run" >&2
+    fi
   fi
   refresh_zip
-  if (( APPLIED )); then
-    if [[ -d $BACKUP ]]; then notify normal "Taken over from GitHub: $APPLIED change(s). Replaced files are kept in $BACKUP"
+  if ((APPLIED)); then
+    if [[ -d $BACKUP ]]; then
+      notify normal "Taken over from GitHub: $APPLIED change(s). Replaced files are kept in $BACKUP"
     else notify normal "Taken over from GitHub: $APPLIED change(s)"; fi
   fi
   echo "rebuild sync: done $(date -Is)"
 }
 
 # EXIT trap: outcome of this run for the waybar sync pill (sync.py)
+# shellcheck disable=SC2317 # only called by the trap
 write_status() {
   local rc=$?
-  (( rc )) && [[ $RESULT == ok || $RESULT == offline ]] && RESULT=failed
+  ((rc)) && [[ $RESULT == ok || $RESULT == offline ]] && RESULT=failed
   printf 'time=%s\nresult=%s\napplied=%s\n' "$(date +%s)" "$RESULT" "$APPLIED" > "$STATE/status"
   pkill -RTMIN+11 -x waybar 2> /dev/null || true
 }
@@ -117,12 +131,19 @@ write_status() {
 # signers/ that is not trusted yet is a new machine asking to join ($STATE/untrusted, sync menu).
 verify_incoming() {
   local bad sha joining
-  [[ -e $STATE/allowed_signers ]] || { rm -f "$STATE/untrusted"; return 0; }   # not set up here yet
+  [[ -e $STATE/allowed_signers ]] || {
+    rm -f "$STATE/untrusted"
+    return 0
+  } # not set up here yet
   bad=$(lib/signing.sh check HEAD..origin/main)
-  [[ -n $bad ]] || { rm -f "$STATE/untrusted"; return 0; }
+  [[ -n $bad ]] || {
+    rm -f "$STATE/untrusted"
+    return 0
+  }
   echo "$bad" > "$STATE/untrusted"
   joining=$(awk '$2 == "U" && $4 != "-" { print $4 }' <<< "$bad" | sort -u | tr '\n' ' ')
-  if [[ -n $joining && -z $(awk '$2 != "U" || $4 == "-"' <<< "$bad") ]]; then RESULT=joining
+  if [[ -n $joining && -z $(awk '$2 != "U" || $4 == "-"' <<< "$bad") ]]; then
+    RESULT=joining
   else RESULT=untrusted; fi
   # one notification per GitHub state, not every hour
   sha=$(git rev-parse origin/main)
@@ -137,7 +158,7 @@ verify_incoming() {
   exit 0
 }
 
-notify() {  # notify URGENCY TEXT
+notify() { # notify URGENCY TEXT
   echo "rebuild sync: $2"
   notify-send -u "$1" -a rebuild "Rebuild sync" "$2" 2> /dev/null || true
 }
@@ -145,9 +166,9 @@ notify() {  # notify URGENCY TEXT
 # kit path -> live path (empty: not applied automatically, e.g. /etc needs root)
 live_path() {
   case $1 in
-    files/home/*)    echo "$HOME/${1#files/home/}" ;;
+    files/home/*) echo "$HOME/${1#files/home/}" ;;
     files/CLAUDE.md) [[ -n ${KIT_NOTES_REL:-} ]] && echo "$HOME/$KIT_NOTES_REL/CLAUDE.md" ;;
-    files/docs/*)    [[ -n ${KIT_NOTES_REL:-} ]] && echo "$HOME/$KIT_NOTES_REL/docs/${1#files/docs/}" ;;
+    files/docs/*) [[ -n ${KIT_NOTES_REL:-} ]] && echo "$HOME/$KIT_NOTES_REL/docs/${1#files/docs/}" ;;
     files/dconf.ini) echo dconf ;;
   esac
 }
@@ -184,13 +205,14 @@ apply_kit() {
       continue
     fi
     case $path in
-      files/home/.config/hypr/*)                               RELOAD+=(hypr) ;;
-      files/home/.config/waybar/*|files/home/.config/theme/*)  RELOAD+=(waybar) ;;
-      files/home/.config/mako/*)                               RELOAD+=(mako) ;;
-      files/home/.config/systemd/user/*)                       RELOAD+=(systemd) ;;
+      files/home/.config/hypr/*) RELOAD+=(hypr) ;;
+      files/home/.config/waybar/* | files/home/.config/theme/*) RELOAD+=(waybar) ;;
+      files/home/.config/mako/*) RELOAD+=(mako) ;;
+      files/home/.config/systemd/user/*) RELOAD+=(systemd) ;;
     esac
   done < <(
-    if [[ -n $1 ]]; then git diff --name-status --no-renames "$1" HEAD -- files
+    if [[ -n $1 ]]; then
+      git diff --name-status --no-renames "$1" HEAD -- files
     else git ls-files files | sed 's/^/M\t/'; fi
   )
   prune_backups
@@ -208,15 +230,15 @@ backup() {
 prune_backups() {
   local old
   [[ -d $STATE/backup ]] || return 0
-  find "$STATE/backup" -mindepth 1 -maxdepth 1 -type d -print0 | sort -rz | tail -zn +11 \
-    | while IFS= read -r -d '' old; do rm -rf "$old"; done
+  find "$STATE/backup" -mindepth 1 -maxdepth 1 -type d -print0 | sort -rz | tail -zn +11 |
+    while IFS= read -r -d '' old; do rm -rf "$old"; done
 }
 
 # without LC_ALL=C (waybar modules would print icons as invalid JSON escapes) and without fd 9
 # (waybar would inherit the sync's lock and hold it for as long as it runs)
 detach() {
-  systemd-run --user --scope --quiet --collect env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null 9>&- \
-    || env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null 9>&- || true
+  systemd-run --user --scope --quiet --collect env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null 9>&- ||
+    env -u LC_ALL setsid -f "$@" > /dev/null 2>&1 < /dev/null 9>&- || true
 }
 
 reload_changed() {
@@ -224,13 +246,14 @@ reload_changed() {
   for r in $(printf '%s\n' "${RELOAD[@]}" | sort -u); do
     case $r in
       systemd) systemctl --user daemon-reload ;;
-      hypr)    hyprctl reload > /dev/null 2>&1 || true ;;
-      mako)    makoctl reload 2> /dev/null || true ;;
+      hypr) hyprctl reload > /dev/null 2>&1 || true ;;
+      mako) makoctl reload 2> /dev/null || true ;;
       # own scope: systemd kills what is left in the service's cgroup when the oneshot ends
       waybar)
-        pgrep -f 'python3? .*waybar/density-watch.py' > /dev/null \
-          || detach "$HOME/.config/waybar/density-watch.py"
-        detach "$HOME/.config/waybar/launch.sh" ;;
+        pgrep -f 'python3? .*waybar/density-watch.py' > /dev/null ||
+          detach "$HOME/.config/waybar/density-watch.py"
+        detach "$HOME/.config/waybar/launch.sh"
+        ;;
     esac
   done
 }
@@ -248,17 +271,18 @@ install_missing() {
   have=$(pacman -Qq | sort)
   mapfile -t miss_repo < <(comm -23 <(sort -u packages/pacman.txt) <(echo "$have"))
   mapfile -t miss_aur < <(comm -23 <(sort -u packages/aur.txt) <(echo "$have"))
-  if (( ${#miss_repo[@]} )); then
+  if ((${#miss_repo[@]})); then
     if [[ ! -x /usr/local/bin/rebuild-install || ! -e /usr/share/polkit-1/actions/org.rebuild.install.policy ]]; then
       msg="rebuild-install is not set up here, so listed packages cannot be installed (see README)"
-    elif (( NOW )) || [[ "${miss_repo[*]}" != "$(cat "$STATE/install-asked" 2> /dev/null)" ]]; then
+    elif ((NOW)) || [[ "${miss_repo[*]}" != "$(cat "$STATE/install-asked" 2> /dev/null)" ]]; then
       echo "${miss_repo[*]}" > "$STATE/install-asked"
       echo "rebuild sync: asking to install ${miss_repo[*]}"
-      rc=0; timeout 300 pkexec /usr/local/bin/rebuild-install "${miss_repo[@]}" || rc=$?
+      rc=0
+      timeout 300 pkexec /usr/local/bin/rebuild-install "${miss_repo[@]}" || rc=$?
       # 126: dialog cancelled, 127: no polkit agent (no desktop session), 124: nobody answered
-      if (( rc == 124 || rc == 126 || rc == 127 )); then
+      if ((rc == 124 || rc == 126 || rc == 127)); then
         echo "rebuild sync: install not confirmed (exit $rc)"
-      elif (( rc )); then
+      elif ((rc)); then
         msg="Could not install: ${miss_repo[*]} (maybe update the system first: sudo pacman -Syu)"
       fi
       have=$(pacman -Qq | sort)
@@ -267,10 +291,12 @@ install_missing() {
       APPLIED=$((APPLIED - ${#miss_repo[@]}))
     fi
   fi
-  { for x in "${miss_repo[@]}"; do echo "repo $x"; done
-    for x in "${miss_aur[@]}"; do echo "aur $x"; done; } > "$STATE/install-pending"
-  (( ${#miss_repo[@]} + ${#miss_aur[@]} )) && [[ -z $msg ]] \
-    && urgency=normal msg="$(( ${#miss_repo[@]} + ${#miss_aur[@]} )) listed package(s) wait for install: ${miss_repo[*]} ${miss_aur[*]} (sync menu: Install missing packages)"
+  {
+    for x in "${miss_repo[@]}"; do echo "repo $x"; done
+    for x in "${miss_aur[@]}"; do echo "aur $x"; done
+  } > "$STATE/install-pending"
+  ((${#miss_repo[@]} + ${#miss_aur[@]})) && [[ -z $msg ]] &&
+    urgency=normal msg="$((${#miss_repo[@]} + ${#miss_aur[@]})) listed package(s) wait for install: ${miss_repo[*]} ${miss_aur[*]} (sync menu: Install missing packages)"
   # notify only when the message changes, not every hour
   if [[ $msg != "$(cat "$STATE/install-notified" 2> /dev/null)" ]]; then
     [[ -n $msg ]] && notify "$urgency" "$msg"
@@ -278,8 +304,8 @@ install_missing() {
   fi
 
   if command -v code > /dev/null && [[ -s packages/vscode-extensions.txt ]]; then
-    mapfile -t miss_code < <(comm -23 <(sort -uf packages/vscode-extensions.txt | tr 'A-Z' 'a-z' | sort -u) \
-                                      <(code --list-extensions 2> /dev/null | tr 'A-Z' 'a-z' | sort -u))
+    mapfile -t miss_code < <(comm -23 <(sort -uf packages/vscode-extensions.txt | tr '[:upper:]' '[:lower:]' | sort -u) \
+      <(code --list-extensions 2> /dev/null | tr '[:upper:]' '[:lower:]' | sort -u))
     for x in "${miss_code[@]}"; do
       code --install-extension "$x" > /dev/null 2>&1 && APPLIED=$((APPLIED + 1)) || echo "rebuild sync: VS Code extension $x failed" >&2
     done
@@ -300,4 +326,5 @@ refresh_zip() {
   echo "rebuild sync: zip refreshed"
 }
 
-main "$@"; exit
+main "$@"
+exit

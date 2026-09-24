@@ -5,7 +5,11 @@
 - when a WiFi device exists, show it (icon + signal) instead of a permanent red "offline"
 Idempotent. Usage: waybar-network.py ~/.config/waybar/config.jsonc
 """
-import glob, os, re, sys
+
+import glob
+import os
+import re
+import sys
 
 p = sys.argv[1]
 s = open(p).read()
@@ -21,9 +25,11 @@ if has_wifi and '"format-wifi"' not in s:
     # insert the WiFi format right after the existing ethernet format, so it's only added once
     s = re.sub(
         r'([ \t]*"format-ethernet": "",[^\n]*\n)',
-        lambda m: m.group(1)
-        + '        "format-wifi": "\\uf1eb {signalStrength}%",\n'
-        + '        "tooltip-format-wifi": "{essid}\\n{ipaddr}/{cidr}",\n',
+        lambda m: (
+            m.group(1)
+            + '        "format-wifi": "\\uf1eb {signalStrength}%",\n'
+            + '        "tooltip-format-wifi": "{essid}\\n{ipaddr}/{cidr}",\n'
+        ),
         s,
         count=1,
     )

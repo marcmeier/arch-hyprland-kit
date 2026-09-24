@@ -16,8 +16,8 @@ merge_list() {
   touch "$list"
   if [[ -f $base ]]; then sort -u "$base" > "$tmp.base"; else comm -12 "$now" <(sort -u "$list") > "$tmp.base"; fi
   {
-    comm -23 <(sort -u "$list") <(comm -23 "$tmp.base" "$now")   # list minus what was removed here
-    comm -23 "$now" "$tmp.base"                                  # plus what was installed here
+    comm -23 <(sort -u "$list") <(comm -23 "$tmp.base" "$now") # list minus what was removed here
+    comm -23 "$now" "$tmp.base"                                # plus what was installed here
   } | sort -u > "$tmp"
   mv "$tmp" "$list"
   mv "$now" "$base"
@@ -34,7 +34,11 @@ guard_deletions() {
   local base=$1 now f
   shift
   now=$(mktemp)
-  find "$@" \( -type f -o -type l \) 2> /dev/null | sort -u > "$now"
+  local dir existing=()
+  for dir in "$@"; do [[ -d $dir ]] && existing+=("$dir"); done # files/docs is optional
+  if ((${#existing[@]})); then
+    find "${existing[@]}" \( -type f -o -type l \) | sort -u > "$now"
+  fi
   while IFS= read -r -d '' f; do
     if ! grep -qxF -- "$f" "$base" 2> /dev/null; then
       git checkout -q -- "$f"

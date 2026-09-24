@@ -8,13 +8,15 @@ list=~/.config/emoji/list.txt
 sel=$(walker --dmenu < "$list") || exit 0
 emoji=${sel%% *}
 [ -n "$emoji" ] || exit 0
-sleep 0.15   # focus has to return to the previous window first
+sleep 0.15 # focus has to return to the previous window first
 class=$(hyprctl activewindow | sed -n 's/^\s*class: //p')
 case "$class" in
-    com.mitchellh.ghostty|*kitty*|*foot*|*Alacritty*)
-        wtype "$emoji" ;;
-    *)
-        printf '%s' "$emoji" | wl-copy
-        sleep 0.05
-        wtype -M ctrl v -m ctrl ;;
+  com.mitchellh.ghostty | *kitty* | *foot* | *Alacritty*)
+    wtype "$emoji"
+    ;;
+  *)
+    printf '%s' "$emoji" | wl-copy
+    sleep 0.05
+    wtype -M ctrl v -m ctrl
+    ;;
 esac

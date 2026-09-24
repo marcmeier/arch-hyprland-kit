@@ -1,0 +1,13 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+# shell scripts: read by shfmt
+[{*.sh,*.bash,cfg-backup,rebuild-install,smartd-notify,kit.conf}]
+indent_style = space
+indent_size = 2
+switch_case_indent = true
+space_redirects = true

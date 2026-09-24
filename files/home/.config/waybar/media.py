@@ -1,32 +1,46 @@
 #!/usr/bin/env python3
 """Waybar: now-playing pill, one process per segment. Usage: media.py prev|play|next|info
-prev/next/play are the transport buttons (play is larger, prev/next smaller), info is title (scrolls when longer than WIDTH) + dimmed artist.
-All segments print empty text (hidden) when nothing plays. "compact" (2nd arg): shorter title, artist only in the tooltip."""
-import html, json, subprocess, sys, threading, time
+prev/next/play are the transport buttons (play is larger, prev/next smaller), info is title
+(scrolls when longer than WIDTH) + dimmed artist. All segments print empty text (hidden) when
+nothing plays. "compact" (2nd arg): shorter title, artist only in the tooltip."""
+
+import html
+import json
+import subprocess
+import sys
+import threading
+import time
 
 MODE = sys.argv[1] if len(sys.argv) > 1 else "info"
 COMPACT = "compact" in sys.argv[2:]
-WIDTH, TICK, HOLD = (22 if COMPACT else 30), 0.3, 7   # visible title chars, seconds per step, ticks to rest at the start
+WIDTH, TICK, HOLD = (22 if COMPACT else 30), 0.3, 7  # visible title chars, seconds per step, ticks to rest at the start
 GAP = "   \u2022   "
 FMT = "{{status}}\t{{artist}}\t{{title}}\t{{album}}"
-PLAY, PAUSE = "\U000f040a", "\U000f03e4"   # 󰐊 󰏤 (icon shows the current state)
-PREV, NEXT = "\U000f04ae", "\U000f04ad"    # 󰒮 󰒭
+PLAY, PAUSE = "\U000f040a", "\U000f03e4"  # 󰐊 󰏤 (icon shows the current state)
+PREV, NEXT = "\U000f04ae", "\U000f04ad"  # 󰒮 󰒭
+
 
 def cut(s, n):
-    return s if len(s) <= n else s[:n - 1].rstrip() + "…"
+    return s if len(s) <= n else s[: n - 1].rstrip() + "…"
+
 
 def emit(d):
     print(json.dumps(d, ensure_ascii=False), flush=True)
 
-p = subprocess.Popen(["playerctl", "--follow", "metadata", "--format", FMT],
-                     stdout=subprocess.PIPE, text=True, stderr=subprocess.DEVNULL)
+
+p = subprocess.Popen(
+    ["playerctl", "--follow", "metadata", "--format", FMT], stdout=subprocess.PIPE, text=True, stderr=subprocess.DEVNULL
+)
+
 
 def run_info():
     """Title scrolls through the whole text in a WIDTH-char window while playing."""
     cur = {"line": None}
+
     def reader():
-        for l in p.stdout:
-            cur["line"] = l
+        for raw in p.stdout:
+            cur["line"] = raw
+
     threading.Thread(target=reader, daemon=True).start()
     last_line, off, hold, last_out = None, 0, HOLD, None
     while p.poll() is None:
@@ -42,7 +56,7 @@ def run_info():
                 shown = title
             else:
                 loop_s = title + GAP
-                shown = (loop_s * 2)[off:off + WIDTH]
+                shown = (loop_s * 2)[off : off + WIDTH]
                 if status == "Playing":
                     if off == 0 and hold > 0:
                         hold -= 1
@@ -59,6 +73,7 @@ def run_info():
             last_out = out
         time.sleep(TICK)
 
+
 if MODE == "info":
     run_info()
     sys.exit(0)
@@ -71,8 +86,13 @@ for line in p.stdout:
     status, artist, title, album = parts[:4]
     cls = status.lower()
     if MODE == "play":
-        emit({"text": f"<span size='large'>{PLAY if status == 'Playing' else PAUSE}</span>",
-              "class": cls, "tooltip": "Pause" if status == "Playing" else "Play"})
+        emit(
+            {
+                "text": f"<span size='large'>{PLAY if status == 'Playing' else PAUSE}</span>",
+                "class": cls,
+                "tooltip": "Pause" if status == "Playing" else "Play",
+            }
+        )
     elif MODE == "prev":
         emit({"text": f"<span size='small'>{PREV}</span>", "class": cls, "tooltip": "Previous"})
     elif MODE == "next":

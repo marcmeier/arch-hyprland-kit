@@ -7,18 +7,18 @@ VDIR="${VDIRSYNCER:-vdirsyncer}"
 SYNC_ID="string:x-canonical-private-synchronous:calendar-sync"
 if "$VDIR" sync && "$VDIR" metasync; then
   # recovered: replace the sticky failure notification by a short-lived one
-  [[ -e $STATE ]] && notify-send -h "$SYNC_ID" -u normal -t 4000 "Calendar sync restored" "<small>$(date +%H:%M)</small>" 2>/dev/null
+  [[ -e $STATE ]] && notify-send -h "$SYNC_ID" -u normal -t 4000 "Calendar sync restored" "<small>$(date +%H:%M)</small>" 2> /dev/null
   rm -f "$STATE"
 else
-  if ! secret-tool lookup service nextcloud-caldav user "$USER" >/dev/null 2>&1; then
+  if ! secret-tool lookup service nextcloud-caldav user "$USER" > /dev/null 2>&1; then
     reason="Keyring locked or app password missing (log in again or run calendar-login.sh)"
   else
     reason="vdirsyncer sync failed (run: vdirsyncer sync)"
   fi
   if [[ ! -e $STATE ]]; then
-    notify-send -h "$SYNC_ID" -u critical "Calendar sync failed" "$reason"$'\n'"<small>$(date +%H:%M)</small>" 2>/dev/null || true
+    notify-send -h "$SYNC_ID" -u critical "Calendar sync failed" "$reason"$'\n'"<small>$(date +%H:%M)</small>" 2> /dev/null || true
   fi
   printf '%s\n' "$reason" > "$STATE"
 fi
-pkill -RTMIN+9 waybar 2>/dev/null || true
+pkill -RTMIN+9 waybar 2> /dev/null || true
 [[ ! -e $STATE ]]

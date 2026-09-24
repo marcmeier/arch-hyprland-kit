@@ -10,13 +10,18 @@ Template tokens: @primary@ -> #rrggbb, @primary+88@ -> #rrggbb88 (alpha suffix),
 @primary_hex@ -> rrggbb, @primary_rgba+ee@ -> rgba(rrggbbee) (Hyprland).
 Names: primary, secondary, primary_dim, secondary_dim (dim = 33 % over the base).
 """
-import json, os, re, subprocess, sys
+
+import json
+import os
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 HOME = Path.home()
 CFG = HOME / ".config"
 TH = CFG / "theme"
-BASE = (0x14, 0x16, 0x1c)
+BASE = (0x14, 0x16, 0x1C)
 DEFAULT = {"primary": "#33ccff", "secondary": "#00ff99"}
 
 # template (in theme/templates/) -> destination (relative to ~/.config)
@@ -35,7 +40,7 @@ TARGETS = {
 
 def rgb(h):
     h = h.lstrip("#")
-    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def colors(pal):
@@ -43,7 +48,7 @@ def colors(pal):
     for n in ("primary", "secondary"):
         c = rgb(pal[n])
         out[n] = c
-        out[n + "_dim"] = tuple(round(b + (a - b) * 0.33) for a, b in zip(c, BASE))
+        out[n + "_dim"] = tuple(round(b + (a - b) * 0.33) for a, b in zip(c, BASE, strict=False))
     return out
 
 
@@ -54,7 +59,7 @@ def render(text, cols):
     def sub(m):
         name = m.group(1) + (m.group(2) or "")
         r, g, b = cols[name]
-        hx = "%02x%02x%02x" % (r, g, b)
+        hx = f"{r:02x}{g:02x}{b:02x}"
         kind, plus, alpha, argb = m.group(3), m.group(4), m.group(5), m.group(6)
         if alpha:
             return f"rgba({r}, {g}, {b}, {alpha})"
@@ -65,6 +70,7 @@ def render(text, cols):
         if kind == "_rgba":
             return f"rgba({hx}{(plus or '+ff')[1:]})"
         return "#" + hx + (plus[1:] if plus else "")
+
     return TOKEN.sub(sub, text)
 
 
@@ -89,6 +95,7 @@ SCREEN = _screen_size()
 def recolor_icons(cols):
     """The wlogout hover icons are flat single-colour PNGs: swap the colour, keep the alpha."""
     from PIL import Image
+
     r, g, b = cols["primary"]
     for f in ICONS.glob("*-hover.png"):
         a = Image.open(f).convert("RGBA").getchannel("A")
@@ -100,6 +107,7 @@ def recolor_icons(cols):
 def make_login_image(src):
     """Login screen background: same look as hyprlock (blurred, brightness 0.45, contrast 0.9)."""
     from PIL import Image, ImageFilter, ImageOps
+
     # crop/scale to the screen first (like swaybg "fill"): hyprlock blurs at screen resolution,
     # so the blur strength must not depend on the size of the source photo
     im = ImageOps.fit(Image.open(src).convert("RGB"), SCREEN, Image.LANCZOS)

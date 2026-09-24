@@ -1,0 +1,10 @@
+line-length = 120
+target-version = "py312"
+
+[lint]
+# pycodestyle, pyflakes, import order, bugbear, pyupgrade
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[lint.per-file-ignores]
+# rewrite rules have to match the private files word for word
+"publish/export.py" = ["E501"]

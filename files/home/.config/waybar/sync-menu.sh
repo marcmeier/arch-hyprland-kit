@@ -4,90 +4,112 @@
 # The switches live in ~/.local/state/rebuild (mode, installs) and never travel with the kit.
 REPO=$HOME/rebuild
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/rebuild
-mode=$(cat "$STATE/mode" 2>/dev/null || echo review)
-installs=$(cat "$STATE/installs" 2>/dev/null || echo on)
+mode=$(cat "$STATE/mode" 2> /dev/null || echo review)
+installs=$(cat "$STATE/installs" 2> /dev/null || echo on)
 refresh() { pkill -RTMIN+11 -x waybar; }
 set_mode() {
-    mkdir -p "$STATE"
-    # pausing remembers the mode, resuming brings it back
-    [ "$1" = off ] && [ "$mode" != off ] && echo "$mode" > "$STATE/mode.resume"
-    echo "$1" > "$STATE/mode"; refresh; notify-send -a rebuild "Rebuild sync" "$2"
+  mkdir -p "$STATE"
+  # pausing remembers the mode, resuming brings it back
+  [ "$1" = off ] && [ "$mode" != off ] && echo "$mode" > "$STATE/mode.resume"
+  echo "$1" > "$STATE/mode"
+  refresh
+  notify-send -a rebuild "Rebuild sync" "$2"
 }
 
 action=$1
 if [ -z "$action" ]; then
-    incoming=$(git -C "$REPO" rev-list --count HEAD..origin/main 2>/dev/null || echo 0)
-    mark() { [ "$mode" = "$1" ] && echo "●" || echo "○"; }
-    items=("󰓦  Sync now$( ((incoming)) && echo " (take over $incoming incoming)")")
-    ((incoming)) && items+=("󰈈  Review incoming changes")
-    pending=$(grep -c . "$STATE/install-pending" 2>/dev/null)
-    ((pending)) && items+=("󰏗  Install missing packages ($pending)")
-    # machines that sign incoming commits but are not trusted here yet (auto-snapshot.sh, lib/signing.sh)
-    while read -r fp host; do
-        items+=("󰒃  Trust new machine: $host ($fp)")
-    done < <(awk '$2 == "U" && $4 != "-" { print $3, $4 }' "$STATE/untrusted" 2>/dev/null | sort -u)
-    items+=("$(mark review)  Mode: review GitHub changes first"
-            "$(mark auto)  Mode: automatic"
-            "$(mark off)  Mode: off"
-            "󰏔  Install packages from the lists: $installs → $([ "$installs" = on ] && echo off || echo on)"
-            "󰑓  Check GitHub now"
-            "󰈙  Show sync log"
-            "  Open commits on GitHub")
-    choice=$(printf '%s\n' "${items[@]}" | walker --dmenu -p "Kit sync ($mode)") || exit 0
-    case $choice in
-        *"Sync now"*)      action=now ;;
-        *Review*)          action=diff ;;
-        *"Mode: auto"*)    action=auto ;;
-        *"Mode: review"*)  action=review ;;
-        *"Mode: off"*)     action=off ;;
-        *"Install pack"*)  action=installs ;;
-        *"Install miss"*)  action=install ;;
-        *"Trust new"*)     action=trust; fp=${choice##*(}; fp=${fp%)} ;;
-        *Check*)           action=check ;;
-        *log*)             action=log ;;
-        *GitHub)           action=github ;;
-        *) exit 0 ;;
-    esac
+  incoming=$(git -C "$REPO" rev-list --count HEAD..origin/main 2> /dev/null || echo 0)
+  mark() { [ "$mode" = "$1" ] && echo "●" || echo "○"; }
+  items=("󰓦  Sync now$( ((incoming)) && echo " (take over $incoming incoming)")")
+  ((incoming)) && items+=("󰈈  Review incoming changes")
+  pending=$(grep -c . "$STATE/install-pending" 2> /dev/null)
+  ((pending)) && items+=("󰏗  Install missing packages ($pending)")
+  # machines that sign incoming commits but are not trusted here yet (auto-snapshot.sh, lib/signing.sh)
+  while read -r fp host; do
+    items+=("󰒃  Trust new machine: $host ($fp)")
+  done < <(awk '$2 == "U" && $4 != "-" { print $3, $4 }' "$STATE/untrusted" 2> /dev/null | sort -u)
+  items+=("$(mark review)  Mode: review GitHub changes first"
+  "$(mark auto)  Mode: automatic"
+  "$(mark off)  Mode: off"
+  "󰏔  Install packages from the lists: $installs → $([ "$installs" = on ] && echo off || echo on)"
+  "󰑓  Check GitHub now"
+  "󰈙  Show sync log"
+  "  Open commits on GitHub")
+  choice=$(printf '%s\n' "${items[@]}" | walker --dmenu -p "Kit sync ($mode)") || exit 0
+  case $choice in
+    *"Sync now"*) action=now ;;
+    *Review*) action="diff" ;;
+    *"Mode: auto"*) action=auto ;;
+    *"Mode: review"*) action=review ;;
+    *"Mode: off"*) action=off ;;
+    *"Install pack"*) action=installs ;;
+    *"Install miss"*) action=install ;;
+    *"Trust new"*)
+      action=trust
+      fp=${choice##*(}
+      fp=${fp%)}
+      ;;
+    *Check*) action=check ;;
+    *log*) action=log ;;
+    *GitHub) action=github ;;
+    *) exit 0 ;;
+  esac
 fi
 
 case $action in
-    # the service consumes $STATE/now: one full run, whatever the mode (review: takes over what waits)
-    now)    touch "$STATE/now"; systemctl --user start --no-block rebuild-snapshot.service; refresh ;;
-    toggle) if [ "$mode" = off ]; then
-                resume=$(cat "$STATE/mode.resume" 2>/dev/null || echo review)
-                set_mode "$resume" "Sync resumed ($([ "$resume" = auto ] && echo automatic || echo review first))"
-            else set_mode off "Sync switched off on this machine"; fi ;;
-    auto)   set_mode auto "Sync mode: automatic" ;;
-    review) set_mode review "Sync mode: review first. GitHub changes wait for \"Sync now\"" ;;
-    off)    set_mode off "Sync switched off on this machine" ;;
-    installs)
-        new=$([ "$installs" = on ] && echo off || echo on)
-        echo "$new" > "$STATE/installs"; refresh
-        notify-send -a rebuild "Rebuild sync" "Installing packages from the lists: $new" ;;
-    # what the sync left waiting (auto-snapshot.sh, install_missing): in a terminal, with the password;
-    # yay shows each AUR package's PKGBUILD before building it
-    install)
-        ghostty -e bash -c '
+  # the service consumes $STATE/now: one full run, whatever the mode (review: takes over what waits)
+  now)
+    touch "$STATE/now"
+    systemctl --user start --no-block rebuild-snapshot.service
+    refresh
+    ;;
+  toggle) if [ "$mode" = off ]; then
+    resume=$(cat "$STATE/mode.resume" 2> /dev/null || echo review)
+    set_mode "$resume" "Sync resumed ($([ "$resume" = auto ] && echo automatic || echo review first))"
+  else set_mode off "Sync switched off on this machine"; fi ;;
+  auto) set_mode auto "Sync mode: automatic" ;;
+  review) set_mode review "Sync mode: review first. GitHub changes wait for \"Sync now\"" ;;
+  off) set_mode off "Sync switched off on this machine" ;;
+  installs)
+    new=$([ "$installs" = on ] && echo off || echo on)
+    echo "$new" > "$STATE/installs"
+    refresh
+    notify-send -a rebuild "Rebuild sync" "Installing packages from the lists: $new"
+    ;;
+  # what the sync left waiting (auto-snapshot.sh, install_missing): in a terminal, with the password;
+  # yay shows each AUR package's PKGBUILD before building it
+  install)
+    # shellcheck disable=SC2016 # expanded by the inner bash
+    ghostty -e bash -c '
             p=$1; repo=($(awk "\$1 == \"repo\" { print \$2 }" "$p")); aur=($(awk "\$1 == \"aur\" { print \$2 }" "$p"))
             ((${#repo[@]})) && sudo pacman -S --needed -- "${repo[@]}"
             ((${#aur[@]})) && yay -S --needed -- "${aur[@]}"
             while read -r k x; do pacman -Q "$x" >/dev/null 2>&1 || echo "$k $x"; done < "$p" > "$p.new"; mv "$p.new" "$p"
-            pkill -RTMIN+11 -x waybar; read -rp "Done. Enter closes this window. "' _ "$STATE/install-pending" ;;
-    # compare the fingerprint in a terminal, then one sync takes over what the machine sent
-    trust)
-        fp=${fp:-$2}
-        ghostty -e bash -c '"$1/lib/signing.sh" trust "$2" && touch "$3/now" && systemctl --user start --no-block rebuild-snapshot.service
-            read -rp "Enter closes this window. "' _ "$REPO" "$fp" "$STATE" ;;
-    # fetch only (nothing applied), under the sync's lock so it never races a running sync
-    check)
-        if flock -n "$STATE/lock" timeout 30 git -C "$REPO" fetch -q origin main; then
-            n=$(git -C "$REPO" rev-list --count HEAD..origin/main)
-            notify-send -a rebuild "Rebuild sync" "GitHub checked: $n incoming change(s)"
-        else notify-send -a rebuild "Rebuild sync" "Check failed (sync running or GitHub not reachable)"; fi
-        refresh ;;
-    diff)   ghostty -e bash -c "cd '$REPO' && git -c color.ui=always log --reverse --stat -p HEAD..origin/main | less -R" ;;
-    log)    ghostty -e bash -c "journalctl --user -u rebuild-snapshot.service -n 200 --no-pager | less -R +G" ;;
-    github) url=$(git -C "$REPO" remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#; s#\.git$##')
-            xdg-open "$url/commits/main" ;;
-    *) echo "usage: $0 [now|toggle|auto|review|off|installs|install|trust FINGERPRINT|check|diff|log|github]" >&2; exit 2 ;;
+            pkill -RTMIN+11 -x waybar; read -rp "Done. Enter closes this window. "' _ "$STATE/install-pending"
+    ;;
+  # compare the fingerprint in a terminal, then one sync takes over what the machine sent
+  trust)
+    fp=${fp:-$2}
+    # shellcheck disable=SC2016 # expanded by the inner bash
+    ghostty -e bash -c '"$1/lib/signing.sh" trust "$2" && touch "$3/now" && systemctl --user start --no-block rebuild-snapshot.service
+            read -rp "Enter closes this window. "' _ "$REPO" "$fp" "$STATE"
+    ;;
+  # fetch only (nothing applied), under the sync's lock so it never races a running sync
+  check)
+    if flock -n "$STATE/lock" timeout 30 git -C "$REPO" fetch -q origin main; then
+      n=$(git -C "$REPO" rev-list --count HEAD..origin/main)
+      notify-send -a rebuild "Rebuild sync" "GitHub checked: $n incoming change(s)"
+    else notify-send -a rebuild "Rebuild sync" "Check failed (sync running or GitHub not reachable)"; fi
+    refresh
+    ;;
+  diff) ghostty -e bash -c "cd '$REPO' && git -c color.ui=always log --reverse --stat -p HEAD..origin/main | less -R" ;;
+  log) ghostty -e bash -c "journalctl --user -u rebuild-snapshot.service -n 200 --no-pager | less -R +G" ;;
+  github)
+    url=$(git -C "$REPO" remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#; s#\.git$##')
+    xdg-open "$url/commits/main"
+    ;;
+  *)
+    echo "usage: $0 [now|toggle|auto|review|off|installs|install|trust FINGERPRINT|check|diff|log|github]" >&2
+    exit 2
+    ;;
 esac

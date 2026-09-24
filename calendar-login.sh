@@ -3,7 +3,10 @@
 # discover the calendars, first sync, start the 10-minute sync timer.
 # Run as normal user:  bash calendar-login.sh
 set -euo pipefail
-command -v vdirsyncer >/dev/null && command -v khal >/dev/null || { echo "install first: sudo pacman -S vdirsyncer khal"; exit 1; }
+if ! command -v vdirsyncer > /dev/null || ! command -v khal > /dev/null; then
+  echo "install first: sudo pacman -S vdirsyncer khal"
+  exit 1
+fi
 
 # a kit with the placeholder config (cloud.example.com): ask for the own server and login once
 CFG=~/.config/vdirsyncer/config
@@ -15,7 +18,7 @@ fi
 
 # the app password is never stored in a file, only in the desktop keyring (secret-tool);
 # vdirsyncer's config reads it back from there via "password.fetch"
-if ! secret-tool lookup service nextcloud-caldav user "$USER" >/dev/null 2>&1; then
+if ! secret-tool lookup service nextcloud-caldav user "$USER" > /dev/null 2>&1; then
   echo "Nextcloud -> Settings -> Security -> 'Create new app password', then paste it here:"
   secret-tool store --label="Nextcloud CalDAV (vdirsyncer)" service nextcloud-caldav user "$USER"
 fi
@@ -25,5 +28,6 @@ vdirsyncer metasync
 vdirsyncer sync
 systemctl --user daemon-reload
 systemctl --user enable --now vdirsyncer.timer
-echo; khal printcalendars
+echo
+khal printcalendars
 echo "Done. Open the calendar with: ikhal"

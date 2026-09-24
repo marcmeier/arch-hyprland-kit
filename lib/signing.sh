@@ -21,7 +21,7 @@ STATE="${XDG_STATE_HOME:-$HOME/.local/state}/rebuild"
 ALLOWED=$STATE/allowed_signers
 KEY=$HOME/.ssh/rebuild-signing
 
-fingerprint() { ssh-keygen -lf - 2> /dev/null | awk '{ print $2 }'; }  # public key on stdin
+fingerprint() { ssh-keygen -lf - 2> /dev/null | awk '{ print $2 }'; } # public key on stdin
 
 # host_of FINGERPRINT: the machine whose signers/<host>.pub on GitHub (origin/main) has this key.
 # Nothing for a name this machine already trusts: a trusted machine never gets a second key this
@@ -42,7 +42,8 @@ host_of() {
 add_signer() {
   local key
   key=$(awk '{ print $1, $2 }' "$2")
-  mkdir -p "$STATE"; touch "$ALLOWED"
+  mkdir -p "$STATE"
+  touch "$ALLOWED"
   grep -qF "$key" "$ALLOWED" || echo "$1 namespaces=\"git\" $key" >> "$ALLOWED"
 }
 
@@ -58,7 +59,7 @@ setup() {
   local host f h
   host=$(< /etc/hostname)
   if [[ ! -f $KEY ]]; then
-    mkdir -p -m700 "$HOME/.ssh"
+    [[ -d $HOME/.ssh ]] || mkdir -m700 "$HOME/.ssh"
     ssh-keygen -q -t ed25519 -N '' -C "rebuild-kit $host" -f "$KEY"
   fi
   git config gpg.format ssh
@@ -88,7 +89,10 @@ setup() {
 trust() {
   local fp=${1:?usage: signing.sh trust FINGERPRINT} host answer tmp
   host=$(host_of "$fp")
-  [[ -n $host ]] || { echo "No new machine on GitHub has the key $fp (no signers/*.pub with it, or its name is trusted here already with another key)." >&2; exit 1; }
+  [[ -n $host ]] || {
+    echo "No new machine on GitHub has the key $fp (no signers/*.pub with it, or its name is trusted here already with another key)." >&2
+    exit 1
+  }
   echo "The machine \"$host\" wants this one to take over its kit changes."
   echo "Only trust it if it really is yours. On $host, run:"
   echo
@@ -96,9 +100,14 @@ trust() {
   echo
   echo "It must show exactly: $fp"
   read -rp "Same fingerprint? Then type yes: " answer
-  [[ $answer == yes ]] || { echo "Not trusted."; exit 1; }
-  tmp=$(mktemp); git show "origin/main:signers/$host.pub" > "$tmp"
-  add_signer "$host" "$tmp"; rm -f "$tmp"
+  [[ $answer == yes ]] || {
+    echo "Not trusted."
+    exit 1
+  }
+  tmp=$(mktemp)
+  git show "origin/main:signers/$host.pub" > "$tmp"
+  add_signer "$host" "$tmp"
+  rm -f "$tmp"
   echo "Trusted: $host. The next sync takes over its changes."
 }
 
@@ -106,5 +115,8 @@ case ${1:-} in
   setup) setup "${2:-}" ;;
   trust) trust "${2:-}" ;;
   check) check "${2:?usage: signing.sh check RANGE}" ;;
-  *) echo "usage: $0 setup [--no-sync] | trust FINGERPRINT | check RANGE" >&2; exit 2 ;;
+  *)
+    echo "usage: $0 setup [--no-sync] | trust FINGERPRINT | check RANGE" >&2
+    exit 2
+    ;;
 esac

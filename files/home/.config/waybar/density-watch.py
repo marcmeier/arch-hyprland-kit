@@ -5,8 +5,18 @@ monitors get config-compact.jsonc merged in and are named "compact", which style
 (scoped to window#waybar.compact) keys on. Re-renders on Hyprland monitor
 events (socket2, like window.py) and when a source file is edited; a new style is picked up by
 waybar itself (reload_style_on_change), a new config restarts waybar via launch.sh (SIGUSR2
-reload is unreliable). SIGUSR1 forces a re-render (hypr/display-mode.sh). --once renders and exits (launch.sh runs it before starting waybar)."""
-import json, os, re, select, signal, socket, subprocess, sys, time
+reload is unreliable). SIGUSR1 forces a re-render (hypr/display-mode.sh). --once renders and
+exits (launch.sh runs it before starting waybar)."""
+
+import json
+import os
+import re
+import select
+import signal
+import socket
+import subprocess
+import sys
+import time
 
 CFG = os.path.expanduser("~/.config/waybar")
 OUT = os.path.expanduser("~/.cache/waybar")
@@ -16,17 +26,25 @@ EVENTS = ("monitoradded", "monitoraddedv2", "monitorremoved", "monitorremovedv2"
 
 COMMENT = re.compile(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*.*?\*/', re.S)
 TRAILING = re.compile(r'"(?:\\.|[^"\\])*"|,(?=\s*[}\]])')
-keep_str = lambda m: m.group(0) if m.group(0).startswith('"') else ""
+
+
+def keep_str(m):
+    return m.group(0) if m.group(0).startswith('"') else ""
+
+
 # the effective style.css lives in ~/.cache, so relative url()s must point back to ~/.config/waybar
 REL_URL = re.compile(r'url\("(?![a-z]+:|/)([^"]+)"\)')
 
+
 def load_jsonc(path):
     return json.loads(TRAILING.sub(keep_str, COMMENT.sub(keep_str, open(path).read())))
+
 
 def merge(a, b):
     for k, v in b.items():
         a[k] = merge(a[k], v) if isinstance(v, dict) and isinstance(a.get(k), dict) else v
     return a
+
 
 def prune(cfg):
     for k, v in cfg.items():
@@ -36,28 +54,45 @@ def prune(cfg):
             v["modules"] = [m for m in v.get("modules", []) if m in cfg]
     return cfg
 
+
 def monitors():
     """(name, logical width) of every monitor that shows its own content; None if hyprctl fails."""
     try:
         mons = json.loads(subprocess.run(["hyprctl", "-j", "monitors"], capture_output=True, text=True).stdout or "[]")
     except Exception:
         return None
-    return [(m["name"], (m["height"] if m.get("transform", 0) % 2 else m["width"]) / (m.get("scale") or 1))
-            for m in mons if not m.get("disabled") and m.get("mirrorOf", "none") == "none"]
+    return [
+        (m["name"], (m["height"] if m.get("transform", 0) % 2 else m["width"]) / (m.get("scale") or 1))
+        for m in mons
+        if not m.get("disabled") and m.get("mirrorOf", "none") == "none"
+    ]
 
-SELECTOR = re.compile(r'([^{};]+)\{')
+
+SELECTOR = re.compile(r"([^{};]+)\{")
+
 
 def scope(css, cls):
     """Prefix every rule of css with window#waybar.<cls>, so it only applies to bars with that name."""
-    css = re.sub(r'/\*.*?\*/', '', css, flags=re.S)
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+
     def fix(m):
         if m.group(1).strip().startswith("@"):
             return m.group(0)
-        lead = m.group(1)[:len(m.group(1)) - len(m.group(1).lstrip())]
+        lead = m.group(1)[: len(m.group(1)) - len(m.group(1).lstrip())]
         sels = [s.strip() for s in m.group(1).split(",")]
-        return lead + ", ".join(s.replace("window#waybar", f"window#waybar.{cls}", 1) if s.startswith("window#waybar")
-                         else f"window#waybar.{cls} {s}" for s in sels) + " {"
+        return (
+            lead
+            + ", ".join(
+                s.replace("window#waybar", f"window#waybar.{cls}", 1)
+                if s.startswith("window#waybar")
+                else f"window#waybar.{cls} {s}"
+                for s in sels
+            )
+            + " {"
+        )
+
     return SELECTOR.sub(fix, css)
+
 
 def write(path, text):
     try:
@@ -70,6 +105,7 @@ def write(path, text):
     open(tmp, "w").write(text)
     os.replace(tmp, path)
     return True
+
 
 def render():
     base = load_jsonc(f"{CFG}/config.jsonc")
@@ -90,9 +126,11 @@ def render():
     write(f"{OUT}/style.css", css)
     return write(f"{OUT}/config.jsonc", json.dumps(bars, indent=2))
 
+
 if "--once" in sys.argv:
     render()
     sys.exit(0)
+
 
 def safe_render():
     try:
@@ -101,13 +139,19 @@ def safe_render():
         print(f"density-watch: {e}", file=sys.stderr, flush=True)
         return False
 
+
 def mtimes():
     return [os.path.getmtime(f"{CFG}/{f}") if os.path.exists(f"{CFG}/{f}") else 0 for f in SOURCES]
 
+
 poked = False
+
+
 def poke(*_):
     global poked
     poked = True
+
+
 signal.signal(signal.SIGUSR1, poke)
 os.makedirs(OUT, exist_ok=True)
 open(f"{OUT}/density-watch.pid", "w").write(str(os.getpid()))
@@ -126,7 +170,7 @@ while True:
             break
         buf += d
         *lines, buf = buf.split(b"\n")
-        if any(l.decode(errors="replace").partition(">>")[0] in EVENTS for l in lines):
+        if any(raw.decode(errors="replace").partition(">>")[0] in EVENTS for raw in lines):
             time.sleep(0.5)  # let Hyprland settle mode/scale of the new monitor
             changed = True
     if poked:
@@ -137,5 +181,6 @@ while True:
     if changed and safe_render() and subprocess.run(["pgrep", "-x", "waybar"], capture_output=True).returncode == 0:
         subprocess.run(["pkill", "-x", "waybar"])
         time.sleep(0.3)
-        subprocess.Popen([f"{CFG}/launch.sh"], start_new_session=True,
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(
+            [f"{CFG}/launch.sh"], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )

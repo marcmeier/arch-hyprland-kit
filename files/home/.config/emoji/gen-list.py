@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Erzeugt list.txt: '<emoji> <name>' pro Zeile, durchsuchbar (Name plus Aliase)."""
-import os, emoji
+
+import os
+
+import emoji
+
 out = os.path.expanduser("~/.config/emoji/list.txt")
 with open(out, "w") as f:
     for ch, d in emoji.EMOJI_DATA.items():

@@ -1,0 +1,2 @@
+# follow "source" lines to files given on the command line
+external-sources=true

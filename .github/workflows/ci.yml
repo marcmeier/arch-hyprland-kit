@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck, shfmt and ruff
+        run: |
+          curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz | tar xJ
+          sudo install shellcheck-v0.10.0/shellcheck /usr/local/bin/
+          sudo curl -fsSLo /usr/local/bin/shfmt https://github.com/mvdan/sh/releases/download/v3.10.0/shfmt_v3.10.0_linux_amd64
+          sudo chmod +x /usr/local/bin/shfmt
+          pipx install ruff==0.16.8
+      - name: Lint
+        run: tests/lint.sh
+
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats
+        run: git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats"
+      - name: Tests
+        run: '"$RUNNER_TEMP/bats/bin/bats" tests/'

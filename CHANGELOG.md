@@ -2,6 +2,20 @@
 
 Versions follow the [releases](../../releases), which have the full notes and upgrade steps.
 
+## v1.5.0 (2026-09-24)
+
+### Fixed
+- Since v1.4.0 the sync failed on every run in a kit without a notes folder, which is the default in this template. The new deletion check in `snapshot.sh` looked at `files/docs`, which does not exist then. The new tests found it.
+
+### Added
+- Tests (`tests/`, bats): the shared-list and deletion rules, `rebuild-install`'s argument check, and the sync itself, run with two simulated machines and a bare repository in a sandbox.
+- CI on every push: shellcheck, shfmt, ruff and the tests.
+
+### Changed
+- All shell scripts are formatted with shfmt and all Python files with ruff. shellcheck and ruff report nothing. The formatting was checked to change no behaviour (`shfmt --minify` and the Python AST are identical before and after).
+- `snapshot.sh` no longer stops on a machine without AUR packages.
+- `restore.sh` and `install-base.sh` pass package lists as arrays instead of relying on word splitting.
+
 ## v1.4.1 (2026-09-24)
 
 ### Security

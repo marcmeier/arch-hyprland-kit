@@ -1,0 +1,19 @@
+# driftless-system: this kit's system files as a package, so pacman installs, updates and removes
+# them like any other. Everything is a drop-in next to the distribution's own files (sysctl.d,
+# service.d, conf.d ...); /etc files of other packages are not touched.
+# Built by "driftless system" (lib/system.sh), which sets the version from the repository.
+pkgname=driftless-system
+pkgver=${DRIFTLESS_SYSTEM_VERSION:-0}
+pkgrel=1
+pkgdesc="System drop-ins of the driftless kit: greeter, SMART warnings, zram, mirrors, initramfs hooks"
+arch=(any)
+license=(MIT)
+depends=(bash polkit systemd greetd greetd-regreet cage smartmontools zram-generator reflector mkinitcpio)
+backup=(etc/security/limits.d/20-driftless-games.conf etc/mkinitcpio.conf.d/driftless.conf)
+install=driftless-system.install
+
+package() {
+  cp -a "$startdir/files/." "$pkgdir/"
+  chmod 755 "$pkgdir"/usr/lib/driftless/*
+  install -d -m755 "$pkgdir/var/lib/driftless/greeter"
+}

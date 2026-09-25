@@ -1,6 +1,0 @@
-[Unit]
-Description=Sync Nextcloud calendars (vdirsyncer)
-
-[Service]
-Type=oneshot
-ExecStart=%h/.config/waybar/calendar-sync.sh

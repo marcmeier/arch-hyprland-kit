@@ -1,75 +1,92 @@
 # shellcheck shell=bash
-# Test sandbox: a bare repository as "GitHub" and machines with their own fake home, all under
-# $BATS_TEST_TMPDIR. System tools the kit calls (pacman, dconf, notify-send, ...) are stubs.
+# Test sandbox: a bare repository as "GitHub" and machines with their own home, all under
+# $BATS_TEST_TMPDIR. System tools (pacman, systemctl, notify-send, ...) are stubs; git and the SSH
+# signing are real.
 
-KIT_SRC=$(cd "$BATS_TEST_DIRNAME/.." && pwd)
-# where the kit lives in a home, as the sync's systemd unit starts it
-KIT_REL=$(sed -n 's#^ExecStart=%h/\(.*\)/auto-snapshot.sh$#\1#p' "$KIT_SRC/files/home/.config/systemd/user/rebuild-snapshot.service")
+SRC=$(cd "$BATS_TEST_DIRNAME/.." && pwd)
 
 setup_sandbox() {
   T=$BATS_TEST_TMPDIR
-  mkdir -p "$T/bin"
+  mkdir -p "$T/bin" "$T/hw/proc" "$T/hw/sys"
   local c
-  for c in notify-send pkexec hyprctl makoctl systemd-run setsid pkill zip systemctl; do
+  for c in notify-send hyprctl makoctl pkill systemd-run walker dbus-run-session; do
     printf '#!/bin/sh\nexit 0\n' > "$T/bin/$c"
   done
-  printf '#!/bin/sh\nexit 1\n' > "$T/bin/code" # VS Code not installed
-  # pacman: repo packages from $PACMAN_REPO, AUR packages from $PACMAN_AUR (space separated)
-  cat > "$T/bin/pacman" << 'EOF'
+  # no user manager in the sandbox (as during bootstrap): every --user call fails, system calls succeed
+  printf '#!/bin/sh\ncase "$*" in *--user*) exit 1 ;; esac\nexit 0\n' > "$T/bin/systemctl"
+  # pkexec: records what it was asked to run
+  printf '#!/bin/sh\necho "$*" >> "%s/pkexec.log"\nexit 0\n' "$T" > "$T/bin/pkexec"
+  # pacman: installed = $PACMAN_PKGS (repo) and $PACMAN_AUR, all explicitly installed
+  cat > "$T/bin/pacman" << 'STUB'
 #!/bin/sh
 case "$1" in
-  -Qqen) printf '%s\n' ${PACMAN_REPO:-base git} ;;
-  -Qqem) [ -n "${PACMAN_AUR-yay}" ] && printf '%s\n' ${PACMAN_AUR-yay} ;;
-  -Qq) printf '%s\n' ${PACMAN_REPO:-base git} ${PACMAN_AUR-yay} ;;
+  -Qq | -Qqe) printf '%s\n' ${PACMAN_PKGS-base git} ${PACMAN_AUR-} ;;
+  -Qqm) printf '%s\n' ${PACMAN_AUR-} ;;
 esac
 exit 0
-EOF
-  # dconf: "dump" prints $HOME/dconf.live, "load" replaces it
-  cat > "$T/bin/dconf" << 'EOF'
+STUB
+  cat > "$T/bin/dconf" << 'STUB'
 #!/bin/sh
 case "$1" in
   dump) cat "$HOME/dconf.live" 2> /dev/null ;;
   load) cat > "$HOME/dconf.live" ;;
 esac
-EOF
+STUB
   chmod +x "$T"/bin/*
   export PATH="$T/bin:$PATH"
-  export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
-  export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
-  export GIT_CONFIG_GLOBAL=/dev/null
+  export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+  # the same hardware on every machine: an AMD CPU, nothing else
+  echo "vendor_id	: AuthenticAMD" > "$T/hw/proc/cpuinfo"
+  export HW_PROC=$T/hw/proc HW_SYS=$T/hw/sys HW_VIRT_OVERRIDE=""
 
-  # "GitHub", seeded with the kit as it is in the working tree
+  # "GitHub", seeded with the working tree (committed or not, so tests see the current code)
   git init -q --bare -b main "$T/origin.git"
   mkdir "$T/seed"
-  (cd "$KIT_SRC" && git ls-files -co --exclude-standard -z | xargs -0 cp --parents -a -t "$T/seed")
-  sed -i 's#^KIT_ZIP=.*#KIT_ZIP=""#' "$T/seed/kit.conf"
+  (cd "$SRC" && git ls-files -co --exclude-standard -z | xargs -0 cp --parents -a -t "$T/seed")
+  [[ ! -f $T/seed/personal/config ]] || sed -i 's#^BUNDLE=.*#BUNDLE=""#' "$T/seed/personal/config"
+  rm -f "$T/seed/signers/"*.pub
   git -C "$T/seed" init -q -b main
-  git -C "$T/seed" add -A
-  git -C "$T/seed" commit -q -m seed
+  git -C "$T/seed" -c user.name=seed -c user.email=seed@example.com add -A
+  git -C "$T/seed" -c user.name=seed -c user.email=seed@example.com commit -q -m seed
   git -C "$T/seed" push -q "$T/origin.git" main
 }
 
-# machine NAME: a fake home with the kit cloned where the unit expects it and every kit file live
-machine() {
-  local home=$T/$1/home
-  mkdir -p "$home"
-  git clone -q "$T/origin.git" "$home/$KIT_REL"
-  cp -a "$home/$KIT_REL/files/home/." "$home/"
-  printf '[org/gnome/desktop/interface]\ngtk-theme=Adwaita-dark\n\n[org/gnome/nautilus/window-state]\nwindow-size=(800, 600)\nmaximized=false\n' > "$home/dconf.live"
-}
+home() { echo "$T/$1/home"; }
+repo() { echo "$T/$1/home/.local/share/driftless"; }
 
-# sync_on NAME [ARGS]: one run of auto-snapshot.sh on machine NAME
-sync_on() {
+# dl MACHINE ARGS...: the driftless command on MACHINE
+dl() {
   local m=$1
   shift
-  HOME="$T/$m/home" XDG_STATE_HOME="$T/$m/state" "$T/$m/home/$KIT_REL/auto-snapshot.sh" "$@"
+  HOME="$T/$m/home" XDG_STATE_HOME="$T/$m/state" DRIFTLESS_HOST="$m" \
+    DRIFTLESS_SIGNING_KEY="$T/$m/home/.ssh/driftless-signing" "$(repo "$m")/driftless" "$@"
 }
 
-home() { echo "$T/$1/home"; }
-state() { cat "$T/$1/state/rebuild/$2" 2> /dev/null; }
+# machine NAME: a home with the repository cloned, linked and signing set up
+machine() {
+  local m=$1
+  mkdir -p "$(home "$m")/.local/share"
+  git clone -q "$T/origin.git" "$(repo "$m")"
+  git -C "$(repo "$m")" config user.name "$m"
+  git -C "$(repo "$m")" config user.email "$m@example.com"
+  dl "$m" link > /dev/null
+  dl "$m" signing setup > /dev/null
+}
+
+# trust_all: every machine trusts every other one (what "Trust new machine" does)
+trust_all() {
+  local m other
+  for m in "$@"; do
+    for other in "$@"; do
+      [[ $m == "$other" ]] && continue
+      echo "$other namespaces=\"git\" $(awk '{ print $1, $2 }' "$(home "$other")/.ssh/driftless-signing.pub")" >> "$T/$m/state/driftless/allowed_signers"
+    done
+  done
+}
+
+state() { cat "$T/$1/state/driftless/$2" 2> /dev/null; }
 result() { state "$1" status | sed -n 's/^result=//p'; }
 on_github() { git -C "$T/origin.git" cat-file -e "main:$1" 2> /dev/null; }
-github_file() { git -C "$T/origin.git" show "main:$1"; }
-github_has() { github_file "$1" | grep -qF -- "$2"; }
+github_has() { git -C "$T/origin.git" show "main:$1" | grep -qF -- "$2"; }
 # refute CMD...: fails when CMD succeeds (a plain "! CMD" never fails a bats test)
 refute() { if "$@"; then return 1; fi; }

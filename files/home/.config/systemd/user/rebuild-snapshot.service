@@ -1,7 +1,0 @@
-[Unit]
-Description=Sync rebuild kit with GitHub: record local changes, apply the GitHub state, push
-
-[Service]
-Type=oneshot
-ExecStart=%h/rebuild/auto-snapshot.sh
-Nice=15

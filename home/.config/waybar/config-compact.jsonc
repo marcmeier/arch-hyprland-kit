@@ -1,0 +1,49 @@
+// -*- mode: jsonc -*-
+// Compact layout for narrow monitors, merged over config.jsonc by render.py
+// (objects merge key by key, lists replace; modules without a definition, e.g. battery
+// on a desktop, are dropped). Fewer, grouped pills; details live in the tooltips.
+{
+    "spacing": 6,
+
+    "modules-left": ["group/user", "group/workspaces", "custom/window"],
+    "modules-center": ["group/datetime"],
+    "modules-right": ["group/media", "custom/claude", "group/status", "group/system"],
+
+    // avatar only, the name is decoration
+    "group/user": { "modules": ["custom/avatar"] },
+
+    // app glyph + app name; the full title stays in the tooltip (and the media pill shows what plays)
+    "custom/window": { "exec": "cat \"$XDG_RUNTIME_DIR/driftless-bar/window-compact.json\" 2> /dev/null" },
+
+    // one island: time · weather · agenda (icon lights up when an event is coming, list in the tooltip)
+    "group/datetime": { "modules": ["clock", "custom/weather", "custom/calendar"] },
+    "custom/calendar": { "exec": "~/.config/waybar/calendar.sh compact" },
+
+    // play/pause + scrolling title; scroll on the title skips tracks
+    "group/media": { "modules": ["custom/media-play", "custom/media"] },
+    "custom/media": { "exec": "cat \"$XDG_RUNTIME_DIR/driftless-bar/media-compact.json\" 2> /dev/null" },
+
+    // only the limit that is closer to running out
+    "custom/claude": { "exec": "~/.config/waybar/claude-usage.py compact" },
+
+    // quick-settings style: monochrome icons, numbers in the tooltips (battery keeps its %)
+    "group/status": {
+        "orientation": "horizontal",
+        "modules": ["network", "pulseaudio", "pulseaudio#mic", "battery"]
+    },
+    "network": {
+        "format-wifi": "",
+        "tooltip-format-wifi": "{essid}  ·  {signalStrength}%\n{ipaddr}/{cidr}"
+    },
+    "pulseaudio": {
+        "format": "{icon}",
+        "format-muted": "",
+        "tooltip-format": "{desc}  ·  {volume}%\nClick: next output  ·  Middle: mixer  ·  Right: mute  ·  Scroll: volume"
+    },
+
+    "group/system": {
+        "orientation": "horizontal",
+        "modules": ["tray", "custom/updates", "custom/sync", "idle_inhibitor", "custom/notifications", "custom/power"]
+    },
+    "tray": { "spacing": 8 }
+}

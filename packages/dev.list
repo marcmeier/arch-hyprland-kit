@@ -1,0 +1,10 @@
+# development and virtual machines
+dnsmasq
+edk2-ovmf
+meson
+pyside6
+python-build
+python-installer
+qemu-desktop
+qt6-tools
+wev

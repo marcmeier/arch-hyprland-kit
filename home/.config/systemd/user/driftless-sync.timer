@@ -1,0 +1,11 @@
+[Unit]
+Description=driftless sync, after login and then hourly
+
+[Timer]
+OnStartupSec=3min
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

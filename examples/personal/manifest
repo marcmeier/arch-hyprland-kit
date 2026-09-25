@@ -1,0 +1,4 @@
+# personal/manifest: your own lines on top of the manifest (format: lib/common.sh). Examples:
+# link .face personal/face.png                    your avatar (login screen and bar)
+# link .config/khal personal/home/.config/khal    a config folder only you need
+# group mine                                      your own packages, personal/packages/mine.list

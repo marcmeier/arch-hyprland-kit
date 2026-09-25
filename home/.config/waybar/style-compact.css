@@ -1,0 +1,78 @@
+/* Compact bar (the bars named "compact" in render.py, on narrow screens). Imported by style.css;
+   every rule is scoped to window#waybar.compact, so nothing here reaches the spacious bar, and the
+   scoped rules are more specific than the ones in style.css.
+   Goes with config-compact.jsonc: groups carry the pill surface, their members stay flat, icons are
+   monochrome and colour only marks a state (muted, low battery, ...). */
+window#waybar.compact * { font-size: 13px; }
+
+window#waybar.compact #user, window#waybar.compact #workspaces, window#waybar.compact #custom-window, window#waybar.compact #datetime, window#waybar.compact #custom-claude, window#waybar.compact #status, window#waybar.compact #system {
+    background: @surface;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 0 10px;
+}
+window#waybar.compact #datetime #custom-weather, window#waybar.compact #datetime #custom-calendar, window#waybar.compact #status #network, window#waybar.compact #status #battery, window#waybar.compact #system #tray, window#waybar.compact #system #custom-updates, window#waybar.compact #system #custom-power {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+}
+
+/* ---- left: avatar, workspaces, app ---- */
+window#waybar.compact #user { padding: 0 4px; }
+window#waybar.compact #custom-avatar { margin: 4px 0; }
+window#waybar.compact #workspaces { padding: 0 4px; }
+window#waybar.compact #workspaces .ws { padding: 0 7px; }
+window#waybar.compact #workspaces .ws.active { padding: 0 10px; }
+window#waybar.compact #custom-window { padding: 0 12px 0 10px; }
+
+/* ---- centre island: time | weather | agenda ---- */
+window#waybar.compact #datetime { padding: 0 4px; }
+window#waybar.compact #clock {
+    font-size: 13.5px;
+    letter-spacing: 0.5px;
+    padding: 0 10px 0 10px;
+}
+window#waybar.compact #datetime #custom-weather {
+    padding: 0 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+window#waybar.compact #datetime #custom-calendar {
+    color: @dim;
+    padding: 0 10px 0 8px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+window#waybar.compact #datetime #custom-calendar.next { color: @accent2; }
+window#waybar.compact #datetime #custom-calendar.error { color: @warn; }
+
+/* ---- media: play + title ---- */
+window#waybar.compact #custom-media-play {
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px 0 0 14px;
+    padding: 0 6px 0 12px;
+}
+window#waybar.compact #custom-media { padding: 0 12px 0 4px; }
+
+window#waybar.compact #custom-claude { padding: 0 12px; }
+
+/* ---- status: network, volume, mic, battery ---- */
+window#waybar.compact #status { padding: 0 5px; }
+window#waybar.compact #status #network, window#waybar.compact #status #pulseaudio, window#waybar.compact #status #battery { color: @text; padding: 0 7px; }
+window#waybar.compact #status #pulseaudio.muted, window#waybar.compact #status #pulseaudio.mic { color: @dim; }
+window#waybar.compact #status #pulseaudio.mic.source-muted { color: @crit; }
+window#waybar.compact #status #network.disconnected { color: @warn; }
+window#waybar.compact #status #battery.charging, window#waybar.compact #status #battery.plugged { color: @accent2; }
+window#waybar.compact #status #battery.warning:not(.charging) { color: @warn; }
+window#waybar.compact #status #battery.critical:not(.charging) { color: @crit; }
+window#waybar.compact #status:hover, window#waybar.compact #system:hover { background: rgba(40, 44, 54, 0.9); }
+
+/* ---- system: tray, updates, idle, notifications, power ---- */
+window#waybar.compact #system { padding: 0 4px 0 8px; }
+window#waybar.compact #system #tray, window#waybar.compact #system #custom-updates, window#waybar.compact #system #custom-sync { padding: 0 6px; }
+window#waybar.compact #system #custom-updates.none { padding: 0; }
+window#waybar.compact #system #idle_inhibitor, window#waybar.compact #system #custom-notifications { padding: 0 6px; }
+window#waybar.compact #system #custom-power {
+    color: @crit;
+    padding: 0 9px;
+    margin: 4px 0 4px 4px;
+}
+window#waybar.compact #system #custom-power:hover { background: @crit; color: #0b0d10; }

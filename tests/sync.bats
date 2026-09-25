@@ -1,164 +1,153 @@
 #!/usr/bin/env bats
-# auto-snapshot.sh between two machines A and B and a bare repository as GitHub (helpers.bash)
+# lib/sync.sh between two machines A and B and a bare repository as GitHub (helpers.bash)
 
 setup() {
   load helpers
   setup_sandbox
   machine A
   machine B
+  trust_all A B
+  dl A mode auto > /dev/null
+  dl B mode auto > /dev/null
+  # both machines publish their signing key once
+  dl A sync > /dev/null
+  dl B sync > /dev/null
+  dl A sync > /dev/null
 }
 
-# khal is the example of a config folder that only A has
-give_A_khal() {
-  mkdir -p "$(home A)/.config/khal"
-  echo "[calendars]" > "$(home A)/.config/khal/config"
-  rm -rf "$(home B)/.config/khal"
-  sync_on A --now
-}
+hypr() { echo "$(home "$1")/.config/hypr/hyprland.lua"; }
 
-@test "a first run on a fresh clone succeeds" {
-  run sync_on A --now
+@test "an edit on A reaches B's live config through its link" {
+  echo "-- from A" >> "$(hypr A)"
+  run dl A sync
   [ "$status" -eq 0 ]
   [ "$(result A)" = ok ]
+  github_has home/.config/hypr/hyprland.lua "-- from A"
+  dl B sync
+  grep -qx -- "-- from A" "$(hypr B)"
 }
 
-@test "snapshot works on a machine without AUR packages" {
-  PACMAN_AUR="" run sync_on A --now
-  [ "$status" -eq 0 ]
-  [ "$(result A)" = ok ]
+@test "the commit names the machine and what changed, and is signed" {
+  echo "-- x" >> "$(hypr A)"
+  dl A sync
+  run git -C "$T/origin.git" log -1 --format='%s|%(trailers:key=Driftless-Host,valueonly,separator=)' main
+  [ "$output" = "A: hypr/hyprland.lua|A" ]
+  # checked where the list of trusted keys is: on B
+  run git -C "$(repo B)" -c gpg.ssh.allowedSignersFile="$T/B/state/driftless/allowed_signers" log -1 --format=%G? origin/main
+  [ "$output" = G ]
 }
 
-@test "the sync commits on a fresh install without a git identity" {
-  # a new machine has no user.name/user.email; the sandbox otherwise sets them in the environment
-  unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
-  echo "-- test: fresh machine" >> "$(home A)/.config/hypr/hyprland.lua"
-  run sync_on A --now
-  [ "$status" -eq 0 ]
-  [ "$(result A)" = ok ]
-  github_has files/home/.config/hypr/hyprland.lua "-- test: fresh machine"
+@test "a new file is never committed by itself" {
+  echo "secret stuff" > "$(home A)/.config/hypr/new-file.conf"
+  dl A sync
+  refute on_github home/.config/hypr/new-file.conf
 }
 
-@test "the sync works without a notes folder, as in the public template" {
-  cd "$(home A)/$KIT_REL"
-  sed -i 's/^KIT_NOTES_REL=.*/KIT_NOTES_REL=""/' kit.conf
-  git rm -rq --ignore-unmatch files/docs files/CLAUDE.md
-  git add -A
-  git diff --cached --quiet || git commit -qm "no notes folder" # the template has none already
-  run sync_on A --now
-  [ "$status" -eq 0 ]
-  [ "$(result A)" = ok ]
-}
-
-@test "a config folder one machine never had is not deleted on the others" {
-  give_A_khal
-  on_github files/home/.config/khal/config
-  sync_on B --now
-  on_github files/home/.config/khal/config
-  sync_on A --now
-  [ -f "$(home A)/.config/khal/config" ]
-}
-
-@test "a real deletion reaches the other machines, with a backup" {
-  give_A_khal
-  sync_on B --adopt # B takes over khal
-  [ -f "$(home B)/.config/khal/config" ]
-  rm -rf "$(home B)/.config/khal"
-  sync_on B --now
-  refute on_github files/home/.config/khal/config
-  sync_on A --now
-  [ ! -e "$(home A)/.config/khal/config" ]
-  ls "$T"/A/state/rebuild/backup/*/.config/khal/config
-}
-
-@test "review first (default): incoming changes wait until Sync now" {
-  sync_on B --now
-  echo "-- test: from A" >> "$(home A)/.config/hypr/hyprland.lua"
-  sync_on A --now
-  cp "$(home B)/.config/hypr/hyprland.lua" "$T/before.lua"
-  sync_on B
-  [ "$(result B)" = held ]
-  cmp "$T/before.lua" "$(home B)/.config/hypr/hyprland.lua"
-  sync_on B --now
-  grep -qF -- "-- test: from A" "$(home B)/.config/hypr/hyprland.lua"
-  ls "$T"/B/state/rebuild/backup/*/.config/hypr/hyprland.lua
-}
-
-@test "same lines changed on both machines: stop, name the file, change nothing" {
-  sync_on B --now
-  echo "-- test: A says hi" >> "$(home A)/.config/hypr/hyprland.lua"
-  sync_on A --now
-  echo "-- test: B says hi" >> "$(home B)/.config/hypr/hyprland.lua"
-  run sync_on B --now
+@test "a staged change that looks like a secret stops the run, nothing committed" {
+  echo 'token = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"' >> "$(hypr A)"
+  run dl A sync
   [ "$status" -ne 0 ]
-  [ "$(result B)" = conflict ]
-  [ "$(state B conflict)" = files/home/.config/hypr/hyprland.lua ]
-  grep -qF -- "-- test: B says hi" "$(home B)/.config/hypr/hyprland.lua" # not overwritten
-  github_has files/home/.config/hypr/hyprland.lua "-- test: A says hi"
-  [ ! -e "$(home B)/$KIT_REL/.git/MERGE_HEAD" ] # merge aborted cleanly
+  [ "$(result A)" = secret ]
+  refute github_has home/.config/hypr/hyprland.lua ghp_
+  [ -z "$(git -C "$(repo A)" diff --cached --name-only)" ]
 }
 
-@test "the sync pill names the conflicting file" {
-  sync_on B --now
-  echo "-- test: A" >> "$(home A)/.config/hypr/hyprland.lua"
-  sync_on A --now
-  echo "-- test: B" >> "$(home B)/.config/hypr/hyprland.lua"
-  sync_on B --now || true
-  run env HOME="$(home B)" XDG_STATE_HOME="$T/B/state" python3 "$(home B)/.config/waybar/sync.py"
-  [[ $output == *'"class": "error"'* ]]
-  [[ $output == *hyprland.lua* ]]
-}
-
-@test "window geometry stays out of the kit" {
-  sync_on A --now
-  refute github_has files/dconf.ini window-size
-  github_has files/dconf.ini gtk-theme
-}
-
-@test "only the last 10 backups are kept" {
-  sync_on B --now
-  mkdir -p "$T/B/state/rebuild/backup"
-  local i
-  for i in $(seq -w 1 15); do mkdir "$T/B/state/rebuild/backup/2000-01-${i}T000000"; done
-  echo "-- test: change" >> "$(home A)/.config/hypr/hyprland.lua"
-  sync_on A --now
-  sync_on B --now
-  [ "$(ls "$T/B/state/rebuild/backup" | wc -l)" -eq 10 ]
-  ls "$T/B/state/rebuild/backup" | grep -qv '^2000-' # the new one is among them
+@test "review mode (default): incoming changes wait until sync --now" {
+  dl B mode review
+  echo "-- from A" >> "$(hypr A)"
+  dl A sync
+  dl B sync
+  [ "$(result B)" = held ]
+  refute grep -qx -- "-- from A" "$(hypr B)"
+  dl B sync --now
+  grep -qx -- "-- from A" "$(hypr B)"
 }
 
 @test "mode off: the timer does nothing" {
-  mkdir -p "$T/A/state/rebuild"
-  echo off > "$T/A/state/rebuild/mode"
-  echo "-- test: local change" >> "$(home A)/.config/hypr/hyprland.lua"
-  sync_on A
-  [ "$(result A)" = paused ]
-  refute github_has files/home/.config/hypr/hyprland.lua "-- test: local change"
+  dl B mode off
+  echo "-- x" >> "$(hypr B)"
+  dl B sync
+  [ "$(result B)" = paused ]
+  refute github_has home/.config/hypr/hyprland.lua "-- x"
 }
 
-@test "wallpaper and theme stay on each machine" {
-  sync_on B --now
-  echo "picture of A" > "$(home A)/.config/wall.png"
-  echo "# colours of A" >> "$(home A)/.config/mako/config"
-  echo "hover of A" > "$(home A)/.config/wlogout/icons/lock-hover.png"
-  sync_on A --now
-  [ "$(result A)" = ok ]
-  refute github_has files/home/.config/wall.png "picture of A"
-  refute github_has files/home/.config/mako/config "# colours of A"
-  refute github_has files/home/.config/wlogout/icons/lock-hover.png "hover of A"
-  grep -qF "picture of A" "$(home A)/.config/wall.png"
-  echo "picture of B" > "$(home B)/.config/wall.png"
-  sync_on B --now
-  [ "$(result B)" = ok ]
-  grep -qF "picture of B" "$(home B)/.config/wall.png"
+@test "edits on both machines in different places: linear history, both arrive" {
+  echo "-- from A" >> "$(hypr A)"
+  echo "# from B" >> "$(home B)/.bashrc"
+  dl A sync
+  dl B sync
+  dl A sync
+  grep -qx -- "# from B" "$(home A)/.bashrc"
+  grep -qx -- "-- from A" "$(hypr B)"
+  [ -z "$(git -C "$T/origin.git" log --merges --format=%h main)" ]
 }
 
-@test "a changed theme template reaches the other machines in their own colours" {
-  sync_on B --now
-  printf '{"primary": "#123456", "secondary": "#654321", "source": "B"}\n' > "$(home B)/.config/theme/colors.json"
-  echo "# from the template: @primary@" >> "$(home A)/.config/theme/templates/mako"
-  sync_on A --now
-  github_has files/home/.config/theme/templates/mako "# from the template"
-  sync_on B --now
-  grep -qF "# from the template: #123456" "$(home B)/.config/mako/config"
-  refute github_has files/home/.config/theme/colors.json "#123456"
+@test "the same line changed on both: stop, name the file, change nothing" {
+  sed -i '1s/.*/-- A was here/' "$(hypr A)"
+  sed -i '1s/.*/-- B was here/' "$(hypr B)"
+  dl A sync
+  run dl B sync
+  [ "$status" -ne 0 ]
+  [ "$(result B)" = conflict ]
+  grep -qx home/.config/hypr/hyprland.lua "$T/B/state/driftless/conflict"
+  [ "$(head -1 "$(hypr B)")" = "-- B was here" ]
+  [ -z "$(git -C "$(repo B)" status --porcelain -- home)" ] # nothing half-applied
+}
+
+@test "a commit nobody's machine signed is not taken over" {
+  git clone -q "$T/origin.git" "$T/intruder"
+  echo "-- evil" >> "$T/intruder/home/.config/hypr/hyprland.lua"
+  git -C "$T/intruder" -c user.name=x -c user.email=x@x commit -qam evil
+  git -C "$T/intruder" push -q origin main
+  dl B sync
+  [ "$(result B)" = untrusted ]
+  refute grep -q evil "$(hypr B)"
+}
+
+@test "a new machine's commits wait until it is trusted" {
+  machine C
+  echo "-- from C" >> "$(hypr C)"
+  dl C mode auto
+  dl C sync
+  dl A sync
+  [ "$(result A)" = joining ]
+  refute grep -q "from C" "$(hypr A)"
+}
+
+@test "a deletion reaches the other machine" {
+  rm "$(home A)/.config/hypr/emoji-picker.sh"
+  dl A sync
+  refute on_github home/.config/hypr/emoji-picker.sh
+  dl B sync
+  [ ! -e "$(home B)/.config/hypr/emoji-picker.sh" ]
+}
+
+@test "a program replaced a linked file: its content is committed and the link restored" {
+  rm "$(home A)/.config/mimeapps.list"
+  echo "[Default Applications]" > "$(home A)/.config/mimeapps.list"
+  dl A sync
+  [ -L "$(home A)/.config/mimeapps.list" ]
+  github_has home/.config/mimeapps.list "[Default Applications]"
+}
+
+@test "a new manifest line from A is linked on B" {
+  mkdir -p "$(repo A)/home/.config/newapp"
+  echo x > "$(repo A)/home/.config/newapp/config"
+  echo "link .config/newapp" >> "$(repo A)/manifest"
+  git -C "$(repo A)" add -A && git -C "$(repo A)" commit -qm "newapp"
+  dl A sync
+  dl B sync
+  [ -L "$(home B)/.config/newapp" ]
+}
+
+@test "a new package in a list asks for the password once, AUR packages wait" {
+  echo "newpkg" >> "$(repo A)/packages/desktop.list"
+  echo "aur:newaur" >> "$(repo A)/packages/desktop.list"
+  dl A sync
+  mkdir -p "$(home B)/.."
+  # driftless-system is "installed" in this test
+  mkdir -p "$T/usr-lib" && touch "$T/usr-lib/install-packages"
+  PACMAN_PKGS="$(cat "$(repo B)"/packages/*.list | grep -v '^#' | grep -v '^aur:' | grep -vx newpkg)" dl B sync
+  grep -qx "aur newaur" "$T/B/state/driftless/install-pending"
+  grep -qx "repo newpkg" "$T/B/state/driftless/install-pending"
 }

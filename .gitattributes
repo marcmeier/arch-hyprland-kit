@@ -1,2 +1,3 @@
-# shared lists: when two machines add packages at the same spot, keep both lines (snapshot.sh re-sorts)
-packages/*.txt merge=union
+# package lists are sets: when two machines add a line at the same spot, keep both
+packages/*.list merge=union
+personal/packages/*.list merge=union

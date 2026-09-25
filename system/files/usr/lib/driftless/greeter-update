@@ -1,0 +1,21 @@
+#!/bin/bash
+# Renders the login screen's files in /var/lib/driftless/greeter: regreet.toml with this machine's
+# hostname, and (given the user's theme folder) the blurred wallpaper, the colours and the avatar.
+#   greeter-update                 only regreet.toml (package install, hostname change)
+#   greeter-update THEME_CACHE     also login.png, regreet.css, avatar.png from ~/.cache/theme
+# Called through pkexec by set-wallpaper (polkit action org.driftless.greeter-update).
+set -euo pipefail
+export PATH=/usr/bin
+out=/var/lib/driftless/greeter
+install -d -m755 "$out"
+sed "s/@HOSTNAME@/$(< /etc/hostname)/" /usr/share/driftless/greetd/regreet.toml > "$out/regreet.toml.new"
+mv "$out/regreet.toml.new" "$out/regreet.toml"
+[[ -n ${1:-} ]] || exit 0
+for f in login.png regreet.css avatar.png; do
+  src=$1/$f
+  # plain files only: no links into files the greeter should not show
+  [[ -f $src && ! -L $src ]] || continue
+  (($(stat -c %s "$src") < 64 * 1024 * 1024)) || continue
+  install -m644 "$src" "$out/$f.new"
+  mv "$out/$f.new" "$out/$f"
+done

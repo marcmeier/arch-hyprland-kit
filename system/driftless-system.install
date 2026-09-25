@@ -1,0 +1,25 @@
+# pacman runs these as root after installing or updating driftless-system
+
+_driftless_apply() {
+  # the login keyring unlocks with the login password (greetd's PAM file is the admin's to edit,
+  # pacman keeps local changes to it, so the two lines are added here instead of shipping the file)
+  grep -q pam_gnome_keyring /etc/pam.d/greetd 2> /dev/null ||
+    printf 'auth       optional     pam_gnome_keyring.so\nsession    optional     pam_gnome_keyring.so auto_start\n' >> /etc/pam.d/greetd
+  /usr/lib/driftless/greeter-update || true
+  systemctl daemon-reload
+  sysctl --system > /dev/null 2>&1 || true
+  # a changed hooks line only takes effect in a rebuilt initramfs
+  local sum
+  sum=$(cat /etc/mkinitcpio.conf.d/*.conf 2> /dev/null | sha256sum)
+  if [ "$sum" != "$(cat /var/lib/driftless/mkinitcpio.sum 2> /dev/null)" ]; then
+    mkinitcpio -P && echo "$sum" > /var/lib/driftless/mkinitcpio.sum
+  fi
+}
+
+post_install() {
+  _driftless_apply
+}
+
+post_upgrade() {
+  _driftless_apply
+}

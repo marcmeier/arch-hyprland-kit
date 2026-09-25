@@ -1,0 +1,204 @@
+/* Minimal floating bar. Stock style: style.css.bak-default */
+
+@import url("../theme/colors.css");
+@import url("palette.css");
+@import url("style-compact.css"); /* the compact bar, scoped to window#waybar.compact */
+
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+window#waybar {
+    background: transparent;
+    color: @text;
+}
+
+tooltip {
+    background: rgba(20, 22, 28, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+}
+tooltip label { color: @text; padding: 2px 4px; }
+
+/* ---- shared pill look ---- */
+#user,
+#workspaces,
+#custom-window,
+#datetime,
+#custom-weather,
+#upkeep,
+#actions,
+#audio,
+#custom-claude,
+#network,
+#tray,
+#custom-power {
+    background: @surface;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 0 14px;
+    margin: 0;
+}
+
+/* ---- user pill ---- */
+#user { padding: 0 14px 0 6px; }
+#custom-avatar {
+    background-image: url("../theme/avatar.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    min-width: 26px;
+    min-height: 26px;
+    margin: 4px 8px 4px 0;
+    padding: 0;
+}
+#custom-username { color: @text; font-weight: 700; }
+
+/* ---- workspaces ---- */
+#workspaces { padding: 0 6px; }
+
+#workspaces .ws {
+    background: transparent;
+    color: @dim;
+    padding: 0 9px;
+    margin: 4px 2px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+#workspaces .ws:hover {
+    background: @hover;
+    color: @text;
+}
+#workspaces .ws.active {
+    background: linear-gradient(135deg, @accent2, @accent);
+    color: #0b0d10;
+    font-weight: 700;
+    padding: 0 14px;
+}
+#workspaces .ws.empty { color: rgba(139, 147, 161, 0.7); }
+#workspaces .ws:not(.empty):not(.active) {
+    color: @text;
+    border-color: alpha(@accent2, 0.45);
+}
+#workspaces .ws:not(.empty):not(.active):hover { border-color: @accent2; }
+#workspaces .ws.active.empty { color: #0b0d10; }
+#workspaces .ws.urgent { background: @crit; color: #0b0d10; }
+
+/* ---- active window (hidden by waybar when the text is empty) ---- */
+#custom-window { color: @text; font-weight: 600; padding: 0 14px 0 12px; }
+
+/* ---- clock ---- */
+#datetime { padding: 0 6px; }
+#clock {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1px;
+    padding: 0 8px 0 12px;
+}
+
+/* ---- media: four joined segments, prev | play | next | title ---- */
+#custom-media-prev, #custom-media-play, #custom-media-next, #custom-media {
+    background: @surface;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: @text;
+    padding: 0 7px;
+    transition: all 0.2s ease;
+}
+#custom-media-prev {
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px 0 0 14px;
+    padding-left: 13px;
+    color: @dim;
+}
+#custom-media-next { color: @dim; }
+#custom-media-play { color: @accent2; padding: 0 8px; }
+#custom-media {
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0 14px 14px 0;
+    font-weight: 600;
+    padding: 0 14px 0 8px;
+}
+#custom-media.paused, #custom-media-play.paused { color: @dim; }
+#custom-media-prev:hover, #custom-media-next:hover { color: @text; background: rgba(40, 44, 54, 0.9); }
+#custom-media-play:hover, #custom-media:hover { background: rgba(40, 44, 54, 0.9); }
+
+/* ---- audio / network / power ---- */
+#audio { padding: 0 8px; }
+#pulseaudio { color: @text; padding: 0 6px; }
+#pulseaudio.muted { color: @dim; }
+#pulseaudio.mic { color: @dim; padding: 0 6px; min-width: 16px; }
+#pulseaudio.mic.source-muted { color: @crit; }
+#audio:hover, #network:hover, #actions:hover { background: rgba(40, 44, 54, 0.9); }
+
+/* ---- Claude usage ---- */
+#custom-claude { color: @text; }
+#custom-claude.warn { color: @warn; }
+#custom-claude.crit { color: @crit; }
+#custom-claude.stale { color: @dim; }
+#custom-claude:hover { background: rgba(40, 44, 54, 0.9); }
+
+/* ---- notifications (mako) ---- */
+#actions { padding: 0 6px; }
+#custom-notifications { color: @dim; padding: 0 8px; }
+#custom-notifications.active { color: @accent2; }
+#custom-notifications.dnd { color: @warn; }
+
+#network { color: @accent; padding: 0 14px; }
+#network.disconnected { color: @warn; }
+
+#tray { padding: 0 10px; }
+#tray > .passive { -gtk-icon-effect: dim; }
+#tray > .needs-attention { -gtk-icon-effect: highlight; }
+
+#custom-power {
+    color: @crit;
+    padding: 0 12px;
+    transition: all 0.2s ease;
+}
+#custom-power:hover { background: @crit; color: #0b0d10; }
+
+/* ---- updates / weather / idle inhibitor ---- */
+#custom-updates { color: @accent2; }
+#custom-updates.many { color: @warn; }
+#custom-updates.none { padding: 0; margin: 0; background: transparent; border-color: transparent; }
+#custom-weather:hover { background: rgba(40, 44, 54, 0.9); }
+/* updates + kit sync share one pill (#upkeep); updates collapses when there are none */
+#upkeep { padding: 0 4px; }
+#upkeep:hover { background: rgba(40, 44, 54, 0.9); }
+#custom-updates { padding: 0 8px; }
+#custom-sync { color: @dim; padding: 0 8px; }
+#upkeep #custom-updates:not(.none) { border-right: 1px solid rgba(255, 255, 255, 0.10); padding-right: 10px; }
+#upkeep #custom-sync { padding-left: 10px; }
+#custom-sync.running { color: @accent; }
+#custom-sync.pending { color: @warn; }
+#custom-sync.off { color: @warn; }
+#custom-sync.error { color: @crit; }
+#custom-weather { color: @text; }
+#idle_inhibitor { color: @dim; padding: 0 8px; }
+#idle_inhibitor.activated { color: @accent; }
+
+#custom-calendar { color: @dim; padding: 0 12px 0 4px; }
+#custom-calendar.next { color: rgba(215, 220, 226, 0.7); font-weight: 400; font-size: 13px; }
+#datetime:hover { background: rgba(40, 44, 54, 0.9); }
+#custom-calendar.error { color: @warn; }
+
+/* ---- battery (notebooks only, added by restore.sh) ---- */
+#battery {
+    background: @surface;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 0 14px;
+    color: @text;
+}
+#battery.charging, #battery.plugged { color: @accent2; }
+#battery.warning:not(.charging) { color: @warn; }
+#battery.critical:not(.charging) { color: @crit; }

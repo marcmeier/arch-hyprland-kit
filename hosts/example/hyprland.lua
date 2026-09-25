@@ -1,0 +1,4 @@
+-- hosts/<hostname>/hyprland.lua: loaded last by hyprland.lua on the machine with that hostname.
+-- Example: pin a monitor's mode, matched by its description (see: hyprctl monitors), so the rule never
+-- catches another monitor.
+-- hl.monitor({ output = "desc:Vendor Model Serial", mode = "2560x1440@144", position = "0x0", scale = 1 })

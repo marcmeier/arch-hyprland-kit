@@ -1,0 +1,75 @@
+# What driftless puts on every machine. personal/manifest and hosts/<host>/manifest add to it.
+# Format: see lib/common.sh. Whole folders are linked where the folder belongs to the kit, single
+# files where programs keep their own files next to them (~/.config/gtk-3.0, applications).
+
+# ---- links: ~/TARGET -> repository (default source: home/TARGET)
+link .bashrc
+link .bash_profile
+link .config/hypr
+link .config/waybar
+link .config/theme
+link .config/ghostty
+link .config/uwsm
+link .config/walker
+link .config/wlogout
+link .config/emoji
+link .config/systemd
+link .config/mimeapps.list
+link .config/user-dirs.dirs
+link .config/user-dirs.locale
+link .config/Code/User/settings.json
+link .local/share/applications/desktop-settings.desktop
+link .local/share/applications/discord.desktop
+link .local/share/applications/avahi-discover.desktop
+link .local/share/applications/bssh.desktop
+link .local/share/applications/bvnc.desktop
+link .local/bin/driftless driftless
+link .local/bin/set-wallpaper home/.config/theme/set-wallpaper.sh
+link .local/bin/cfg-backup
+# stable paths the configs include from: this machine's host folder and the personal layer
+link .config/driftless/host hosts/{host}
+link .config/driftless/personal personal
+
+# ---- packages: packages/NAME.list (or personal/packages/NAME.list)
+group base
+group desktop
+group apps
+group gaming
+group dev
+group hw-cpu-amd if=cpu-amd
+group hw-cpu-intel if=cpu-intel
+group hw-gpu-amd if=gpu-amd
+group hw-gpu-intel if=gpu-intel
+group hw-gpu-nvidia if=gpu-nvidia
+group hw-hybrid if=hybrid
+group hw-laptop if=laptop
+group hw-marvell if=marvell
+group hw-surface if=surface
+
+# ---- system units (enabled by install/bootstrap.sh, checked by driftless verify)
+unit NetworkManager.service
+unit bluetooth.service
+unit greetd.service
+unit systemd-timesyncd.service
+unit paccache.timer
+unit reflector.timer
+unit fstrim.timer
+unit ufw.service
+unit smartd.service if=!vm
+unit fwupd-refresh.timer if=!vm
+unit power-profiles-daemon.service if=laptop
+
+# ---- user units (enabled by driftless setup; the session ones start with graphical-session.target)
+user-unit pipewire.socket
+user-unit pipewire-pulse.socket
+user-unit wireplumber.service
+user-unit gnome-keyring-daemon.socket
+user-unit waybar.service
+user-unit mako.service
+user-unit hypridle.service
+user-unit hyprpolkitagent.service
+user-unit cliphist.service
+user-unit driftless-wallpaper.service
+user-unit driftless-bar.service
+user-unit elephant.service
+user-unit driftless-sync.timer

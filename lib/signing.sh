@@ -1,36 +1,26 @@
-#!/usr/bin/env bash
-# Signed kit commits: a push to GitHub alone cannot hand this machine anything.
-# Every machine signs its commits with its own SSH key (~/.ssh/rebuild-signing, no passphrase: the
-# timer signs unattended) and publishes the public half as signers/<host>.pub. The sync
-# (auto-snapshot.sh) only takes over commits signed by a key in $STATE/allowed_signers, a local list
-# that never travels with the kit: a stolen GitHub token or login can push, but it cannot sign.
+# shellcheck shell=bash
+# shellcheck disable=SC2153 # HOST and STATE come from lib/common.sh
+# Signed commits: a push to GitHub alone cannot hand a machine anything.
 #
-#   lib/signing.sh setup [--no-sync]   once per machine (restore.sh runs it with --no-sync on new
-#                  installs): key, git config, signers/<host>.pub, and trust for this machine and
-#                  every machine already in signers/. Without --no-sync it first takes over the
-#                  current GitHub state (a last unverified sync) and pushes the key afterwards.
-#   lib/signing.sh trust FINGERPRINT   trust the machine whose signers/*.pub on GitHub has this
-#                  fingerprint, after you compared it on that machine (sync menu: Trust new machine)
-#   lib/signing.sh check RANGE   every commit in RANGE not signed by a trusted machine, one per line:
-#                  "<sha> <%G?> <key fingerprint or -> <host from signers/ or ->"
-# Stop trusting a machine: delete its line from ~/.local/state/rebuild/allowed_signers.
-set -euo pipefail
-export LC_ALL=C
-cd "$(dirname "$(readlink -f "$0")")/.."
-STATE="${XDG_STATE_HOME:-$HOME/.local/state}/rebuild"
+# Every machine signs its commits with its own SSH key (~/.ssh/driftless-signing, no passphrase: the
+# timer signs unattended) and publishes the public half as signers/<host>.pub. The sync only takes
+# over commits signed by a key in $STATE/allowed_signers, a list that exists only on the machine and
+# never travels with the repository. A stolen GitHub token or login can push, but it cannot sign.
+# Not covered: a compromised machine of yours, since its key signs.
+
+SIGNING_KEY=${DRIFTLESS_SIGNING_KEY:-$HOME/.ssh/driftless-signing}
 ALLOWED=$STATE/allowed_signers
-KEY=$HOME/.ssh/rebuild-signing
 
 fingerprint() { ssh-keygen -lf - 2> /dev/null | awk '{ print $2 }'; } # public key on stdin
 
-# host_of FINGERPRINT: the machine whose signers/<host>.pub on GitHub (origin/main) has this key.
-# Nothing for a name this machine already trusts: a trusted machine never gets a second key this
-# way, so such a file is someone claiming to be it (drop the old line by hand for a real new key).
+# host_of FINGERPRINT: the machine whose signers/<host>.pub on origin/main has this key. Nothing for a
+# name this machine already trusts: a trusted machine never gets a second key this way, so such a
+# file is someone claiming to be it (drop the old line by hand for a real new key).
 host_of() {
   local f signer
   [[ -n $1 && $1 != - ]] || return 0
-  for f in $(git ls-tree --name-only origin/main signers/ 2> /dev/null); do
-    [[ $(git show "origin/main:$f" | fingerprint) == "$1" ]] || continue
+  for f in $(git -C "$DRIFTLESS" ls-tree --name-only origin/main signers/ 2> /dev/null); do
+    [[ $(git -C "$DRIFTLESS" show "origin/main:$f" | fingerprint) == "$1" ]] || continue
     signer=$(basename "$f" .pub)
     awk -v h="$signer" '$1 == h { found = 1 } END { exit !found }' "$ALLOWED" 2> /dev/null || echo "$signer"
     return 0
@@ -38,8 +28,7 @@ host_of() {
   return 0
 }
 
-# add_signer HOST PUBKEY_FILE: one allowed_signers line, unless this key is in there already
-add_signer() {
+add_signer() { # add_signer HOST PUBKEY_FILE
   local key
   key=$(awk '{ print $1, $2 }' "$2")
   mkdir -p "$STATE"
@@ -47,79 +36,69 @@ add_signer() {
   grep -qF "$key" "$ALLOWED" || echo "$1 namespaces=\"git\" $key" >> "$ALLOWED"
 }
 
-check() {
+# signing_check RANGE: every commit in RANGE not signed by a trusted machine, one per line:
+#   "<sha> <%G?> <key fingerprint or -> <host from signers/ or ->"
+signing_check() {
   local sha st fp
-  git -c gpg.ssh.allowedSignersFile="$ALLOWED" log --format='%H %G? %GK' "$1" | while read -r sha st fp; do
-    [[ $st == G ]] && continue
-    echo "$sha $st ${fp:--} $(host_of "${fp:--}" | grep . || echo -)"
-  done
+  git -C "$DRIFTLESS" -c gpg.ssh.allowedSignersFile="$ALLOWED" log --format='%H %G? %GK' "$1" |
+    while read -r sha st fp; do
+      [[ $st == G ]] && continue
+      echo "$sha $st ${fp:--} $(host_of "${fp:--}" | grep . || echo -)"
+    done
 }
 
-setup() {
-  local host f signer
-  host=$(< /etc/hostname)
-  # a fresh install has no git identity: name the machine (only for this repository, no real address)
-  git config user.name > /dev/null || git config user.name "rebuild-kit $host"
-  git config user.email > /dev/null || git config user.email "rebuild-kit@$host.invalid"
-  if [[ ! -f $KEY ]]; then
+# signing_setup: key, git config, signers/<host>.pub, and trust for every machine in signers/.
+# A machine coming from the old rebuild kit keeps its key and its list of trusted machines.
+signing_setup() {
+  local f signer old_state=${XDG_STATE_HOME:-$HOME/.local/state}/rebuild
+  git -C "$DRIFTLESS" config user.name > /dev/null || git -C "$DRIFTLESS" config user.name "driftless $HOST"
+  git -C "$DRIFTLESS" config user.email > /dev/null || git -C "$DRIFTLESS" config user.email "driftless@$HOST.invalid"
+  if [[ ! -f $SIGNING_KEY && -f $HOME/.ssh/rebuild-signing ]]; then
+    cp -a "$HOME/.ssh/rebuild-signing" "$SIGNING_KEY"
+    cp -a "$HOME/.ssh/rebuild-signing.pub" "$SIGNING_KEY.pub"
+  fi
+  if [[ ! -f $SIGNING_KEY ]]; then
     [[ -d $HOME/.ssh ]] || mkdir -m700 "$HOME/.ssh"
-    ssh-keygen -q -t ed25519 -N '' -C "rebuild-kit $host" -f "$KEY"
+    ssh-keygen -q -t ed25519 -N '' -C "driftless $HOST" -f "$SIGNING_KEY"
   fi
-  git config gpg.format ssh
-  git config user.signingkey "$KEY.pub"
-  git config commit.gpgsign true
-  git config gpg.ssh.allowedSignersFile "$ALLOWED"
-  # a machine that is not verifying yet takes over what GitHub has now, as it did so far
-  if [[ ${1:-} != --no-sync && ! -e $ALLOWED ]]; then
-    echo "==> taking over the current GitHub state (the last sync without signature check)"
-    ./auto-snapshot.sh --now
+  if [[ ! -e $ALLOWED && -s $old_state/allowed_signers ]]; then
+    mkdir -p "$STATE"
+    cp "$old_state/allowed_signers" "$ALLOWED"
   fi
-  install -Dm644 "$KEY.pub" "signers/$host.pub"
-  add_signer "$host" "$KEY.pub"
-  echo "==> trusted on this machine:"
-  for f in signers/*.pub; do
+  git -C "$DRIFTLESS" config gpg.format ssh
+  git -C "$DRIFTLESS" config user.signingkey "$SIGNING_KEY.pub"
+  git -C "$DRIFTLESS" config commit.gpgsign true
+  git -C "$DRIFTLESS" config gpg.ssh.allowedSignersFile "$ALLOWED"
+  install -Dm644 "$SIGNING_KEY.pub" "$DRIFTLESS/signers/$HOST.pub"
+  add_signer "$HOST" "$SIGNING_KEY.pub"
+  echo "trusted on this machine:"
+  for f in "$DRIFTLESS"/signers/*.pub; do
     signer=$(basename "$f" .pub)
-    [[ $signer == "$host" ]] || add_signer "$signer" "$f"
-    echo "    $signer  $(fingerprint < "$f")"
+    [[ $signer == "$HOST" ]] || add_signer "$signer" "$f"
+    echo "  $signer  $(fingerprint < "$f")"
   done
-  git add "signers/$host.pub"
-  git diff --cached --quiet -- "signers/$host.pub" || git commit -q -m "Signing key of $host" -- "signers/$host.pub"
-  [[ ${1:-} == --no-sync ]] || ./auto-snapshot.sh --now
-  echo "==> $host signs its kit commits now. Your other machines hold them back until you trust it"
-  echo "    there (sync pill menu: Trust new machine). Its fingerprint: $(fingerprint < "$KEY.pub")"
+  git -C "$DRIFTLESS" add "signers/$HOST.pub"
+  git -C "$DRIFTLESS" diff --cached --quiet -- "signers/$HOST.pub" ||
+    git -C "$DRIFTLESS" commit -q -m "$HOST: signing key" -- "signers/$HOST.pub"
+  echo "$HOST signs its commits. Its fingerprint: $(fingerprint < "$SIGNING_KEY.pub")"
 }
 
-trust() {
-  local fp=${1:?usage: signing.sh trust FINGERPRINT} host answer tmp
+# signing_trust FINGERPRINT: trust a new machine after comparing the fingerprint on it
+signing_trust() {
+  local fp=${1:?usage: driftless trust FINGERPRINT} host answer tmp
   host=$(host_of "$fp")
-  [[ -n $host ]] || {
-    echo "No new machine on GitHub has the key $fp (no signers/*.pub with it, or its name is trusted here already with another key)." >&2
-    exit 1
-  }
-  echo "The machine \"$host\" wants this one to take over its kit changes."
+  [[ -n $host ]] || die "no new machine on GitHub has the key $fp"
+  echo "The machine \"$host\" wants this one to take over its changes."
   echo "Only trust it if it really is yours. On $host, run:"
   echo
-  echo "    ssh-keygen -lf ~/.ssh/rebuild-signing.pub"
+  echo "    ssh-keygen -lf ~/.ssh/driftless-signing.pub"
   echo
   echo "It must show exactly: $fp"
   read -rp "Same fingerprint? Then type yes: " answer
-  [[ $answer == yes ]] || {
-    echo "Not trusted."
-    exit 1
-  }
+  [[ $answer == yes ]] || die "not trusted"
   tmp=$(mktemp)
-  git show "origin/main:signers/$host.pub" > "$tmp"
+  git -C "$DRIFTLESS" show "origin/main:signers/$host.pub" > "$tmp"
   add_signer "$host" "$tmp"
   rm -f "$tmp"
   echo "Trusted: $host. The next sync takes over its changes."
 }
-
-case ${1:-} in
-  setup) setup "${2:-}" ;;
-  trust) trust "${2:-}" ;;
-  check) check "${2:?usage: signing.sh check RANGE}" ;;
-  *)
-    echo "usage: $0 setup [--no-sync] | trust FINGERPRINT | check RANGE" >&2
-    exit 2
-    ;;
-esac

@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# driftless: one Arch + Hyprland setup on all your machines, with the repository as the only truth.
+#
+#   driftless setup                 join this machine: links, signing, theme, settings, user units
+#   driftless status                links, packages and sync in short
+#   driftless link [--dry-run] [--adopt [TARGET...]]  make ~ match the manifest's links
+#   driftless packages [status|install [repo|aur]|add NAME [GROUP]|remove NAME]
+#   driftless sync [--now|--adopt]  commit, fetch, check signatures, update, apply, push
+#   driftless mode review|auto|off  how the hourly sync treats changes from GitHub (this machine)
+#   driftless installs on|off       whether the sync installs listed packages (this machine)
+#   driftless trust FINGERPRINT     take over the changes of a new machine
+#   driftless signing setup         this machine's signing key and trust list (part of setup)
+#   driftless system [--build-only] build and install driftless-system (the system drop-ins)
+#   driftless dconf load|capture    GNOME/GTK settings from / into dconf.ini
+#   driftless verify                read-only check, exit code = number of failures
+#   driftless facts | manifest KIND  this machine's facts / manifest lines of one kind
+#   driftless publish OUT [--push]  the public template: everything but personal/, hosts/, signers/
+set -euo pipefail
+export LC_ALL=C
+
+DRIFTLESS=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
+for lib in common link packages signing sync setup system verify publish; do
+  # shellcheck source=/dev/null
+  source "$DRIFTLESS/lib/$lib.sh"
+done
+
+cmd_status() {
+  local p
+  echo "repository: $DRIFTLESS ($(git -C "$DRIFTLESS" log -1 --format='%h %s'))"
+  echo "machine:    $HOST ($(facts | xargs))"
+  p=$(link_problems)
+  if [[ -z $p ]]; then
+    echo "links:      all in place"
+  else
+    echo "links:"
+    while IFS= read -r l; do echo "  $l"; done <<< "$p"
+  fi
+  cmd_packages status | sed 's/^/packages:   /'
+  echo "sync:       mode $(cat "$STATE/mode" 2> /dev/null || echo review), last run: $(sed -n 's/^result=//p' "$STATE/status" 2> /dev/null || echo never)"
+}
+
+set_switch() { # set_switch NAME VALUE ALLOWED...
+  local name=$1 value=$2
+  shift 2
+  [[ " $* " == *" $value "* ]] || die "usage: driftless $name $*"
+  mkdir -p "$STATE"
+  [[ $name == mode && $value == off ]] && cp -f "$STATE/mode" "$STATE/mode.resume" 2> /dev/null
+  echo "$value" > "$STATE/$name"
+  poke_bar
+  echo "$name: $value (this machine only)"
+}
+
+usage() {
+  sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+cmd=${1:-help}
+shift || true
+case $cmd in
+  setup) cmd_setup "$@" ;;
+  status) cmd_status ;;
+  link) cmd_link "$@" ;;
+  packages | pkg) cmd_packages "$@" ;;
+  sync) cmd_sync "$@" ;;
+  mode) set_switch mode "${1:-}" review auto off ;;
+  installs) set_switch installs "${1:-}" on off ;;
+  trust) signing_trust "$@" ;;
+  signing)
+    [[ ${1:-} == setup ]] || die "usage: driftless signing setup"
+    signing_setup
+    ;;
+  system) cmd_system "$@" ;;
+  dconf) cmd_dconf "$@" ;;
+  verify) cmd_verify ;;
+  publish) cmd_publish "$@" ;;
+  facts) facts | xargs -n1 ;;
+  manifest) manifest "${1:?usage: driftless manifest link|group|unit|user-unit}" ;;
+  help | -h | --help) usage ;;
+  *) usage 2 >&2 ;;
+esac

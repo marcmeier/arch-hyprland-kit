@@ -1,0 +1,21 @@
+# driftless: template, greeter-update fills in @HOSTNAME@
+[background]
+path = "/var/lib/driftless/greeter/login.png"
+fit = "Cover"
+
+[GTK]
+application_prefer_dark_theme = true
+cursor_theme_name = "capitaine-cursors"
+font_name = "JetBrainsMono Nerd Font 13"
+
+[appearance]
+greeting_msg = "@HOSTNAME@"
+
+[commands]
+reboot = ["systemctl", "reboot"]
+poweroff = ["systemctl", "poweroff"]
+
+[widget.clock]
+format = "%H:%M"
+resolution = "500ms"
+label_width = 200

@@ -1,0 +1,9 @@
+#!/bin/sh
+# smartd found a disk problem: log it and show it on the desktop of every logged-in user.
+MSG="${SMARTD_FAILTYPE}: ${SMARTD_MESSAGE}"
+logger -t smartd-notify "$MSG"
+loginctl list-sessions --no-legend | while read -r session uid user _; do
+  [ "$(loginctl show-session "$session" -p Type --value)" = wayland ] || continue
+  runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+    notify-send -u critical "Disk warning (SMART)" "$MSG" || true
+done

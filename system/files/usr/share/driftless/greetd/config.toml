@@ -1,0 +1,8 @@
+# driftless: ReGreet in cage. The files it reads are rendered per machine in /var/lib/driftless/greeter
+# (hostname, wallpaper, colours, avatar) by /usr/lib/driftless/greeter-update.
+[terminal]
+vt = 1
+
+[default_session]
+command = "cage -s -mlast -- regreet --config /var/lib/driftless/greeter/regreet.toml --style /var/lib/driftless/greeter/regreet.css"
+user = "greeter"

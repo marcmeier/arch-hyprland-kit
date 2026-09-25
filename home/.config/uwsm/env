@@ -1,0 +1,12 @@
+# Environment of the Hyprland session, read by uwsm before the compositor and every unit starts.
+export XCURSOR_THEME=capitaine-cursors XCURSOR_SIZE=24
+export HYPRCURSOR_THEME=capitaine-cursors HYPRCURSOR_SIZE=24
+export QT_QPA_PLATFORMTHEME=qt6ct
+
+# NVIDIA without an integrated GPU next to it: the NVIDIA GL and VA-API libraries
+if [ -d /sys/module/nvidia ] && [ ! -d /sys/module/amdgpu ] && [ ! -d /sys/module/i915 ] && [ ! -d /sys/module/xe ]; then
+  export LIBVA_DRIVER_NAME=nvidia __GLX_VENDOR_LIBRARY_NAME=nvidia
+fi
+
+# machine specific additions
+[ -r "$HOME/.config/driftless/host/env" ] && . "$HOME/.config/driftless/host/env"

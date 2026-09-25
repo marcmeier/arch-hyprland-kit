@@ -1,0 +1,72 @@
+/* Matches the waybar theme. Stock files: layout.bak-default, style.css.bak-default */
+
+@import url("../theme/colors.css");
+
+@define-color surface  rgba(20, 22, 28, 0.85);
+@define-color surface2 rgba(40, 44, 54, 0.95);
+@define-color text     #d7dce2;
+@define-color dim      #8b93a1;
+@define-color crit     #ff5f6d;
+
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    font-weight: 600;
+    background-image: none;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+window {
+    background-color: rgba(8, 9, 12, 0.82);
+}
+
+button {
+    color: @dim;
+    background-color: @surface;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    margin: 0;
+    padding-top: 96px;
+    min-width: 170px;
+    font-size: 13px;
+    background-repeat: no-repeat;
+    background-position: center 38%;
+    background-size: 30%;
+    transition: all 0.2s ease;
+}
+
+button:hover,
+button:focus {
+    color: @text;
+    background-color: @surface2;
+    border-color: @accent2;
+    outline-style: none;
+}
+
+button:active {
+    border-color: @accent;
+    color: @accent;
+}
+
+#shutdown:hover, #shutdown:focus,
+#logout:hover,   #logout:focus {
+    border-color: @crit;
+}
+#shutdown:active, #logout:active {
+    color: @crit;
+    border-color: @crit;
+}
+
+/* icons recoloured to the palette (files in icons/): dim, cyan on hover, red for logout/shutdown */
+#lock     { background-image: image(url("icons/lock.png")); }
+#logout   { background-image: image(url("icons/logout.png")); }
+#suspend  { background-image: image(url("icons/suspend.png")); }
+#reboot   { background-image: image(url("icons/reboot.png")); }
+#shutdown { background-image: image(url("icons/shutdown.png")); }
+
+#lock:hover,    #lock:focus    { background-image: image(url("icons/lock-hover.png")); }
+#suspend:hover, #suspend:focus { background-image: image(url("icons/suspend-hover.png")); }
+#reboot:hover,  #reboot:focus  { background-image: image(url("icons/reboot-hover.png")); }
+#logout:hover,  #logout:focus  { background-image: image(url("icons/logout-crit.png")); }
+#shutdown:hover,#shutdown:focus{ background-image: image(url("icons/shutdown-crit.png")); }

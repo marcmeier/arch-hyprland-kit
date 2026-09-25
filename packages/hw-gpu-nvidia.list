@@ -1,0 +1,6 @@
+# hardware groups: the manifest picks them from the facts in lib/hardware.sh, never by hand
+lib32-nvidia-utils
+linux-headers
+linux-lts-headers
+nvidia-open-dkms
+nvidia-utils

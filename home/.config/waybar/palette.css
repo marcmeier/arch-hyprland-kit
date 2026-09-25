@@ -1,0 +1,7 @@
+/* The bar's own colours; the accents come from ../theme/colors.css (the wallpaper). */
+@define-color surface  rgba(20, 22, 28, 0.80);
+@define-color hover    rgba(255, 255, 255, 0.08);
+@define-color text     #d7dce2;
+@define-color dim      #8b93a1;
+@define-color warn     #ffb454;
+@define-color crit     #ff5f6d;

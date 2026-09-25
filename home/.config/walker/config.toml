@@ -1,0 +1,9 @@
+# Only overrides; everything else comes from /etc/xdg/walker/config.toml.
+# There was no user config before, so the backup is "delete ~/.config/walker".
+theme = "driftless"
+
+hide_quick_activation = true
+hide_action_hints = true
+
+[placeholders]
+"default" = { input = "Search apps, calculate, browse the web…", list = "No results" }

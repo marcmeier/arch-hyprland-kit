@@ -1,6 +1,34 @@
 # Changelog
 
-Versions follow the [releases](../../releases), which have the full notes and upgrade steps.
+Versions follow the [releases](../../releases), which have the full notes.
+
+## v2.0.0 (2026-09-25): driftless
+
+The kit is rebuilt around links instead of copies and renamed to driftless. The reasons, decision by
+decision: [ARCHITECTURE.md](ARCHITECTURE.md). Moving a running v1 machine over:
+[README](README.md#moving-over-from-arch-hyprland-kit-v1).
+
+### Changed
+- The home links into the repository (`~/.config/hypr` is `home/.config/hypr`). `snapshot.sh`, the
+  deletion guessing, the per machine file list and the backup folders of the sync are gone.
+- The sync commits only files the repository tracks, stops on changes that look like credentials,
+  rebases instead of merging, and heals links that programs replaced by files.
+- One manifest (`manifest`, `personal/manifest`, `hosts/<host>/manifest`) says what a machine gets:
+  links, package groups, system and user units, chosen by hardware facts.
+- Package lists are written by hand, in groups (`packages/*.list`); nothing is recorded from what a
+  machine has. `driftless packages` shows what is installed but in no list.
+- System files are the package `driftless-system`, all as drop-ins. greetd and smartd get their
+  configuration through service drop-ins; no file of another package is edited with `sed`.
+- The session runs under uwsm: Waybar, mako, hypridle, the polkit agent (now hyprpolkitagent),
+  cliphist, the wallpaper and elephant are systemd user units.
+- Waybar: one bar per output from Waybar's own `output` rules, so no watcher process. The workspace
+  buttons, the window title and the media pill come from one process (`feeds.py`) instead of eleven.
+- Personal values live in `personal/` and `hosts/`; publishing is leaving them out.
+
+### Added
+- `install-base.sh --encrypt`: LUKS2. New installs boot unified kernel images (`docs/boot.md`).
+- `install/switch-to-uki.sh`, `install/migrate-from-rebuild.sh`, `install/migrate-system.sh`.
+- `driftless verify` warns about a notebook without disk encryption.
 
 ## v1.6.0 (2026-09-25)
 

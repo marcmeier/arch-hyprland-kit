@@ -1,0 +1,12 @@
+[Unit]
+Description=Wallpaper (swaybg, ~/.config/wall.png)
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/swaybg -i %h/.config/wall.png -m fill
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

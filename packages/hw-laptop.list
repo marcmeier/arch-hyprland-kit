@@ -1,0 +1,5 @@
+# hardware groups: the manifest picks them from the facts in lib/hardware.sh, never by hand
+brightnessctl
+power-profiles-daemon
+sof-firmware
+upower

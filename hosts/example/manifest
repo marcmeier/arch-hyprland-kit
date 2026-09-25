@@ -1,0 +1,2 @@
+# hosts/<hostname>/manifest: extra lines for the machine with that hostname (format: lib/common.sh)
+# group dev

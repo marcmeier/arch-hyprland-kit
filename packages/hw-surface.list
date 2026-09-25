@@ -1,0 +1,4 @@
+# Microsoft Surface: kernel and touch/pen daemon from pkg.surfacelinux.com (install/bootstrap.sh adds the repository)
+iptsd
+linux-surface
+linux-surface-headers

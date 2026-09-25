@@ -1,0 +1,8 @@
+[Unit]
+Description=Sync Nextcloud calendars (vdirsyncer)
+# nothing to sync before calendar-login ran (it creates the status folder)
+ConditionPathExists=%h/.local/share/vdirsyncer/status
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/waybar/calendar-sync.sh

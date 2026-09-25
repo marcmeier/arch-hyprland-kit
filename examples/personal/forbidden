@@ -1,0 +1,3 @@
+# driftless publish: terms that must never appear in a published copy (extended regex, one per line)
+# your-login-name
+# your-domain\.example

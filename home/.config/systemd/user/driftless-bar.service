@@ -1,0 +1,13 @@
+[Unit]
+Description=Waybar feeds: workspaces, active window, media (driftless)
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+ExecStart=%h/.config/waybar/feeds.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

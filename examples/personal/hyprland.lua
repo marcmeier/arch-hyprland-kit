@@ -1,0 +1,2 @@
+-- personal/hyprland.lua: loaded last by hyprland.lua on every machine. Example: your keyboard layout.
+-- hl.config({ input = { kb_layout = "de" } })

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Installs packages from the official repositories for the driftless sync, and nothing else.
+# Called through pkexec, so every call asks for the password in a dialog that names the packages
+# (polkit action org.driftless.install-packages).
+#   pkexec /usr/lib/driftless/install-packages PACKAGE...
+# Only plain package names pass: no options (-U, --config, --hookdir ...), no files, no URLs.
+set -euo pipefail
+export PATH=/usr/bin
+(($#)) || {
+  echo "usage: install-packages PACKAGE..." >&2
+  exit 2
+}
+for p in "$@"; do
+  [[ $p =~ ^[a-z0-9@_+][a-z0-9@._+-]*$ ]] || {
+    echo "install-packages: not a package name: $p" >&2
+    exit 2
+  }
+done
+exec pacman -S --needed --noconfirm -- "$@"

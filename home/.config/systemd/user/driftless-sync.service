@@ -1,0 +1,7 @@
+[Unit]
+Description=driftless sync: commit, fetch, check signatures, update, apply, push
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/driftless sync
+Nice=15

@@ -1,4 +1,18 @@
 __pycache__/
 *.pyc
 *.bak*
-bak_*
+*.tmp
+.ruff_cache/
+# systemctl --user enable writes its links into the linked folder
+home/.config/systemd/user/*.wants/
+home/.config/systemd/user/*.requires/
+# alias links "systemctl --user enable" makes (wireplumber: pipewire-session-manager.service)
+home/.config/systemd/user/pipewire-session-manager.service
+# rendered per machine by theme/apply.py (wallpaper colours), never shared
+home/.config/theme/colors.*
+home/.config/theme/ghostty-colors
+home/.config/theme/avatar.png
+home/.config/hypr/hyprlock.conf
+home/.config/wlogout/icons/*-hover.png
+home/.config/walker/themes/driftless/style.css
+home/.config/emoji/list.txt

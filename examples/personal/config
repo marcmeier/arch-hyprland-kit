@@ -1,0 +1,23 @@
+# shellcheck shell=bash disable=SC2034 # read by the scripts that source this file
+# Your personal settings: copy examples/personal to personal/ and fill in what you need. Read by
+# driftless and by the dotfiles (as ~/.config/driftless/personal/config). Every value is optional.
+
+# weather pill (wttr.in location; empty: guessed from your IP)
+WTTR_LOCATION=""
+
+# mirror countries for reflector, e.g. "Germany,Austria" (install/bootstrap.sh)
+REFLECTOR_COUNTRY=""
+
+# where Claude Code starts (SUPER + SHIFT + C)
+CLAUDE_WORKDIR="$HOME"
+
+# a full copy of the repository with history, refreshed by the sync (restore: git clone FILE)
+BUNDLE=""
+
+# moving from arch-hyprland-kit v1: links that keep this machine's live version
+MIGRATE_ADOPT=()
+
+# install/install-base.sh defaults for a new machine
+DEFAULT_USER=user
+DEFAULT_KEYMAP=us
+DEFAULT_TIMEZONE=UTC

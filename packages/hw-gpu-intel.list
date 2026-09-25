@@ -1,0 +1,4 @@
+# hardware groups: the manifest picks them from the facts in lib/hardware.sh, never by hand
+intel-media-driver
+lib32-vulkan-intel
+vulkan-intel

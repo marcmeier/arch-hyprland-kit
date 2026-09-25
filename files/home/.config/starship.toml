@@ -7,11 +7,11 @@ $username$hostname$directory$git_branch$git_status$python$rust$golang$cmd_durati
 $character"""
 
 [character]
-success_symbol = "[❯](bold #ffcc33)"
+success_symbol = "[❯](bold #33aaff)"
 error_symbol   = "[❯](bold #ff5f6d)"
 
 [directory]
-style = "bold #33aaff"
+style = "bold #a299ff"
 truncation_length = 3
 truncation_symbol = "…/"
 read_only = " "
@@ -20,7 +20,7 @@ read_only_style = "#ffb454"
 [git_branch]
 symbol = " "
 format = "[on](#6b7280) [$symbol$branch]($style) "
-style = "#ffcc33"
+style = "#33aaff"
 
 [git_status]
 format = "([$all_status$ahead_behind]($style) )"

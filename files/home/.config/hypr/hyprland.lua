@@ -11,6 +11,13 @@ hl.monitor({
 })
 
 
+-- Per machine layout from nwg-displays (avatar menu > Monitors, waybar/settings-menu.sh). It lives in
+-- ~/.local/state/hypr, never in the kit, and comes after the defaults above, so it wins.
+local layout_dir = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/hypr/"
+for _, file in ipairs({ "monitors.lua", "workspaces.lua" }) do
+    pcall(dofile, layout_dir .. file) -- missing until the first save
+end
+
 -- Laptop only / external only / extend / mirror: SUPER + SHIFT + P (display-mode.sh). If the last active
 -- monitor goes away (external unplugged in "External only" mode), turn the laptop panel back on.
 hl.on("monitor.removed", function(removed)
@@ -276,6 +283,7 @@ hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal))
 local closeWindowBind = hl.bind(mainMod .. " + W", hl.dsp.window.close())
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/wlogout/wlogout.sh"))
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("~/.config/waybar/widgets.py")) -- waybar widget manager
 hl.bind(mainMod .. " + SHIFT + RETURN", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen("maximized", "toggle"))

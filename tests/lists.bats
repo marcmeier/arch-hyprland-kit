@@ -74,3 +74,15 @@ sidebar-width=200
 EOF
   [ "$output" = "$(printf "[org/gnome/desktop/interface]\ngtk-theme='Adwaita-dark'\n\n[org/gnome/nautilus/preferences]\nshow-hidden=true")" ]
 }
+
+@test "MACHINE_LOCAL covers every file theme/apply.py renders" {
+  local dest
+  while read -r dest; do
+    machine_local "files/home/.config/$dest"
+  done < <(python3 -c 'import importlib.util as u, sys
+s = u.spec_from_file_location("apply", sys.argv[1]); m = u.module_from_spec(s); s.loader.exec_module(m)
+print("\n".join(list(m.TARGETS.values()) + ["theme/colors.json", "wall.png", "wlogout/icons/lock-hover.png"]))' \
+    "$BATS_TEST_DIRNAME/../files/home/.config/theme/apply.py")
+  run machine_local files/home/.config/wlogout/icons/lock.png
+  [ "$status" -ne 0 ]
+}

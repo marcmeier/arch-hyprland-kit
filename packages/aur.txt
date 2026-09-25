@@ -6,6 +6,7 @@ elephant-calc
 elephant-desktopapplications
 elephant-runner
 localsend-bin
+obsidian-bin
 proton-ge-custom-bin
 protonup-qt
 pwvucontrol

@@ -32,18 +32,21 @@
         "custom/power"
     ],
 
-    // Profile picture (round PNG rendered from ~/.face) + display name
+    // Profile picture (round PNG rendered from ~/.face) + display name.
+    // Click: desktop settings (widgets, wallpaper, monitors, kit sync; settings-menu.sh)
     "group/user": {
         "orientation": "horizontal",
         "modules": ["custom/avatar", "custom/username"]
     },
     "custom/avatar": {
         "format": " ",
-        "tooltip": false
+        "tooltip": false,
+        "on-click": "~/.config/waybar/settings-menu.sh"
     },
     "custom/username": {
         "exec": "n=$(getent passwd \"$USER\" | cut -d: -f5 | cut -d, -f1); echo \"${n:-$USER}\"", "interval": "once",
-        "tooltip": false
+        "tooltip": false,
+        "on-click": "~/.config/waybar/settings-menu.sh"
     },
 
     "group/workspaces": {

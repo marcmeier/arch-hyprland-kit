@@ -18,8 +18,8 @@ icon-border-radius=8
 
 background-color=#14161ccc
 text-color=#d7dce2
-border-color=#33aaff88
-progress-color=over #ffcc3344
+border-color=#a299ff88
+progress-color=over #33aaff44
 
 format=<b>%s</b>\n%b
 markup=1
@@ -37,7 +37,7 @@ border-color=#ff5f6dcc
 default-timeout=0
 
 [app-name=notify-send]
-border-color=#ffcc3388
+border-color=#33aaff88
 
 # Toggled from the waybar bell (makoctl mode -t dnd): notifications are held, not shown
 [mode=dnd]

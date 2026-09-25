@@ -134,3 +134,31 @@ give_A_khal() {
   [ "$(result A)" = paused ]
   refute github_has files/home/.config/hypr/hyprland.lua "-- test: local change"
 }
+
+@test "wallpaper and theme stay on each machine" {
+  sync_on B --now
+  echo "picture of A" > "$(home A)/.config/wall.png"
+  echo "# colours of A" >> "$(home A)/.config/mako/config"
+  echo "hover of A" > "$(home A)/.config/wlogout/icons/lock-hover.png"
+  sync_on A --now
+  [ "$(result A)" = ok ]
+  refute github_has files/home/.config/wall.png "picture of A"
+  refute github_has files/home/.config/mako/config "# colours of A"
+  refute github_has files/home/.config/wlogout/icons/lock-hover.png "hover of A"
+  grep -qF "picture of A" "$(home A)/.config/wall.png"
+  echo "picture of B" > "$(home B)/.config/wall.png"
+  sync_on B --now
+  [ "$(result B)" = ok ]
+  grep -qF "picture of B" "$(home B)/.config/wall.png"
+}
+
+@test "a changed theme template reaches the other machines in their own colours" {
+  sync_on B --now
+  printf '{"primary": "#123456", "secondary": "#654321", "source": "B"}\n' > "$(home B)/.config/theme/colors.json"
+  echo "# from the template: @primary@" >> "$(home A)/.config/theme/templates/mako"
+  sync_on A --now
+  github_has files/home/.config/theme/templates/mako "# from the template"
+  sync_on B --now
+  grep -qF "# from the template: #123456" "$(home B)/.config/mako/config"
+  refute github_has files/home/.config/theme/colors.json "#123456"
+}

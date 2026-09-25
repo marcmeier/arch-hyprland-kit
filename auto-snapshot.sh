@@ -48,6 +48,7 @@ main() {
   git config user.name > /dev/null || git config user.name "rebuild-kit $HOST"
   git config user.email > /dev/null || git config user.email "rebuild-kit@$HOST.invalid"
   source ./kit.conf
+  source ./lib/lists.sh # MACHINE_LOCAL
 
   local old
   if ((ADOPT)); then
@@ -184,6 +185,8 @@ apply_kit() {
   while read -r status path; do
     live=$(live_path "$path")
     [[ -n $live ]] || continue
+    # this machine's wallpaper and theme stay (lib/lists.sh); new templates are rendered below
+    machine_local "$path" && continue
     if [[ $live == dconf ]]; then
       if [[ $status != D ]]; then
         mkdir -p "$BACKUP"
@@ -209,6 +212,10 @@ apply_kit() {
     fi
     case $path in
       files/home/.config/hypr/*) RELOAD+=(hypr) ;;
+      # new templates or renderer: render them with this machine's own colours (reload_changed)
+      files/home/.config/theme/templates/* | files/home/.config/theme/apply.py) RELOAD+=(theme hypr mako waybar) ;;
+      # the renderer keeps running: restart it, or it goes on with the old code
+      files/home/.config/waybar/density-watch.py | files/home/.config/waybar/bar_layout.py) RELOAD+=(density waybar) ;;
       files/home/.config/waybar/* | files/home/.config/theme/*) RELOAD+=(waybar) ;;
       files/home/.config/mako/*) RELOAD+=(mako) ;;
       files/home/.config/systemd/user/*) RELOAD+=(systemd) ;;
@@ -246,6 +253,11 @@ detach() {
 
 reload_changed() {
   local r
+  # first, so the reloads below pick up the freshly rendered files
+  if printf '%s\n' "${RELOAD[@]}" | grep -qx theme; then
+    python3 "$HOME/.config/theme/apply.py" --current > /dev/null || echo "rebuild sync: theme not rendered" >&2
+    pkill -USR2 -x ghostty 2> /dev/null || true
+  fi
   for r in $(printf '%s\n' "${RELOAD[@]}" | sort -u); do
     case $r in
       systemd) systemctl --user daemon-reload ;;
@@ -253,6 +265,10 @@ reload_changed() {
       mako) makoctl reload 2> /dev/null || true ;;
       # own scope: systemd kills what is left in the service's cgroup when the oneshot ends
       waybar)
+        if printf '%s\n' "${RELOAD[@]}" | grep -qx density; then
+          kill "$(cat "$HOME/.cache/waybar/density-watch.pid" 2> /dev/null)" 2> /dev/null || true
+          sleep 0.3
+        fi
         pgrep -f 'python3? .*waybar/density-watch.py' > /dev/null ||
           detach "$HOME/.config/waybar/density-watch.py"
         detach "$HOME/.config/waybar/launch.sh"

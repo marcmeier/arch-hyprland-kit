@@ -42,8 +42,8 @@ dropdown > button {
 }
 
 entry:focus {
-  border-color: #33aaff;
-  box-shadow: 0 0 0 1px #33aaff;
+  border-color: #a299ff;
+  box-shadow: 0 0 0 1px #a299ff;
 }
 
 button {
@@ -56,20 +56,20 @@ button {
 }
 
 button:hover {
-  background-color: rgba(51, 170, 255, 0.15);
-  border-color: #33aaff;
+  background-color: rgba(162, 153, 255, 0.15);
+  border-color: #a299ff;
 }
 
 button.suggested-action {
-  background-color: #33aaff;
+  background-color: #a299ff;
   color: #0b0d10;
-  border-color: #33aaff;
+  border-color: #a299ff;
   font-weight: 600;
 }
 
 button.suggested-action:hover {
-  background-color: #ffcc33;
-  border-color: #ffcc33;
+  background-color: #33aaff;
+  border-color: #33aaff;
 }
 
 label.error,
@@ -93,7 +93,7 @@ frame > grid {
   background-repeat: no-repeat;
   background-size: 96px 96px;
   background-position: 36px 96px;
-  border: 1px solid rgba(51, 170, 255, 0.25);
+  border: 1px solid rgba(162, 153, 255, 0.25);
   border-radius: 20px;
   padding: 32px 40px 32px 152px;
   min-width: 460px;

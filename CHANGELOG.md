@@ -2,6 +2,21 @@
 
 Versions follow the [releases](../../releases), which have the full notes and upgrade steps.
 
+## v1.6.0 (2026-09-25)
+
+### Added
+- Settings menu: a click on the avatar or the name in Waybar (or *Desktop Settings* in the app launcher) opens a walker menu for Waybar widgets, wallpaper, monitors and the kit sync (`waybar/settings-menu.sh`).
+- Waybar widget manager (also `SUPER + SHIFT + B`, `waybar/widgets.py`): show and hide widgets, also single members of a group, and move them along the bar, with a separate order for the spacious and the compact bar. Stored per machine in `~/.local/state/waybar/layout.json`.
+- Wallpaper menu: pick from `~/Pictures/Wallpapers`, choose any other image, or go back to the previous one.
+- Monitor layout with nwg-displays, per machine in `~/.local/state/hypr/`. `hyprland.lua` loads it after its own rules.
+
+### Changed
+- The wallpaper and its colours are per machine now. The wallpaper and every file `theme/apply.py` renders from it are listed as `MACHINE_LOCAL` in `lib/lists.sh`: `snapshot.sh` never records them and the sync never applies them. A changed template or `apply.py` is rendered on each machine with its own colours. `restore.sh` renders the theme anew on a new install.
+- The sync restarts `waybar/density-watch.py` when it changed. Before, the old renderer kept running until the next login.
+
+### Fixed
+- nwg-displays had no effect: it writes `monitors.lua`, which the Lua config never loaded. The unused `hypr/monitors.conf`, `monitors.lua` and `workspaces.conf` are gone from the kit.
+
 ## v1.5.1 (2026-09-24)
 
 Found by installing the template in a fresh VM, following the README.

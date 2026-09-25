@@ -2,6 +2,7 @@
 # set-wallpaper.sh <image>|--current|--default
 # Sets ~/.config/wall.png, derives accent colours from it, renders all themed configs and reloads
 # the running programs. The login screen needs root (one sudo prompt at the end).
+# Wallpaper and colours are per machine: the kit sync leaves them alone (lib/lists.sh MACHINE_LOCAL).
 set -euo pipefail
 THEME_DIR="$HOME/.config/theme"
 arg="${1:-}"

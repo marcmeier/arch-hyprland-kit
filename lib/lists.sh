@@ -62,3 +62,41 @@ filter_dconf() {
       print
     }'
 }
+
+# Per machine files: every machine keeps its own wallpaper and the theme rendered from it
+# (theme/apply.py: TARGETS, colors.json, the wlogout hover icons). The kit holds one set only as
+# the start of a new install: snapshot.sh keeps the committed version (keep_machine_local), the
+# sync never applies them (auto-snapshot.sh) and restore.sh renders them anew for its wallpaper.
+MACHINE_LOCAL=(
+  files/home/.config/wall.png
+  files/home/.config/theme/colors.json
+  files/home/.config/theme/colors.css
+  files/home/.config/theme/colors.lua
+  files/home/.config/theme/ghostty-colors
+  files/home/.config/mako/config
+  files/home/.config/hypr/hyprlock.conf
+  files/home/.config/starship.toml
+  files/home/.config/qt6ct/colors/kit.conf
+  files/home/.config/gtk-3.0/gtk.css
+  files/home/.config/gtk-4.0/gtk.css
+  'files/home/.config/wlogout/icons/*-hover.png'
+)
+
+# machine_local PATH: is this kit path one of MACHINE_LOCAL (patterns allowed)?
+machine_local() {
+  local p
+  # shellcheck disable=SC2053 # the entries are patterns
+  for p in "${MACHINE_LOCAL[@]}"; do [[ $1 == $p ]] && return 0; done
+  return 1
+}
+
+# keep_machine_local: after snapshot.sh copied the live files, put the committed version of every
+# per machine file back, and leave out one the kit does not have yet
+keep_machine_local() {
+  local f
+  while IFS= read -r -d '' f; do
+    if machine_local "$f"; then
+      if git cat-file -e "HEAD:$f" 2> /dev/null; then git checkout -q HEAD -- "$f"; else rm -f "$f"; fi
+    fi
+  done < <(git ls-files -z -c -o --exclude-standard -- files/home)
+}

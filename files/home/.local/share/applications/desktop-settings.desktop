@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Desktop Settings
+Comment=Waybar widgets, wallpaper and colours, monitors, kit sync
+Exec=bash -c "~/.config/waybar/settings-menu.sh"
+Icon=preferences-desktop
+Keywords=settings;waybar;widgets;bar;wallpaper;background;colours;monitor;display;screen;sync;
+Categories=Settings;
+Terminal=false

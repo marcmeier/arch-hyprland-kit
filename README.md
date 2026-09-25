@@ -155,7 +155,7 @@ Every machine runs the same user timer, `rebuild-snapshot.timer`: 3 minutes afte
 
 1. Snapshot: `snapshot.sh` records this machine's changes in the kit (dotfiles, dconf, notes, package lists, VS Code extensions, readable `/etc` files) and commits them as `Automatic snapshot <host> <time>`.
 2. Pull: it merges `origin/main`. If both machines changed the same lines, nothing is applied or pushed; the pill turns red and names the files, and you merge by hand (`git merge origin/main` in the kit). The package lists are the exception: git keeps both sides' lines there (`merge=union` in `.gitattributes`).
-3. Apply: it copies every kit file the merge changed onto this machine (`files/home` → `~`, `files/dconf.ini` → `dconf load`, `files/CLAUDE.md` and `files/docs` → the notes folder set in `kit.conf`) and deletes files that were deleted in the kit. Each live file it replaces or deletes is copied to `~/.local/state/rebuild/backup/<time>/` first. Hyprland, Waybar, mako and systemd are reloaded as needed, and missing packages and VS Code extensions from the lists are installed.
+3. Apply: it copies every kit file the merge changed onto this machine (`files/home` → `~`, `files/dconf.ini` → `dconf load`, `files/CLAUDE.md` and `files/docs` → the notes folder set in `kit.conf`) and deletes files that were deleted in the kit, except the per machine wallpaper and theme files (`MACHINE_LOCAL`, see the [settings menu](#settings-menu-click-the-avatar)). Each live file it replaces or deletes is copied to `~/.local/state/rebuild/backup/<time>/` first. Hyprland, Waybar, mako and systemd are reloaded as needed, and missing packages and VS Code extensions from the lists are installed.
 4. Push, then refresh the zip copy (`KIT_ZIP` in `kit.conf`) if the kit changed.
 
 The details:
@@ -229,6 +229,17 @@ How it works (all in `files/home/.config/waybar/`):
 - `launch.sh` renders once and starts Waybar from the cache. Always start Waybar through it (autostart and `set-wallpaper` do).
 - The overlay merges objects key by key and replaces lists; modules without a definition (e.g. `battery` on a desktop) are dropped. `window.py`, `media.py`, `calendar.sh` and `claude-usage.py` take a `compact` argument.
 - Edit the sources in `~/.config/waybar/`, not the generated files in `~/.cache/waybar/`.
+
+## Settings menu (click the avatar)
+
+A click on the avatar or the name in Waybar opens a walker menu (`waybar/settings-menu.sh`, also *Desktop Settings* in the app launcher). Everything set here stays on the machine it was set on; the sync never carries it to the others.
+
+- **Waybar widgets** (also `SUPER + SHIFT + B`, `waybar/widgets.py`): every widget by section, shown (●) or hidden (○). Pick one to hide or show it, move it one place left or right (at the edge of a section it jumps into the next one) or put it into another section. Members of a group, e.g. the microphone in the audio pill, can be switched on and off on their own and move with their group. The spacious and the compact bar keep their own order; hidden widgets are hidden on both. Stored in `~/.local/state/waybar/layout.json`, which `density-watch.py` applies last; widgets that are new in `config.jsonc` appear at the end of their section.
+- **Wallpaper and colours**: the images in `~/Pictures/Wallpapers` (newest first), any other image (copied into that folder), or back to the previous wallpaper, all through `set-wallpaper`. The wallpaper and everything rendered from it are listed as `MACHINE_LOCAL` in `lib/lists.sh`: `snapshot.sh` keeps the kit's copy of them, and the sync never applies them. The kit's copy is only the start of a new install, which `restore.sh` renders anew from the current templates. When a template or `apply.py` changes, the sync renders it on each machine with that machine's own colours.
+- **Monitors**: *Arrange monitors* opens nwg-displays, which saves to `~/.local/state/hypr/monitors.lua` (and `workspaces.lua`). `hyprland.lua` loads them after its own monitor rules, so they win, and the menu reloads Hyprland on every save. *Reset to the automatic layout* deletes them again. On machines with a laptop panel, *Display mode* opens the menu below.
+- **Kit sync**: the [sync pill's menu](#sync-pill-in-the-bar).
+
+From a terminal: `~/.config/waybar/settings-menu.sh widgets|wallpaper|monitors|sync`.
 
 ## Display modes (SUPER + SHIFT + P)
 

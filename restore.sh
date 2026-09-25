@@ -388,6 +388,9 @@ chmod 700 "$HOME_DIR/.config/gtk-3.0" "$HOME_DIR/.config/gtk-4.0" 2> /dev/null |
 chmod +x "$HOME_DIR/.config/wlogout/wlogout.sh" 2> /dev/null || true
 chmod +x "$HOME_DIR"/.config/theme/*.sh "$HOME_DIR"/.config/theme/*.py 2> /dev/null || true
 ln -sfn "$HOME_DIR/.config/theme/set-wallpaper.sh" "$HOME_DIR/.local/bin/set-wallpaper" 2> /dev/null || true
+# the theme files in the kit are one machine's (lib/lists.sh, MACHINE_LOCAL): render them anew from
+# the current templates for the kit's wallpaper; this machine keeps its own from here on
+as_user python3 "$HOME_DIR/.config/theme/apply.py" --current > /dev/null || warn "theme not rendered (later: set-wallpaper --current)"
 # a few dotfiles need absolute paths (GTK/Waybar CSS imports, qt6ct): point them at this home,
 # whatever user the kit was snapshotted as
 grep -rlZ --include='*.css' --include='*.conf' -E '/home/[^/"]+/\.config' "$HOME_DIR/.config" 2> /dev/null |

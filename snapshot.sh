@@ -56,6 +56,8 @@ if [[ -n ${KIT_NOTES_REL:-} ]]; then
     cp -a "$NOTES/docs" files/docs
   fi
 fi
+# wallpaper and the theme rendered from it stay on each machine (lib/lists.sh)
+keep_machine_local
 # a kit file missing here was only deleted if this machine had it before (lib/lists.sh)
 guard_deletions "$STATE/files.base" files/home files/docs
 

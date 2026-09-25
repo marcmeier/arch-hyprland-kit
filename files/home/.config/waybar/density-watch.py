@@ -6,7 +6,8 @@ monitors get config-compact.jsonc merged in and are named "compact", which style
 events (socket2, like window.py) and when a source file is edited; a new style is picked up by
 waybar itself (reload_style_on_change), a new config restarts waybar via launch.sh (SIGUSR2
 reload is unreliable). SIGUSR1 forces a re-render (hypr/display-mode.sh). --once renders and
-exits (launch.sh runs it before starting waybar)."""
+exits (launch.sh runs it before starting waybar). ~/.local/state/waybar/layout.json (widget manager,
+widgets.py, per machine) is applied last: widget order and hidden widgets."""
 
 import json
 import os
@@ -18,41 +19,16 @@ import subprocess
 import sys
 import time
 
+from bar_layout import LAYOUT, apply, load_jsonc, load_layout, merge, prune
+
 SRC_DIR = os.path.expanduser("~/.config/waybar")
 OUT_DIR = os.path.expanduser("~/.cache/waybar")
 SOURCES = ["config.jsonc", "style.css", "config-compact.jsonc", "style-compact.css"]
 THRESHOLD = 2560
 EVENTS = ("monitoradded", "monitoraddedv2", "monitorremoved", "monitorremovedv2", "configreloaded")
 
-COMMENT = re.compile(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*.*?\*/', re.S)
-TRAILING = re.compile(r'"(?:\\.|[^"\\])*"|,(?=\s*[}\]])')
-
-
-def keep_str(m):
-    return m.group(0) if m.group(0).startswith('"') else ""
-
-
 # the effective style.css lives in ~/.cache, so relative url()s must point back to ~/.config/waybar
 REL_URL = re.compile(r'url\("(?![a-z]+:|/)([^"]+)"\)')
-
-
-def load_jsonc(path):
-    return json.loads(TRAILING.sub(keep_str, COMMENT.sub(keep_str, open(path).read())))
-
-
-def merge(base, overlay):
-    for key, value in overlay.items():
-        base[key] = merge(base[key], value) if isinstance(value, dict) and isinstance(base.get(key), dict) else value
-    return base
-
-
-def prune(cfg):
-    for k, v in cfg.items():
-        if k in ("modules-left", "modules-center", "modules-right"):
-            cfg[k] = [m for m in v if m in cfg]
-        elif k.startswith("group/"):
-            v["modules"] = [m for m in v.get("modules", []) if m in cfg]
-    return cfg
 
 
 def monitors():
@@ -110,16 +86,19 @@ def write(path, text):
 def render():
     base = load_jsonc(f"{SRC_DIR}/config.jsonc")
     compact = load_jsonc(f"{SRC_DIR}/config-compact.jsonc")
+    layout = load_layout()  # widget manager: order and hidden widgets (widgets.py)
     mons = monitors()
     if not mons:  # unknown layout: one plain bar on every output
-        bars = base
+        bars = apply(base, "spacious", layout)
     else:
         bars = []
         for name, width in mons:
             bar = json.loads(json.dumps(base))
             if width < THRESHOLD:
                 bar = prune(merge(bar, json.loads(json.dumps(compact))))
-            bar.update(output=name, name="compact" if width < THRESHOLD else "spacious")
+            variant = "compact" if width < THRESHOLD else "spacious"
+            bar = apply(bar, variant, layout)
+            bar.update(output=name, name=variant)
             bars.append(bar)
     css = open(f"{SRC_DIR}/style.css").read() + "\n" + scope(open(f"{SRC_DIR}/style-compact.css").read(), "compact")
     css = REL_URL.sub(lambda m: f'url("file://{SRC_DIR}/{m.group(1)}")', css)
@@ -141,7 +120,8 @@ def safe_render():
 
 
 def mtimes():
-    return [os.path.getmtime(f"{SRC_DIR}/{f}") if os.path.exists(f"{SRC_DIR}/{f}") else 0 for f in SOURCES]
+    paths = [f"{SRC_DIR}/{f}" for f in SOURCES] + [LAYOUT]
+    return [os.path.getmtime(p) if os.path.exists(p) else 0 for p in paths]
 
 
 poked = False

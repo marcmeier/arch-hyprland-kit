@@ -2,17 +2,32 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
-## Unreleased
+## v2.1.0 (2026-09-27): dictation and keybindings
+
+Speak into any window, look up any key, and a tour of everything: [FEATURES.md](FEATURES.md).
 
 ### Added
-- `FEATURES.md`: everything driftless sets up in one page, with the keys; the README's list is
-  shorter and points there.
-- Keybindings in the settings menu and on `SUPER + SHIFT + K` (`hypr/keybinds.py`): every bind of the
-  running Hyprland with its description, searchable in walker. Every bind in `hyprland.lua` has one now.
 - Dictation into the active window (`SUPER + D`, `hypr/dictate.py`, package group `dictation`):
   whisper.cpp and a small LLM from Ollama (`gemma3:4b`), both on the GPU through Vulkan. Tap to start
   and stop, or hold and let go; with `SHIFT` without the LLM. A pill next to the microphone shows the
   state. Settings `DICTATE_*` in `personal/config`.
+- Keybindings in the settings menu and on `SUPER + SHIFT + K` (`hypr/keybinds.py`): every bind of the
+  running Hyprland with its description, searchable in walker. Every bind in `hyprland.lua` has one now.
+- Bar size in the settings menu: automatic (compact on notebook panels), always full or always
+  compact, per machine.
+- `FEATURES.md`: everything driftless sets up in one page, with the keys and screenshots; the README's
+  list is shorter and points there.
+
+### Changed
+- The Monitors menu wins over the host file: a layout saved there overrides `hosts/<host>/hyprland.lua`.
+- Waybar: the spacious bar has the pills and order of the compact one; one icon size and one gap in
+  the icon pills.
+
+### Upgrading
+- Update first (`sudo pacman -Syu`): the sync installs the new group `dictation` with `pacman -S` only
+  and never upgrades the system, which fails on an outdated package database.
+- Then once: `sudo systemctl enable --now ollama`. The models (about 4 GB) download on the first
+  dictation, or ahead of it with `ollama pull gemma3:4b`.
 
 ## v2.0.0 (2026-09-25): driftless
 

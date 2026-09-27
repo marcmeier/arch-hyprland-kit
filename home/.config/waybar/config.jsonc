@@ -1,5 +1,7 @@
 // -*- mode: jsonc -*-
-// Minimal floating bar: user + workspaces + window left, clock centered, media, tray and controls right.
+// Minimal floating bar: user + workspaces + window left, clock island centered, media, Claude usage,
+// status (network, audio, battery) and system (tray, updates, sync, idle, notifications, power) right.
+// config-compact.jsonc keeps this order and these pills for the compact bar, with fewer words.
 {
     "layer": "top",
     "position": "top",
@@ -16,19 +18,13 @@
         "custom/window"
     ],
     "modules-center": [
-        "group/datetime",
-        "custom/weather"
+        "group/datetime"
     ],
     "modules-right": [
         "group/media",
-        "tray",
-        "group/audio",
         "custom/claude",
-        "battery",
-        "network",
-        "group/upkeep",
-        "group/actions",
-        "custom/power"
+        "group/status",
+        "group/system"
     ],
 
     // Profile picture (round, rendered from ~/.face by theme/apply.py) + display name.
@@ -163,21 +159,22 @@
         "on-scroll-down": "playerctl previous"
     },
 
-    // Idle inhibitor + notifications in one pill
-    "group/actions": {
+    // How this machine is connected: network, output + microphone, battery (notebooks) in one pill
+    "group/status": {
         "orientation": "horizontal",
-        "modules": ["idle_inhibitor", "custom/notifications"]
+        "modules": ["network", "pulseaudio", "pulseaudio#mic", "custom/dictate", "battery"]
     },
 
-    // Output switcher + microphone in one pill
-    "group/audio": {
+    // The machine itself: tray, what waits (package updates, driftless sync), idle inhibitor,
+    // notifications and power in one pill; updates collapses when there are none
+    "group/system": {
         "orientation": "horizontal",
-        "modules": ["pulseaudio", "pulseaudio#mic"]
+        "modules": ["tray", "custom/updates", "custom/sync", "idle_inhibitor", "custom/notifications", "custom/power"]
     },
 
     // Left: next output (audio-switch.py) · middle: mixer · right: mute
     "pulseaudio": {
-        "format": "{icon}   {volume}%",
+        "format": "{icon}  {volume}%",
         "format-muted": "\uf026    muted",
         "format-icons": {
             "headphone": "\uf025",
@@ -201,6 +198,18 @@
         "tooltip-format": "Microphone {source_volume}%\nClick: mute  ·  Scroll: level"
     },
 
+    // Dictation (hypr/dictate.py, SUPER + D): idle, recording, transcribing.
+    // Click: start/stop · Right: start/stop without the LLM · Middle: cancel the recording
+    "custom/dictate": {
+        "exec": "~/.config/hypr/dictate.py status",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 15,
+        "on-click": "~/.config/hypr/dictate.py toggle",
+        "on-click-right": "~/.config/hypr/dictate.py toggle --raw",
+        "on-click-middle": "~/.config/hypr/dictate.py cancel"
+    },
+
     // Claude Code usage: session/week utilisation + reset times (claude-usage.py)
     "custom/claude": {
         "exec": "~/.config/waybar/claude-usage.py",
@@ -222,7 +231,7 @@
     "battery": {
         "interval": 30,
         "states": { "warning": 25, "critical": 12 },
-        "format": "{icon} {capacity}%",
+        "format": "{icon}  {capacity}%",
         "format-charging": " {capacity}%",
         "format-plugged": " {capacity}%",
         "format-icons": ["", "", "", "", ""],
@@ -231,17 +240,11 @@
 
     "network": {
         "format-ethernet": "",  // hidden while connected
-        "format-wifi": "\uf1eb {signalStrength}%",
+        "format-wifi": "\uf1eb  {signalStrength}%",
         "tooltip-format-wifi": "{essid}\n{ipaddr}/{cidr}",
         "format-disconnected": " offline",
         "tooltip-format-ethernet": "{ifname}\n{ipaddr}/{cidr}\n↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
         "on-click": "ghostty -e nmtui"
-    },
-
-    // What waits to reach this machine: package updates + the driftless sync with GitHub, one pill
-    "group/upkeep": {
-        "orientation": "horizontal",
-        "modules": ["custom/updates", "custom/sync"]
     },
 
     // driftless sync: mode, incoming/outgoing commits, who wrote to GitHub last.
@@ -266,10 +269,10 @@
     },
 
     // Next event from khal (synced from Nextcloud). Click: interactive calendar (add/edit events)
-    // One bubble: date/time + next event; click opens ikhal
+    // One island: date/time · weather · next event; click on the clock or the event opens ikhal
     "group/datetime": {
         "orientation": "horizontal",
-        "modules": ["clock", "custom/calendar"]
+        "modules": ["clock", "custom/weather", "custom/calendar"]
     },
 
     "custom/calendar": {
@@ -296,8 +299,9 @@
         "tooltip-format-deactivated": "Idle allowed"
     },
 
+    // tray icons at about the height of the font glyphs next to them in the system pill
     "tray": {
-        "icon-size": 16,
+        "icon-size": 14,
         "spacing": 10
     },
 

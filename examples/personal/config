@@ -8,6 +8,13 @@ WTTR_LOCATION=""
 # mirror countries for reflector, e.g. "Germany,Austria" (install/bootstrap.sh)
 REFLECTOR_COUNTRY=""
 
+# dictation (SUPER + D): language (de, en, ... or auto), the Ollama model that tidies the text up ("off":
+# Whisper's text as it is), the Whisper model and words Whisper should know (names, terms)
+DICTATE_LANG=auto
+DICTATE_LLM=gemma3:4b
+DICTATE_WHISPER_MODEL=large-v3-turbo-q5_0
+DICTATE_PROMPT=""
+
 # where Claude Code starts (SUPER + SHIFT + C)
 CLAUDE_WORKDIR="$HOME"
 

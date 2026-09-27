@@ -30,16 +30,19 @@ A new machine gets everything from two scripts.
 
 ## What you get
 
-- **Hyprland session under uwsm**: Waybar, mako, hypridle, the polkit agent, the clipboard history
-  and the wallpaper run as systemd user units, so they restart when they crash
-- **Theme from the wallpaper**: `set-wallpaper IMAGE` derives two accent colours and renders them
-  into Waybar, walker, wlogout, mako, Ghostty, hyprlock, the login screen, GTK and Qt
-- **One bar per monitor**: compact on notebook panels, spacious everywhere else, with no watcher process
-- **Settings menu** on the avatar: widgets (per machine), wallpaper, monitors, sync
+- **A complete Hyprland desktop** in the colours of your wallpaper: Waybar, walker, mako, hyprlock,
+  wlogout, the ReGreet login screen, Ghostty, GTK and Qt, all themed by `set-wallpaper IMAGE`
+- **Dictation** (`SUPER + D`): speak into any window. whisper.cpp and a small LLM tidy the text up,
+  both locally on the GPU
+- **One bar per monitor** with a pill for everything (weather, calendar, media, updates, sync, ...),
+  compact on notebook panels
+- **Settings menu** on the avatar: widgets, bar size, wallpaper, monitors, sync, and every keybinding
+  in a list you search as you type (`SUPER + SHIFT + K`)
 - **Gaming stack**: Steam, Proton-GE, Lutris, gamescope, gamemode, tearing for games
-- **Login screen**: ReGreet in cage, with your wallpaper, colours and avatar
-- **Base system**: btrfs with snapper, optional LUKS2 encryption, unified kernel images,
-  zram, SMART warnings on the desktop, firewall
+- **Base system**: btrfs with snapper, optional LUKS2, unified kernel images, zram, firewall
+- **The sync** that keeps all of it the same on every machine you own
+
+**The full tour, with the keys: [FEATURES.md](FEATURES.md).**
 
 <table>
 <tr>
@@ -193,6 +196,7 @@ as GitHub, with real SSH signatures. `pacman`, `systemctl` and the desktop tools
 
 ## More
 
+- [FEATURES.md](FEATURES.md): everything it sets up, and the keys
 - [ARCHITECTURE.md](ARCHITECTURE.md): the design, and what it replaced
 - [CHANGELOG.md](CHANGELOG.md)
 - [docs/boot.md](docs/boot.md): unified kernel images, and moving an existing machine to them

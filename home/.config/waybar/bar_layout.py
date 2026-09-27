@@ -4,9 +4,12 @@ layout.json holds what the widget manager changed. It lives in ~/.local/state/wa
 outside the repository, so every machine keeps its own bar.
   {"hidden": ["custom/weather", ...],                      hidden everywhere, also inside groups
    "order": {"spacious": {"modules-left": [...], ...},     widget order per bar variant
-             "compact":  {...}}}
+             "compact":  {...}},
+   "mode": "auto"}                                         bar size: "auto" (compact on narrow outputs),
+                                                           "spacious" or "compact" on every output
 config.jsonc stays the source of every widget: a widget missing from the saved order (new in the
-config) keeps its place at the end of its section, a saved one gone from the config is ignored."""
+config) goes in right after the widget before it in the config (first in its section when there is
+none), a saved one gone from the config is ignored."""
 
 import copy
 import json
@@ -20,6 +23,7 @@ OUT = os.path.expanduser("~/.cache/waybar/config.jsonc")
 HOST_CONFIG = os.path.expanduser("~/.config/driftless/host/waybar.json")
 DEFAULT_COMPACT = ["eDP-1", "eDP-2"]
 SECTIONS = ("modules-left", "modules-center", "modules-right")
+MODES = ("auto", "spacious", "compact")
 
 COMMENT = re.compile(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*.*?\*/', re.S)
 TRAILING = re.compile(r'"(?:\\.|[^"\\])*"|,(?=\s*[}\]])')
@@ -64,6 +68,20 @@ def compact_outputs(path=HOST_CONFIG):
         return list(DEFAULT_COMPACT)
 
 
+def bar_mode(layout):
+    """The saved bar size: "auto", "spacious" or "compact" (anything else counts as "auto")."""
+    mode = layout.get("mode")
+    return mode if mode in MODES else "auto"
+
+
+def variant_for(monitor, layout, narrow):
+    """The bar variant on a monitor (hyprctl's name and description) under the saved bar size."""
+    mode = bar_mode(layout)
+    if mode != "auto":
+        return mode
+    return "compact" if monitor.get("name") in narrow or monitor.get("description") in narrow else "spacious"
+
+
 def load_layout(path=LAYOUT):
     try:
         layout = json.load(open(path))
@@ -91,7 +109,14 @@ def ordered(cfg, variant, layout):
     result = {s: [m for m in saved.get(s, []) if m in known] for s in SECTIONS}
     placed = {m for s in SECTIONS for m in result[s]}
     for s in SECTIONS:
-        result[s] += [m for m in current[s] if m not in placed]
+        for i, m in enumerate(current[s]):
+            if m in placed:
+                continue
+            # next to its neighbour in the config, wherever the layout moved that one
+            before = next((p for p in reversed(current[s][:i]) if p in placed), None)
+            where = next((sec for sec in SECTIONS if before in result[sec]), s) if before else s
+            result[where].insert(result[where].index(before) + 1 if before else 0, m)
+            placed.add(m)
     return result
 
 

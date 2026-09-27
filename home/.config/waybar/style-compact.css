@@ -54,11 +54,24 @@ window#waybar.compact #custom-media { padding: 0 12px 0 4px; }
 
 window#waybar.compact #custom-claude { padding: 0 12px; }
 
+/* ---- icon pills (status, system): one glyph size, one gap ----
+   Nerd Font glyphs at 14px come out about 12px high, the tray icons are 13px (config-compact.jsonc).
+   The paddings below differ because the glyphs carry different side bearings: measured on screen they
+   leave about 10px between every two icons. */
+window#waybar.compact #status #network, window#waybar.compact #status #pulseaudio, window#waybar.compact #system #custom-updates, window#waybar.compact #system #custom-sync, window#waybar.compact #system #idle_inhibitor, window#waybar.compact #system #custom-notifications, window#waybar.compact #system #custom-power { font-size: 14px; }
+
 /* ---- status: network, volume, mic, battery ---- */
 window#waybar.compact #status { padding: 0 5px; }
-window#waybar.compact #status #network, window#waybar.compact #status #pulseaudio, window#waybar.compact #status #battery { color: @text; padding: 0 7px; }
+window#waybar.compact #status #network, window#waybar.compact #status #pulseaudio, window#waybar.compact #status #battery { color: @text; padding: 0 5px; }
+/* the wifi and speaker glyphs draw wider than their advance: without the extra room on the right their
+   outer arcs get clipped and the two icons crowd each other */
+window#waybar.compact #status #network { padding: 0 9px 0 5px; }
+window#waybar.compact #status #pulseaudio { padding: 0 9px; }
+window#waybar.compact #status #pulseaudio.mic { padding: 0 3px 0 5px; }
+window#waybar.compact #status #battery { padding: 0 5px 0 4px; }
 window#waybar.compact #status #pulseaudio.muted, window#waybar.compact #status #pulseaudio.mic { color: @dim; }
 window#waybar.compact #status #pulseaudio.mic.source-muted { color: @crit; }
+window#waybar.compact #status #custom-dictate { font-size: 15px; padding: 0 5px; }
 window#waybar.compact #status #network.disconnected { color: @warn; }
 window#waybar.compact #status #battery.charging, window#waybar.compact #status #battery.plugged { color: @accent2; }
 window#waybar.compact #status #battery.warning:not(.charging) { color: @warn; }
@@ -66,13 +79,16 @@ window#waybar.compact #status #battery.critical:not(.charging) { color: @crit; }
 window#waybar.compact #status:hover, window#waybar.compact #system:hover { background: rgba(40, 44, 54, 0.9); }
 
 /* ---- system: tray, updates, idle, notifications, power ---- */
-window#waybar.compact #system { padding: 0 4px 0 8px; }
-window#waybar.compact #system #tray, window#waybar.compact #system #custom-updates, window#waybar.compact #system #custom-sync { padding: 0 6px; }
+window#waybar.compact #system { padding: 0 4px 0 5px; }
+window#waybar.compact #system #tray { padding: 0 4px; }
+window#waybar.compact #system #custom-updates { padding: 0 5px 0 4px; }
+window#waybar.compact #system #custom-sync { padding: 0 7px 0 5px; }
+window#waybar.compact #system #idle_inhibitor { padding: 0 7px; }
+window#waybar.compact #system #custom-notifications { padding: 0 5px 0 7px; }
 window#waybar.compact #system #custom-updates.none { padding: 0; }
-window#waybar.compact #system #idle_inhibitor, window#waybar.compact #system #custom-notifications { padding: 0 6px; }
 window#waybar.compact #system #custom-power {
     color: @crit;
-    padding: 0 9px;
-    margin: 4px 0 4px 4px;
+    padding: 0 7px;
+    margin: 4px 0;
 }
 window#waybar.compact #system #custom-power:hover { background: @crit; color: #0b0d10; }

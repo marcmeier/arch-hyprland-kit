@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Desktop settings, from a click on the avatar in waybar (or "Desktop settings" in the app launcher).
-# Usage: settings-menu.sh [widgets|wallpaper|monitors|sync]  (no argument: pick in walker)
-# Per machine choices: widget layout and monitor layout (~/.local/state) and the wallpaper with its
+# Usage: settings-menu.sh [widgets|size|wallpaper|monitors|sync|keys]  (no argument: pick in walker)
+# Per machine choices: widget layout, bar size and monitor layout (~/.local/state) and the wallpaper with its
 # colours (~/.config/wall.png and the files rendered from it, not in the repository). None of them
 # travels to your other machines.
 WAYBAR=$HOME/.config/waybar
@@ -88,25 +88,53 @@ monitors() {
   esac
 }
 
+# bar size: automatic (compact bar on the narrow outputs, render.py) or one size on every monitor
+size() {
+  local current choice mode items=() label
+  current=$("$WAYBAR/render.py" --get-mode)
+  for mode in auto spacious compact; do
+    case $mode in
+      auto) label="󰁨  Automatic (compact on notebook panels)" ;;
+      spacious) label="󰍹  Always full size" ;;
+      compact) label="󰍺  Always compact" ;;
+    esac
+    [[ $mode == "$current" ]] && label+="  (current)"
+    items+=("$label")
+  done
+  choice=$(printf '%s\n' "${items[@]}" | pick "Bar size") || return 0
+  case $choice in
+    *Automatic*) mode=auto ;;
+    *full*) mode=spacious ;;
+    *compact) mode=compact ;;
+    *) return 0 ;;
+  esac
+  [[ $mode == "$current" ]] && return 0
+  "$WAYBAR/render.py" --mode "$mode" && systemctl --user restart waybar.service
+}
+
 action=$1
 if [[ -z $action ]]; then
-  choice=$(printf '%s\n' "󰕮  Waybar widgets (show, hide, move)" "󰸉  Wallpaper and colours" "󰍹  Monitors" "󰓦  Sync with your other machines" |
+  choice=$(printf '%s\n' "󰕮  Waybar widgets (show, hide, move)" "󰯌  Waybar size (full, compact, automatic)" "󰸉  Wallpaper and colours" "󰍹  Monitors" "󰓦  Sync with your other machines" "󰌌  Keybindings (search)" |
     pick "Settings") || exit 0
   case $choice in
     *widgets*) action=widgets ;;
+    *size*) action=size ;;
     *Wallpaper*) action=wallpaper ;;
     *Monitors) action=monitors ;;
     *sync) action=sync ;;
+    *Keybindings*) action=keys ;;
     *) exit 0 ;;
   esac
 fi
 case $action in
   widgets) exec "$WAYBAR/widgets.py" ;;
+  size) size ;;
   wallpaper) wallpaper ;;
   monitors) monitors ;;
   sync) exec "$WAYBAR/sync-menu.sh" ;;
+  keys) exec "$HOME/.config/hypr/keybinds.py" ;;
   *)
-    echo "usage: $0 [widgets|wallpaper|monitors|sync]" >&2
+    echo "usage: $0 [widgets|size|wallpaper|monitors|sync|keys]" >&2
     exit 2
     ;;
 esac

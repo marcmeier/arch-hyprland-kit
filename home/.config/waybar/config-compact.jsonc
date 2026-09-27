@@ -1,13 +1,10 @@
 // -*- mode: jsonc -*-
 // Compact layout for narrow monitors, merged over config.jsonc by render.py
 // (objects merge key by key, lists replace; modules without a definition, e.g. battery
-// on a desktop, are dropped). Fewer, grouped pills; details live in the tooltips.
+// on a desktop, are dropped). Same pills in the same order as config.jsonc, fewer words: details live
+// in the tooltips.
 {
     "spacing": 6,
-
-    "modules-left": ["group/user", "group/workspaces", "custom/window"],
-    "modules-center": ["group/datetime"],
-    "modules-right": ["group/media", "custom/claude", "group/status", "group/system"],
 
     // avatar only, the name is decoration
     "group/user": { "modules": ["custom/avatar"] },
@@ -15,8 +12,7 @@
     // app glyph + app name; the full title stays in the tooltip (and the media pill shows what plays)
     "custom/window": { "exec": "cat \"$XDG_RUNTIME_DIR/driftless-bar/window-compact.json\" 2> /dev/null" },
 
-    // one island: time · weather · agenda (icon lights up when an event is coming, list in the tooltip)
-    "group/datetime": { "modules": ["clock", "custom/weather", "custom/calendar"] },
+    // the island: time · weather · agenda (icon lights up when an event is coming, list in the tooltip)
     "custom/calendar": { "exec": "~/.config/waybar/calendar.sh compact" },
 
     // play/pause + scrolling title; scroll on the title skips tracks
@@ -26,11 +22,7 @@
     // only the limit that is closer to running out
     "custom/claude": { "exec": "~/.config/waybar/claude-usage.py compact" },
 
-    // quick-settings style: monochrome icons, numbers in the tooltips (battery keeps its %)
-    "group/status": {
-        "orientation": "horizontal",
-        "modules": ["network", "pulseaudio", "pulseaudio#mic", "battery"]
-    },
+    // status pill in quick-settings style: monochrome icons, numbers in the tooltips (battery keeps its %)
     "network": {
         "format-wifi": "",
         "tooltip-format-wifi": "{essid}  ·  {signalStrength}%\n{ipaddr}/{cidr}"
@@ -40,10 +32,9 @@
         "format-muted": "",
         "tooltip-format": "{desc}  ·  {volume}%\nClick: next output  ·  Middle: mixer  ·  Right: mute  ·  Scroll: volume"
     },
+    // one space after the battery glyph, as tight as the other icons (config.jsonc leaves two)
+    "battery": { "format": "{icon} {capacity}%" },
 
-    "group/system": {
-        "orientation": "horizontal",
-        "modules": ["tray", "custom/updates", "custom/sync", "idle_inhibitor", "custom/notifications", "custom/power"]
-    },
-    "tray": { "spacing": 8 }
+    // tray icons at the height of the font glyphs next to them (style-compact.css), one gap everywhere
+    "tray": { "icon-size": 13, "spacing": 8 }
 }

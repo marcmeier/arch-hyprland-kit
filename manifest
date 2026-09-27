@@ -36,6 +36,7 @@ group desktop
 group apps
 group gaming
 group dev
+group dictation
 group hw-cpu-amd if=cpu-amd
 group hw-cpu-intel if=cpu-intel
 group hw-gpu-amd if=gpu-amd
@@ -54,6 +55,7 @@ unit systemd-timesyncd.service
 unit paccache.timer
 unit reflector.timer
 unit fstrim.timer
+unit ollama.service
 unit ufw.service
 unit smartd.service if=!vm
 unit fwupd-refresh.timer if=!vm

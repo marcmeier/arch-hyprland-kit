@@ -10,12 +10,8 @@ hl.monitor({
     scale    = "1.0", -- Hyprland picks a fitting scale (HiDPI notebook panels)
 })
 
--- Per machine layout from nwg-displays (avatar menu > Monitors, waybar/settings-menu.sh). It lives in
--- ~/.local/state/hypr, never in the kit, and comes after the defaults above, so it wins.
-local layout_dir = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/hypr/"
-for _, file in ipairs({ "monitors.lua", "workspaces.lua" }) do
-    pcall(dofile, layout_dir .. file) -- missing until the first save
-end
+-- Monitor rules of this machine: hosts/<host>/hyprland.lua, then the layout from the Monitors menu,
+-- both loaded at the very end of this file (LOCAL LAYERS), so they win over the default above.
 
 -- Laptop only / external only / extend / mirror: SUPER + SHIFT + P (display-mode.sh). If the last active
 -- monitor goes away (external unplugged in "External only" mode), turn the laptop panel back on.
@@ -262,79 +258,86 @@ hl.gesture({
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 
 -- Example binds, see https://wiki.hypr.land/Configuring/Basics/Binds/ for more
-hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal))
-local closeWindowBind = hl.bind(mainMod .. " + W", hl.dsp.window.close())
+hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal), { description = "Terminal (Ghostty)" })
+local closeWindowBind = hl.bind(mainMod .. " + W", hl.dsp.window.close(), { description = "Close window" })
 -- closeWindowBind:set_enabled(false)
-hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/wlogout/wlogout.sh"))
-hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("~/.config/waybar/widgets.py")) -- waybar widget manager
-hl.bind(mainMod .. " + SHIFT + RETURN", hl.dsp.exec_cmd(browser))
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen("maximized", "toggle"))
-hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | walker --dmenu | cliphist decode | wl-copy"))
-hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("~/.config/hypr/claude-launch.sh"))
-hl.bind("PRINT", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy'))
-hl.bind("SHIFT + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'))
-hl.bind("CTRL + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim - | tee "$f" | wl-copy'))
+hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/wlogout/wlogout.sh"), { description = "Power menu: lock, log out, suspend, reboot, shut down" })
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("~/.config/waybar/widgets.py"), { description = "Waybar widgets: show, hide, move" }) -- waybar widget manager
+hl.bind(mainMod .. " + SHIFT + RETURN", hl.dsp.exec_cmd(browser), { description = "Browser" })
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { description = "File manager" })
+hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen("maximized", "toggle"), { description = "Maximise window (fullscreen)" })
+hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | walker --dmenu | cliphist decode | wl-copy"), { description = "Clipboard history" })
+hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("~/.config/hypr/claude-launch.sh"), { description = "Claude Code" })
+hl.bind("PRINT", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy'), { description = "Screenshot: area to clipboard" })
+hl.bind("SHIFT + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'), { description = "Screenshot: area to file and clipboard" })
+hl.bind("CTRL + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim - | tee "$f" | wl-copy'), { description = "Screenshot: whole screen to file and clipboard" })
 -- Color picker: click a pixel -> hex code in clipboard + notification (Esc cancels)
-hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("pidof hyprpicker || hyprpicker -a -n -q"))
-hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(menu))
-hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("~/.config/hypr/emoji-picker.sh"))
-hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
-hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/display-mode.sh"))
-hl.bind("XF86Display", hl.dsp.exec_cmd("~/.config/hypr/display-mode.sh"))
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
+hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("pidof hyprpicker || hyprpicker -a -n -q"), { description = "Colour picker: hex code to clipboard" })
+-- Every keybinding, searchable (keybinds.py lists the descriptions of these binds)
+hl.bind(mainMod .. " + SHIFT + K", hl.dsp.exec_cmd("~/.config/hypr/keybinds.py"), { description = "Keybindings: search all shortcuts" })
+hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }), { description = "Float window (toggle)" })
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(menu), { description = "App launcher (walker): apps, calculator, web search" })
+hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("~/.config/hypr/emoji-picker.sh"), { description = "Emoji picker" })
+-- Dictation (dictate.py): tap to start and again to stop, or hold and let go; with SHIFT without the LLM
+hl.bind(mainMod .. " + D",         hl.dsp.exec_cmd("~/.config/hypr/dictate.py down"), { description = "Dictation, voice to text: tap to start and stop, hold to talk" })
+hl.bind(mainMod .. " + D",         hl.dsp.exec_cmd("~/.config/hypr/dictate.py up"), { release = true })
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("~/.config/hypr/dictate.py down --raw"), { description = "Dictation, voice to text, without the LLM tidying up" })
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("~/.config/hypr/dictate.py up"), { release = true })
+hl.bind(mainMod .. " + P", hl.dsp.window.pseudo(), { description = "Pseudo-tile window" })
+hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/display-mode.sh"), { description = "Display mode: extend, mirror, one screen" })
+hl.bind("XF86Display", hl.dsp.exec_cmd("~/.config/hypr/display-mode.sh"), { description = "Display mode: extend, mirror, one screen" })
+hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"), { description = "Toggle split direction" }) -- dwindle only
 
 -- Move focus with mainMod + arrow keys
-hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
-hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
-hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
+hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }), { description = "Move focus" })
+hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }), { description = "Move focus" })
+hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }), { description = "Move focus" })
+hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }), { description = "Move focus" })
 
 -- Swap active window with its neighbour with mainMod + SHIFT + arrow keys
-hl.bind(mainMod .. " + SHIFT + left",  hl.dsp.window.swap({ direction = "left" }))
-hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.swap({ direction = "right" }))
-hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.swap({ direction = "up" }))
-hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.swap({ direction = "down" }))
+hl.bind(mainMod .. " + SHIFT + left",  hl.dsp.window.swap({ direction = "left" }), { description = "Swap window with its neighbour" })
+hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.swap({ direction = "right" }), { description = "Swap window with its neighbour" })
+hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.swap({ direction = "up" }), { description = "Swap window with its neighbour" })
+hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.swap({ direction = "down" }), { description = "Swap window with its neighbour" })
 
 -- Switch workspaces with mainMod + [0-9]
 -- Move active window to a workspace with mainMod + SHIFT + [0-9]
 for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
-    hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}))
-    hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }))
+    hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}), { description = "Go to workspace 1-10" })
+    hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }), { description = "Move window to workspace 1-10" })
 end
 
 -- Example special workspace (scratchpad)
-hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"), { description = "Scratchpad (special workspace): show or hide" })
 -- Screenshot wie unter Windows: Bereich -> Datei + Zwischenablage
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'), { description = "Screenshot: area to file and clipboard" })
 -- Screenshot mit Annotieren (satty): Bereich -> Editor, Speichern/Kopieren dort
-hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd('mkdir -p ~/Pictures && grim -g "$(slurp)" - | satty --filename - --output-filename ~/Pictures/shot-%Y-%m-%d_%H-%M-%S.png --copy-command wl-copy --early-exit'))
+hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd('mkdir -p ~/Pictures && grim -g "$(slurp)" - | satty --filename - --output-filename ~/Pictures/shot-%Y-%m-%d_%H-%M-%S.png --copy-command wl-copy --early-exit'), { description = "Screenshot: area, annotate (satty)" })
 -- Scratchpad-Verschieben (vorher SUPER + SHIFT + S)
-hl.bind(mainMod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+hl.bind(mainMod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:magic" }), { description = "Move window to the scratchpad" })
 
 -- Scroll through existing workspaces with mainMod + scroll
-hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), { description = "Next workspace" })
+hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }), { description = "Previous workspace" })
 
 -- Move/resize windows with mainMod + LMB/RMB and dragging
-hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
-hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true, description = "Move window (drag)" })
+hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, description = "Resize window (drag)" })
 
 -- Laptop multimedia keys for volume and LCD brightness
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true, description = "Volume up" })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true, description = "Volume down" })
+hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true, description = "Mute speakers" })
+hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true, description = "Mute microphone" })
+hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true, description = "Brightness up" })
+hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true, description = "Brightness down" })
 
 -- Requires playerctl
-hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
-hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true, description = "Media: next track" })
+hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true, description = "Media: play / pause" })
+hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true, description = "Media: play / pause" })
+hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true, description = "Media: previous track" })
 
 
 --------------------------------
@@ -442,8 +445,15 @@ hl.window_rule({
 ---- LOCAL LAYERS ----
 ----------------------
 
--- Machine specific (hosts/<host>/hyprland.lua, e.g. a monitor's refresh rate) and personal
--- (personal/hyprland.lua, e.g. the keyboard layout). Both are optional; loaded last, so they win.
+-- In this order, each one winning over the ones before:
+--   1. hosts/<host>/hyprland.lua   this machine in the repository (e.g. a monitor's refresh rate)
+--   2. personal/hyprland.lua       yours on every machine (e.g. the keyboard layout)
+--   3. the Monitors menu           nwg-displays (avatar menu > Monitors), saved in ~/.local/state/hypr,
+--                                  never in the repository: what you set there is what you get
 for _, layer in ipairs({ "host", "personal" }) do
     pcall(dofile, os.getenv("HOME") .. "/.config/driftless/" .. layer .. "/hyprland.lua")
+end
+local layout_dir = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/hypr/"
+for _, file in ipairs({ "monitors.lua", "workspaces.lua" }) do
+    pcall(dofile, layout_dir .. file) -- missing until the first save
 end

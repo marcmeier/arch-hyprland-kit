@@ -1,5 +1,6 @@
 {
     "workbench.startupEditor": "none",
     "chat.titleBar.signIn.enabled": false,
-    "chat.titleBar.openInAgentsWindow.enabled": false
+    "chat.titleBar.openInAgentsWindow.enabled": false,
+    "git.openRepositoryInParentFolders": "never"
 }

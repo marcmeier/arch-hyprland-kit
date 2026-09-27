@@ -2,6 +2,18 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## Unreleased
+
+### Added
+- `FEATURES.md`: everything driftless sets up in one page, with the keys; the README's list is
+  shorter and points there.
+- Keybindings in the settings menu and on `SUPER + SHIFT + K` (`hypr/keybinds.py`): every bind of the
+  running Hyprland with its description, searchable in walker. Every bind in `hyprland.lua` has one now.
+- Dictation into the active window (`SUPER + D`, `hypr/dictate.py`, package group `dictation`):
+  whisper.cpp and a small LLM from Ollama (`gemma3:4b`), both on the GPU through Vulkan. Tap to start
+  and stop, or hold and let go; with `SHIFT` without the LLM. A pill next to the microphone shows the
+  state. Settings `DICTATE_*` in `personal/config`.
+
 ## v2.0.0 (2026-09-25): driftless
 
 The kit is rebuilt around links instead of copies and renamed to driftless. The reasons, decision by

@@ -32,14 +32,9 @@ tooltip label { color: @text; padding: 2px 4px; }
 #workspaces,
 #custom-window,
 #datetime,
-#custom-weather,
-#upkeep,
-#actions,
-#audio,
 #custom-claude,
-#network,
-#tray,
-#custom-power {
+#status,
+#system {
     background: @surface;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 14px;
@@ -95,14 +90,27 @@ tooltip label { color: @text; padding: 2px 4px; }
 /* ---- active window (hidden by waybar when the text is empty) ---- */
 #custom-window { color: @text; font-weight: 600; padding: 0 14px 0 12px; }
 
-/* ---- clock ---- */
+/* ---- centre island: clock | weather | next event ---- */
 #datetime { padding: 0 6px; }
 #clock {
     font-weight: 700;
     font-size: 15px;
     letter-spacing: 1px;
-    padding: 0 8px 0 12px;
+    padding: 0 12px 0 12px;
 }
+#datetime #custom-weather {
+    color: @text;
+    padding: 0 12px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+#datetime #custom-calendar {
+    color: @dim;
+    padding: 0 12px 0 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+#custom-calendar.next { color: rgba(215, 220, 226, 0.7); font-weight: 400; font-size: 13px; }
+#custom-calendar.error { color: @warn; }
+#datetime:hover { background: rgba(40, 44, 54, 0.9); }
 
 /* ---- media: four joined segments, prev | play | next | title ---- */
 #custom-media-prev, #custom-media-play, #custom-media-next, #custom-media {
@@ -131,14 +139,6 @@ tooltip label { color: @text; padding: 2px 4px; }
 #custom-media-prev:hover, #custom-media-next:hover { color: @text; background: rgba(40, 44, 54, 0.9); }
 #custom-media-play:hover, #custom-media:hover { background: rgba(40, 44, 54, 0.9); }
 
-/* ---- audio / network / power ---- */
-#audio { padding: 0 8px; }
-#pulseaudio { color: @text; padding: 0 6px; }
-#pulseaudio.muted { color: @dim; }
-#pulseaudio.mic { color: @dim; padding: 0 6px; min-width: 16px; }
-#pulseaudio.mic.source-muted { color: @crit; }
-#audio:hover, #network:hover, #actions:hover { background: rgba(40, 44, 54, 0.9); }
-
 /* ---- Claude usage ---- */
 #custom-claude { color: @text; }
 #custom-claude.warn { color: @warn; }
@@ -146,59 +146,50 @@ tooltip label { color: @text; padding: 2px 4px; }
 #custom-claude.stale { color: @dim; }
 #custom-claude:hover { background: rgba(40, 44, 54, 0.9); }
 
-/* ---- notifications (mako) ---- */
-#actions { padding: 0 6px; }
-#custom-notifications { color: @dim; padding: 0 8px; }
-#custom-notifications.active { color: @accent2; }
-#custom-notifications.dnd { color: @warn; }
+/* ---- icon pills (status, system): tray icons and glyphs at one height, one gap ----
+   The paddings differ because the glyphs carry different side bearings: measured on screen they leave
+   about 12px between every two icons (style-compact.css does the same with 10px). */
+#status:hover, #system:hover { background: rgba(40, 44, 54, 0.9); }
 
-#network { color: @accent; padding: 0 14px; }
+/* ---- status: network, volume, mic, battery ---- */
+#status { padding: 0 6px; }
+#network { color: @accent; padding: 0 8px; }
 #network.disconnected { color: @warn; }
+#pulseaudio { color: @text; padding: 0 8px 0 6px; }
+#pulseaudio.muted { color: @dim; }
+#pulseaudio.mic { color: @dim; min-width: 16px; padding: 0 3px 0 2px; }
+#pulseaudio.mic.source-muted { color: @crit; }
+#custom-dictate { color: @accent; font-size: 17px; min-width: 18px; padding: 0 6px 0 5px; }
+#custom-dictate.recording { color: @crit; }
+#custom-dictate.busy { color: @accent; }
+#battery { color: @text; padding: 0 8px; }
+#battery.charging, #battery.plugged { color: @accent2; }
+#battery.warning:not(.charging) { color: @warn; }
+#battery.critical:not(.charging) { color: @crit; }
 
-#tray { padding: 0 10px; }
+/* ---- system: tray, updates, sync, idle, notifications, power ---- */
+#system { padding: 0 4px 0 6px; }
+#tray { padding: 0 5px; }
 #tray > .passive { -gtk-icon-effect: dim; }
 #tray > .needs-attention { -gtk-icon-effect: highlight; }
-
-#custom-power {
-    color: @crit;
-    padding: 0 12px;
-    transition: all 0.2s ease;
-}
-#custom-power:hover { background: @crit; color: #0b0d10; }
-
-/* ---- updates / weather / idle inhibitor ---- */
-#custom-updates { color: @accent2; }
+#custom-updates { color: @accent2; padding: 0 6px 0 5px; }
 #custom-updates.many { color: @warn; }
-#custom-updates.none { padding: 0; margin: 0; background: transparent; border-color: transparent; }
-#custom-weather:hover { background: rgba(40, 44, 54, 0.9); }
-/* updates + kit sync share one pill (#upkeep); updates collapses when there are none */
-#upkeep { padding: 0 4px; }
-#upkeep:hover { background: rgba(40, 44, 54, 0.9); }
-#custom-updates { padding: 0 8px; }
-#custom-sync { color: @dim; padding: 0 8px; }
-#upkeep #custom-updates:not(.none) { border-right: 1px solid rgba(255, 255, 255, 0.10); padding-right: 10px; }
-#upkeep #custom-sync { padding-left: 10px; }
+#custom-updates.none { padding: 0; }
+#custom-sync { color: @dim; padding: 0 8px 0 6px; }
 #custom-sync.running { color: @accent; }
 #custom-sync.pending { color: @warn; }
 #custom-sync.off { color: @warn; }
 #custom-sync.error { color: @crit; }
-#custom-weather { color: @text; }
 #idle_inhibitor { color: @dim; padding: 0 8px; }
 #idle_inhibitor.activated { color: @accent; }
-
-#custom-calendar { color: @dim; padding: 0 12px 0 4px; }
-#custom-calendar.next { color: rgba(215, 220, 226, 0.7); font-weight: 400; font-size: 13px; }
-#datetime:hover { background: rgba(40, 44, 54, 0.9); }
-#custom-calendar.error { color: @warn; }
-
-/* ---- battery (notebooks only, added by restore.sh) ---- */
-#battery {
-    background: @surface;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    padding: 0 14px;
-    color: @text;
+#custom-notifications { color: @dim; padding: 0 5px 0 8px; }
+#custom-notifications.active { color: @accent2; }
+#custom-notifications.dnd { color: @warn; }
+#custom-power {
+    color: @crit;
+    padding: 0 9px;
+    margin: 4px 0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
 }
-#battery.charging, #battery.plugged { color: @accent2; }
-#battery.warning:not(.charging) { color: @warn; }
-#battery.critical:not(.charging) { color: @crit; }
+#custom-power:hover { background: @crit; color: #0b0d10; }

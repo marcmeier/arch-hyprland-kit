@@ -1,0 +1,6 @@
+# dictation (SUPER + D, home/.config/hypr/dictate.py): whisper.cpp and a small LLM from Ollama, both
+# on the GPU through Vulkan (AMD, Intel and NVIDIA alike); the models are downloaded on first use
+ggml-vulkan
+ollama
+ollama-vulkan
+whisper-cpp

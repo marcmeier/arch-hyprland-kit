@@ -10,7 +10,7 @@ import json
 import subprocess
 import sys
 
-from bar_layout import SECTIONS, compact_outputs, load_layout, ordered, variant_config
+from bar_layout import SECTIONS, compact_outputs, load_layout, ordered, variant_config, variant_for
 from bar_layout import save_layout as _save_layout
 
 SECTION_NAMES = {"modules-left": "Left", "modules-center": "Center", "modules-right": "Right"}
@@ -24,16 +24,14 @@ NAMES = {
     "custom/weather": "Weather",
     "group/media": "Media",
     "tray": "Tray",
-    "group/audio": "Audio",
     "pulseaudio": "Volume",
     "pulseaudio#mic": "Microphone",
+    "custom/dictate": "Dictation",
     "custom/claude": "Claude usage",
     "battery": "Battery",
     "network": "Network",
-    "group/upkeep": "Updates & sync",
     "custom/updates": "Updates",
     "custom/sync": "Sync",
-    "group/actions": "Idle & notifications",
     "idle_inhibitor": "Idle inhibitor",
     "custom/notifications": "Notifications",
     "group/status": "Status",
@@ -49,14 +47,14 @@ def name(mod):
 
 
 def focused_variant():
-    """The bar variant of the focused monitor (render.py: compact on the outputs it names)."""
+    """The bar variant of the focused monitor (render.py: compact on the outputs it names, or the fixed
+    bar size from the settings menu)."""
     try:
         mons = json.loads(subprocess.run(["hyprctl", "-j", "monitors"], capture_output=True, text=True).stdout)
         m = next(m for m in mons if m.get("focused"))
     except (ValueError, StopIteration):
-        return "spacious"
-    narrow = compact_outputs()
-    return "compact" if m.get("name") in narrow or m.get("description") in narrow else "spacious"
+        m = {}
+    return variant_for(m, load_layout(), compact_outputs())
 
 
 def save_layout(layout):

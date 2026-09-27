@@ -18,6 +18,13 @@ searchable as you type.
 | `SUPER + SHIFT + M` | Lock, log out, suspend, reboot, shut down |
 | `SUPER + SHIFT + K` | Every keybinding, searchable |
 
+<table>
+<tr>
+<td width="50%"><img src="docs/img/keybinds.jpg" alt="walker listing every keybinding with its description"><br><sub><code>SUPER + SHIFT + K</code>: every key of the running desktop.</sub></td>
+<td width="50%"><img src="docs/img/keybinds-search.jpg" alt="the keybinding list filtered by typing screen"><br><sub>Type to filter: <code>screen</code> leaves the screenshot, display and fullscreen keys.</sub></td>
+</tr>
+</table>
+
 ## Dictation
 
 Speak, and the text lands in whatever window is active, terminals included. All of it runs locally on
@@ -30,9 +37,16 @@ the GPU (Vulkan: AMD, Intel and NVIDIA):
 - the model leaves VRAM after 5 minutes, so games get it back
 - language, models and names Whisper should know: `DICTATE_*` in `personal/config`
 
+<img src="docs/img/dictation-pill.png" alt="The dictation pill next to the microphone: ready, recording, transcribing" width="600"><br>
+<sub>The pill next to the microphone: ready, recording, transcribing. Click: start/stop, right click: without the LLM, middle: cancel.</sub>
+
 ## The bar
 
 One Waybar per monitor: compact on notebook panels, spacious everywhere else. Pills from left to right:
+
+<img src="docs/img/desktop.jpg" alt="Desktop with the spacious Waybar on an ultrawide monitor"><br>
+<sub>The spacious bar on a 3440x1440 ultrawide.</sub>
+
 
 - **You**: avatar and name; a click opens the settings menu
 - **Workspaces** and the **active window**
@@ -47,6 +61,10 @@ One Waybar per monitor: compact on notebook panels, spacious everywhere else. Pi
 
 A click on the avatar, every choice per machine:
 
+<img src="docs/img/settings.jpg" alt="The settings menu in walker" width="600"><br>
+<sub>The settings menu.</sub>
+
+
 - **Widgets**: show, hide and move every pill, separately for the spacious and the compact bar
 - **Bar size**: automatic, always spacious, always compact
 - **Wallpaper and colours** (next section)
@@ -59,6 +77,13 @@ A click on the avatar, every choice per machine:
 `set-wallpaper IMAGE` (or the settings menu) derives two accent colours from the image and renders
 them into Waybar, walker, wlogout, mako, Ghostty, hyprlock, the login screen, GTK and Qt. The login
 screen (ReGreet) shows the same wallpaper, your avatar and the machine's name.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/img/theme-tiled.jpg" alt="Tiled windows: btop, Nautilus and Ghostty"><br><sub>The terminal palette follows the wallpaper.</sub></td>
+<td width="50%"><img src="docs/img/theme-greeter.jpg" alt="ReGreet login screen"><br><sub>The login screen with the same wallpaper and colours.</sub></td>
+</tr>
+</table>
 
 ## Gaming
 

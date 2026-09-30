@@ -1,0 +1,8 @@
+[Unit]
+Description=Another wallpaper from the wallpaper folder (and its colours)
+Requisite=graphical-session.target
+After=graphical-session.target driftless-wallpaper.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/theme/set-wallpaper.sh --random

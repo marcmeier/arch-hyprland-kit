@@ -1,0 +1,20 @@
+/* rendered by theme/apply.py into ~/.config/walker/themes/driftless-wallpapers/style.css */
+/* The normal driftless walker look, plus the wallpaper menu: thumbnails and a large, rounded preview. */
+
+@import url("file://@home@/.config/walker/themes/driftless/style.css");
+
+.item-image {
+  border-radius: 8px;
+  margin: 2px 4px 2px 0;
+}
+
+.preview {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.preview-box picture,
+.preview-box image {
+  border-radius: 14px;
+}

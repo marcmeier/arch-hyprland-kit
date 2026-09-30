@@ -3,10 +3,12 @@ adw-gtk-theme
 aur:adwaita-qt6
 aur:elephant-calc
 aur:elephant-desktopapplications
+aur:elephant-menus
 aur:elephant-runner
 aur:pwvucontrol
 aur:walker-bin
 aur:wlogout
+awww
 blueman
 bluez
 bluez-utils
@@ -49,7 +51,6 @@ qt6ct
 satty
 slurp
 starship
-swaybg
 ttf-jetbrains-mono-nerd
 uwsm
 waybar

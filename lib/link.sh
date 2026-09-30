@@ -144,7 +144,7 @@ cmd_link() {
     link_one "$target" "$src" "$dry" "$adopt" || rc=1
   done < <(link_entries)
   unlink_stale "$dry"
-  if ((!dry)); then
+  if ((! dry)); then
     # only targets whose link exists count as managed; a skipped source is not
     while IFS=$'\t' read -r target src; do
       [[ -L $HOME/$target ]] && echo "$target"

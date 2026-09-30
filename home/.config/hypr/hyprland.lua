@@ -54,7 +54,8 @@ if not os.getenv("UWSM_FINALIZE_VARNAMES") then
         for _, cmd in ipairs({
             "~/.config/waybar/render.py && waybar -c ~/.cache/waybar/config.jsonc",
             "~/.config/waybar/feeds.py", "mako", "hypridle", "/usr/lib/hyprpolkitagent/hyprpolkitagent",
-            "wl-paste --watch cliphist store", "swaybg -i ~/.config/wall.png -m fill", "elephant",
+            "wl-paste --watch cliphist store", "elephant", "awww-daemon",
+            "sleep 1 && awww img --transition-type none ~/.config/wall.png",
         }) do hl.exec_cmd(cmd) end
         hl.exec_cmd("notify-send 'Started without uwsm' 'Pick \"Hyprland (uwsm-managed)\" at the login screen'")
     end)
@@ -269,8 +270,8 @@ hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen("maximized", "toggle"), { de
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | walker --dmenu | cliphist decode | wl-copy"), { description = "Clipboard history" })
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("~/.config/hypr/claude-launch.sh"), { description = "Claude Code" })
 hl.bind("PRINT", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy'), { description = "Screenshot: area to clipboard" })
-hl.bind("SHIFT + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'), { description = "Screenshot: area to file and clipboard" })
-hl.bind("CTRL + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim - | tee "$f" | wl-copy'), { description = "Screenshot: whole screen to file and clipboard" })
+hl.bind("SHIFT + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'), { description = "Screenshot: area to file and clipboard" })
+hl.bind("CTRL + PRINT", hl.dsp.exec_cmd('mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/shot-$(date +%F_%H-%M-%S).png && grim - | tee "$f" | wl-copy'), { description = "Screenshot: whole screen to file and clipboard" })
 -- Color picker: click a pixel -> hex code in clipboard + notification (Esc cancels)
 hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("pidof hyprpicker || hyprpicker -a -n -q"), { description = "Colour picker: hex code to clipboard" })
 -- Every keybinding, searchable (keybinds.py lists the descriptions of these binds)
@@ -311,9 +312,9 @@ end
 -- Example special workspace (scratchpad)
 hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"), { description = "Scratchpad (special workspace): show or hide" })
 -- Screenshot wie unter Windows: Bereich -> Datei + Zwischenablage
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd('mkdir -p ~/Pictures && f=~/Pictures/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'), { description = "Screenshot: area to file and clipboard" })
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd('mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/shot-$(date +%F_%H-%M-%S).png && grim -g "$(slurp)" - | tee "$f" | wl-copy'), { description = "Screenshot: area to file and clipboard" })
 -- Screenshot mit Annotieren (satty): Bereich -> Editor, Speichern/Kopieren dort
-hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd('mkdir -p ~/Pictures && grim -g "$(slurp)" - | satty --filename - --output-filename ~/Pictures/shot-%Y-%m-%d_%H-%M-%S.png --copy-command wl-copy --early-exit'), { description = "Screenshot: area, annotate (satty)" })
+hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd('mkdir -p ~/Pictures/Screenshots && grim -g "$(slurp)" - | satty --filename - --output-filename ~/Pictures/Screenshots/shot-%Y-%m-%d_%H-%M-%S.png --copy-command wl-copy --early-exit'), { description = "Screenshot: area, annotate (satty)" })
 -- Scratchpad-Verschieben (vorher SUPER + SHIFT + S)
 hl.bind(mainMod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:magic" }), { description = "Move window to the scratchpad" })
 

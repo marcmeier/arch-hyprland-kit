@@ -1,11 +1,13 @@
 [Unit]
-Description=Wallpaper (swaybg, ~/.config/wall.png)
+Description=Wallpaper (awww, ~/.config/wall.png)
 PartOf=graphical-session.target
 After=graphical-session.target
 Requisite=graphical-session.target
 
 [Service]
-ExecStart=/usr/bin/swaybg -i %h/.config/wall.png -m fill
+ExecStart=/usr/bin/awww-daemon
+# show the wallpaper as soon as the daemon answers (set-wallpaper.sh changes it with a transition)
+ExecStartPost=/bin/sh -c 'for i in $(seq 50); do awww query >/dev/null 2>&1 && exec awww img --transition-type none %h/.config/wall.png; sleep 0.1; done; exit 1'
 Restart=on-failure
 
 [Install]

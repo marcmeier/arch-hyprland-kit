@@ -2,6 +2,45 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.2.0 (2026-09-30): the wallpaper menu
+
+Pick a wallpaper from thumbnails with a large preview, get a new one every day, and see the colours
+reach btop, VS Code and the terminal tools: [FEATURES.md](FEATURES.md#theme-from-the-wallpaper).
+
+### Added
+- The wallpaper menu (settings menu, *Wallpaper and colours*): the wallpaper folder with thumbnails
+  and a large preview, plus a random, the previous or any other image. An elephant-menus menu
+  (`elephant/menus/wallpapers.lua`) in a wider walker theme; the thumbnails come from
+  `theme/thumbs.py` (cached in `~/.cache/theme/thumbs`). Without elephant-menus the plain list stays.
+- `WALLPAPER_DIR` in `personal/config`: the wallpaper folder, e.g. one your cloud client syncs, to have
+  the same wallpapers on every machine.
+- A new wallpaper every day: `driftless-wallpaper-rotate.timer` runs `set-wallpaper --random` (an image
+  from the folder, not the current one); a day the machine was off catches up after the next login.
+- btop and VS Code in the wallpaper's colours: `apply.py` renders a btop theme and the VS Code theme
+  "driftless" (2026 Dark with the accents, installed as a local `.vsix`). fastfetch (in Ghostty with
+  your avatar as the logo), bat and fzf use Ghostty's accent slots.
+- `ruff` in the `dev` group: `tests/lint.sh` needs it.
+- Tests for `greeter-update` (`tests/greeter-update.bats`): links, oversized files and bad caller ids
+  are refused, and the files are read with the caller's rights.
+
+### Changed
+- The wallpaper runs on awww (the successor of swww) instead of swaybg: a new image grows in as a
+  circle from the mouse pointer while the colours change.
+- The login screen follows a new wallpaper without a password prompt. `greeter-update` now reads the
+  theme files with the caller's rights, which makes that safe
+  ([ARCHITECTURE.md](ARCHITECTURE.md#4-system-files-are-a-package)).
+- Screenshots are saved to `~/Pictures/Screenshots` instead of `~/Pictures`.
+- CI lints with shellcheck 0.11.0, shfmt 3.14.1 and ruff 0.16.9, the versions Arch ships, so
+  `tests/lint.sh` agrees locally.
+
+### Upgrading
+- The sync offers `awww` in its password dialog (or `driftless packages install`). `elephant-menus`
+  is an AUR package: `driftless packages install` in a terminal.
+- `driftless system`, which the sync reminds you of: the new `greeter-update` and its polkit rule.
+- Then once: `systemctl --user restart driftless-wallpaper.service elephant.service` (or log in again)
+  and `set-wallpaper --current`, which renders the btop, VS Code and walker themes.
+- swaybg is in no list any more: `sudo pacman -Rs swaybg` if you like.
+
 ## v2.1.0 (2026-09-27): dictation and keybindings
 
 Speak into any window, look up any key, and a tour of everything: [FEATURES.md](FEATURES.md).

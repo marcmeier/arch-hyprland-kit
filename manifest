@@ -11,8 +11,10 @@ link .config/theme
 link .config/ghostty
 link .config/uwsm
 link .config/walker
+link .config/elephant/menus
 link .config/wlogout
 link .config/emoji
+link .config/fastfetch
 link .config/systemd
 link .config/mimeapps.list
 link .config/user-dirs.dirs
@@ -72,6 +74,7 @@ user-unit hypridle.service
 user-unit hyprpolkitagent.service
 user-unit cliphist.service
 user-unit driftless-wallpaper.service
+user-unit driftless-wallpaper-rotate.timer
 user-unit driftless-bar.service
 user-unit elephant.service
 user-unit driftless-sync.timer

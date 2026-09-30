@@ -31,13 +31,15 @@ A new machine gets everything from two scripts.
 ## What you get
 
 - **A complete Hyprland desktop** in the colours of your wallpaper: Waybar, walker, mako, hyprlock,
-  wlogout, the ReGreet login screen, Ghostty, GTK and Qt, all themed by `set-wallpaper IMAGE`
+  wlogout, the ReGreet login screen, Ghostty, GTK, Qt, btop and VS Code, all themed by
+  `set-wallpaper IMAGE`. A new wallpaper grows in from the mouse pointer, and every day another one
+  from your folder takes over
 - **Dictation** (`SUPER + D`): speak into any window. whisper.cpp and a small LLM tidy the text up,
   both locally on the GPU
 - **One bar per monitor** with a pill for everything (weather, calendar, media, updates, sync, ...),
   compact on notebook panels
-- **Settings menu** on the avatar: widgets, bar size, wallpaper, monitors, sync, and every keybinding
-  in a list you search as you type (`SUPER + SHIFT + K`)
+- **Settings menu** on the avatar: widgets, bar size, wallpaper (with thumbnails and a preview),
+  monitors, sync, and every keybinding in a list you search as you type (`SUPER + SHIFT + K`)
 - **Gaming stack**: Steam, Proton-GE, Lutris, gamescope, gamemode, tearing for games
 - **Base system**: btrfs with snapper, optional LUKS2, unified kernel images, zram, firewall
 - **The sync** that keeps all of it the same on every machine you own
@@ -149,6 +151,7 @@ driftless packages                 # missing packages, and installed ones in no 
 driftless packages add NAME GROUP  # keep a package on every machine
 driftless mode review|auto|off     # review (default): changes from GitHub wait for you
 set-wallpaper ~/Pictures/x.jpg     # wallpaper and colours, on this machine only
+set-wallpaper --random             # another one from your wallpaper folder (the daily timer does this)
 ```
 
 The Waybar sync pill shows the same: incoming (`↓n`) and outgoing (`↑n`) changes, who changed what,
@@ -178,7 +181,8 @@ and a menu for everything above.
 
 ```bash
 tests/lint.sh   # shellcheck, shfmt, ruff, and every script with a shebang must be executable
-bats tests/     # links, manifest, packages, hardware facts, the sync between two machines, publish
+bats tests/     # links, manifest, packages, hardware facts, the sync between two machines, publish,
+                # and the two root helpers
 ```
 
 The sync tests run the real `driftless` on two machines with their own home and a bare repository

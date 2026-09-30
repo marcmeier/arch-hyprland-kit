@@ -39,8 +39,10 @@ TARGETS = {
     "qt6ct-colors.conf": "qt6ct/colors/driftless.conf",
     "qt6ct.conf": "qt6ct/qt6ct.conf",
     "walker.css": "walker/themes/driftless/style.css",
+    "walker-wallpapers.css": "walker/themes/driftless-wallpapers/style.css",
     "gtk3.css": "gtk-3.0/gtk.css",
     "gtk4.css": "gtk-4.0/gtk.css",
+    "btop.theme": "btop/themes/driftless.theme",
 }
 
 
@@ -157,7 +159,7 @@ def make_login_image(src):
     """Login screen background: same look as hyprlock (blurred, brightness 0.45, contrast 0.9)."""
     from PIL import Image, ImageFilter, ImageOps
 
-    # crop/scale to the screen first (like swaybg "fill"): hyprlock blurs at screen resolution,
+    # crop/scale to the screen first (like the wallpaper, awww "crop"): hyprlock blurs at screen resolution,
     # so the blur strength must not depend on the size of the source photo
     image = ImageOps.fit(Image.open(src).convert("RGB"), SCREEN, Image.LANCZOS)
     width, height = image.size
@@ -171,6 +173,88 @@ def make_login_image(src):
     out.parent.mkdir(parents=True, exist_ok=True)
     image.save(out.with_name("login.png.tmp"), "PNG")
     os.replace(out.with_name("login.png.tmp"), out)
+
+
+def btop_use_theme():
+    """btop rewrites btop.conf itself, so only the two theme keys are set (a fresh file is fine:
+    btop fills in the rest). No theme background: the terminal's blur shows through."""
+    conf = CONFIG / "btop" / "btop.conf"
+    wanted = {"color_theme": '"driftless"', "theme_background": "False"}
+    lines = conf.read_text().splitlines() if conf.exists() else []
+    for key, value in wanted.items():
+        line = f"{key} = {value}"
+        index = next((i for i, old in enumerate(lines) if old.split("=")[0].strip() == key), None)
+        if index is None:
+            lines.append(line)
+        else:
+            lines[index] = line
+    write(conf, "\n".join(lines) + "\n")
+
+
+VSCODE_THEMES = Path("/usr/share/code/resources/app/extensions/theme-defaults/themes")
+VSCODE_MANIFEST = """<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
+ <Metadata>
+  <Identity Language="en-US" Id="theme" Version="1.0.0" Publisher="driftless"/>
+  <DisplayName>driftless</DisplayName>
+  <Description xml:space="preserve">2026 Dark with the wallpaper accents (theme/apply.py)</Description>
+  <Categories>Themes</Categories>
+  <Properties><Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.80.0"/></Properties>
+ </Metadata>
+ <Installation><InstallationTarget Id="Microsoft.VisualStudio.Code"/></Installation>
+ <Dependencies/>
+ <Assets><Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true"/></Assets>
+</PackageManifest>
+"""
+VSCODE_TYPES = """<?xml version="1.0" encoding="utf-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+ <Default Extension=".json" ContentType="application/json"/>
+ <Default Extension=".vsixmanifest" ContentType="text/xml"/>
+</Types>
+"""
+
+
+def vscode_theme(rgb_colors):
+    """VS Code theme "driftless": packed as a .vsix next to VS Code's own theme files (it includes
+    2026 Dark) and installed in the background; VS Code only picks up registered extensions.
+    Open windows show the new colours after a reload. Skipped without VS Code."""
+    import shutil
+    import zipfile
+
+    code = shutil.which("code")
+    if not code or not VSCODE_THEMES.is_dir():
+        return
+    package = {
+        "name": "theme",
+        "publisher": "driftless",
+        "displayName": "driftless",
+        "version": "1.0.0",
+        "engines": {"vscode": "^1.80.0"},
+        "categories": ["Themes"],
+        "contributes": {
+            "themes": [
+                {"id": "driftless", "label": "driftless", "uiTheme": "vs-dark", "path": "./themes/driftless.json"}
+            ]
+        },
+    }
+    vsix = HOME / ".cache" / "theme" / "driftless-vscode.vsix"
+    vsix.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(vsix.with_name(vsix.name + ".tmp"), "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", VSCODE_TYPES)
+        archive.writestr("extension.vsixmanifest", VSCODE_MANIFEST)
+        archive.writestr("extension/package.json", json.dumps(package, indent=1))
+        for base in VSCODE_THEMES.glob("*.json"):
+            archive.write(base, "extension/themes/" + base.name)
+        theme = render((THEME / "templates" / "vscode-theme.json").read_text(), rgb_colors)
+        archive.writestr("extension/themes/driftless.json", theme)
+    os.replace(vsix.with_name(vsix.name + ".tmp"), vsix)
+    subprocess.Popen(
+        [code, "--install-extension", str(vsix), "--force"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
 
 
 def write(dest, text):
@@ -211,6 +295,8 @@ def main(argv):
     rgb_colors = colors(palette)
     for template, dest in TARGETS.items():
         write(CONFIG / dest, render((THEME / "templates" / template).read_text(), rgb_colors))
+    btop_use_theme()
+    vscode_theme(rgb_colors)
     recolor_icons(rgb_colors)
     make_avatar(rgb_colors)
     # login screen (root-owned): rendered here, installed by set-wallpaper.sh

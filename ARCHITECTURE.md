@@ -70,6 +70,13 @@ smartd get their configuration through a service drop-in instead of replacing `/
 and `/etc/smartd.conf`. The one edit that is left, two keyring lines in `/etc/pam.d/greetd`, is done
 by the package's install script. Lists of units live in the manifest, read by bootstrap and verify.
 
+Root is reached through two polkit actions, each a single helper in `/usr/lib/driftless`. Installing
+packages asks for the password every time: it changes the system. Updating the login screen
+(`greeter-update`) does not, so a new wallpaper, by hand or by the daily timer, reaches it at once.
+That is safe because the helper reads the theme files with the caller's rights (`setpriv` to
+`PKEXEC_UID`), not root's: a program in the session can only show on the login screen what it could
+read anyway, and no symlink swapped in between a check and the copy makes root read `/etc/shadow`.
+
 ## 5. Boot: unified kernel images
 
 **Before:** boot entries were derived from each other with `sed` (LTS, Surface), microcode `initrd`
@@ -91,7 +98,7 @@ btrfs into LUKS2; `driftless verify` warns on a notebook without it.
 process restarted Waybar whenever monitors changed. Restarting any of it from the sync needed tricks
 (own scopes, a closed lock descriptor, the locale reset).
 
-**Now:** uwsm runs the session; Waybar, mako, hypridle, the polkit agent, cliphist, swaybg, elephant
+**Now:** uwsm runs the session; Waybar, mako, hypridle, the polkit agent, cliphist, awww, elephant
 and the bar feeds are user units bound to `graphical-session.target`. The sync restarts one with
 `systemctl --user try-restart`. Waybar gets one bar per output from its own `output` rules
 (`["eDP-1"]` compact, `["!eDP-1", "*"]` spacious), so no watcher is needed.

@@ -67,16 +67,30 @@ A click on the avatar, every choice per machine:
 
 - **Widgets**: show, hide and move every pill, separately for the spacious and the compact bar
 - **Bar size**: automatic, always spacious, always compact
-- **Wallpaper and colours** (next section)
+- **Wallpaper and colours**: thumbnails and a large preview (next section)
 - **Monitors**: arrange them (nwg-displays), or back to the automatic layout
 - **Sync**: mode, what is waiting, trust a new machine
 - **Keybindings**: the searchable list
 
 ## Theme from the wallpaper
 
-`set-wallpaper IMAGE` (or the settings menu) derives two accent colours from the image and renders
-them into Waybar, walker, wlogout, mako, Ghostty, hyprlock, the login screen, GTK and Qt. The login
-screen (ReGreet) shows the same wallpaper, your avatar and the machine's name.
+`set-wallpaper IMAGE` derives two accent colours from the image and renders them into Waybar, walker,
+wlogout, mako, Ghostty, hyprlock, the login screen, GTK, Qt, btop and VS Code (theme "driftless": 2026
+Dark with your accents). The calendar, fastfetch, bat and fzf use the terminal's accent slots, so they
+follow too.
+
+- **The wallpaper menu** (settings menu): your wallpaper folder with thumbnails and a large preview,
+  plus a random one, the previous one or any other image. The folder is `WALLPAPER_DIR` in
+  `personal/config`, e.g. one your cloud client syncs, so every machine has the same choice
+- **The change itself** (awww): the new image grows in as a circle from the mouse pointer while the
+  colours change with it
+- **A new wallpaper every day**, at random from the folder; a day the machine was off catches up after
+  the next login. `set-wallpaper --random` does the same by hand
+- **The login screen** (ReGreet) shows the same wallpaper, your avatar and the machine's name, and
+  follows every change without a password prompt
+
+<img src="docs/img/wallpaper-menu.jpg" alt="The wallpaper menu in walker: thumbnails on the left, a large preview on the right" width="600"><br>
+<sub>The wallpaper menu: thumbnails, and the selected image large.</sub>
 
 <table>
 <tr>

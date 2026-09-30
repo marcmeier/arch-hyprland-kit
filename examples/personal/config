@@ -15,6 +15,10 @@ DICTATE_LLM=gemma3:4b
 DICTATE_WHISPER_MODEL=large-v3-turbo-q5_0
 DICTATE_PROMPT=""
 
+# the wallpaper folder of the settings menu; point it at a folder your cloud client syncs to have the
+# same wallpapers on every machine (empty: ~/Pictures/Wallpapers)
+WALLPAPER_DIR=""
+
 # where Claude Code starts (SUPER + SHIFT + C)
 CLAUDE_WORKDIR="$HOME"
 

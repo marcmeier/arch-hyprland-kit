@@ -221,7 +221,7 @@ cmd_sync() {
   [[ -e $STATE/now ]] && NOW=1 && rm -f "$STATE/now"
   MODE=$(cat "$STATE/mode" 2> /dev/null || echo review)
   poke_bar
-  if [[ $MODE == off ]] && ((!NOW && !adopt)); then
+  if [[ $MODE == off ]] && ((! NOW && ! adopt)); then
     RESULT=paused
     return 0
   fi
@@ -243,7 +243,7 @@ cmd_sync() {
     if git_ fetch -q origin main 2> /dev/null; then
       verify_incoming
       incoming=$(git_ rev-list --count HEAD..origin/main)
-      if [[ $MODE == review ]] && ((incoming && !NOW)); then
+      if [[ $MODE == review ]] && ((incoming && ! NOW)); then
         RESULT=held
         notify_once held normal "$incoming change(s) on GitHub wait for your review (sync pill in the bar)"
         return 0

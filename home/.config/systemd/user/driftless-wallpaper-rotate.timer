@@ -1,0 +1,12 @@
+[Unit]
+Description=A new wallpaper every day
+PartOf=graphical-session.target
+
+[Timer]
+# once a day; a day missed (machine off) runs shortly after the next login
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=graphical-session.target

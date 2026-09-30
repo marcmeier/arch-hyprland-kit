@@ -3,7 +3,10 @@
 # hostname, and (given the user's theme folder) the blurred wallpaper, the colours and the avatar.
 #   greeter-update                 only regreet.toml (package install, hostname change)
 #   greeter-update THEME_CACHE     also login.png, regreet.css, avatar.png from ~/.cache/theme
-# Called through pkexec by set-wallpaper (polkit action org.driftless.greeter-update).
+# Called through pkexec by set-wallpaper (polkit action org.driftless.greeter-update, no password for
+# the active session) or through sudo. The files are read with the caller's rights, not root's: a
+# caller can only put onto the login screen what it could read itself (no symlink swapping
+# /etc/shadow in between a check and the copy).
 set -euo pipefail
 export PATH=/usr/bin
 out=/var/lib/driftless/greeter
@@ -11,11 +14,23 @@ install -d -m755 "$out"
 sed "s/@HOSTNAME@/$(< /etc/hostname)/" /usr/share/driftless/greetd/regreet.toml > "$out/regreet.toml.new"
 mv "$out/regreet.toml.new" "$out/regreet.toml"
 [[ -n ${1:-} ]] || exit 0
+caller=${PKEXEC_UID:-${SUDO_UID:-0}}
+[[ $caller =~ ^[0-9]+$ ]] || exit 1
+as_caller=()
+((caller == 0)) || as_caller=(setpriv --reuid="$caller" --regid="$(id -g "$caller")" --init-groups --)
+max=$((64 * 1024 * 1024))
 for f in login.png regreet.css avatar.png; do
   src=$1/$f
-  # plain files only: no links into files the greeter should not show
+  # plain files only (the check is a courtesy; the read below runs as the caller anyway)
   [[ -f $src && ! -L $src ]] || continue
-  (($(stat -c %s "$src") < 64 * 1024 * 1024)) || continue
-  install -m644 "$src" "$out/$f.new"
+  "${as_caller[@]}" head -c $((max + 1)) -- "$src" > "$out/$f.new" || {
+    rm -f "$out/$f.new"
+    continue
+  }
+  if (($(stat -c %s "$out/$f.new") > max)); then
+    rm -f "$out/$f.new"
+    continue
+  fi
+  chmod 644 "$out/$f.new"
   mv "$out/$f.new" "$out/$f"
 done

@@ -22,12 +22,12 @@ Singleton {
         dispatch(`hl.dsp.focus({ workspace = ${arg} })`, `workspace ${ws}`);
     }
 
-    // a short command (playerctl, wpctl, makoctl, ...)
+    // a short command (playerctl, wpctl, systemctl, ...)
     function run(cmd) {
         Quickshell.execDetached(cmd);
     }
 
-    // a program that stays (terminal, menu, wlogout): in a scope of its own, so restarting the shell
+    // a program that stays (terminal, menu, mixer): in a scope of its own, so restarting the shell
     // never takes it along
     function launch(cmd) {
         Quickshell.execDetached(["systemd-run", "--user", "--scope", "--collect", "--quiet", "--"].concat(cmd));

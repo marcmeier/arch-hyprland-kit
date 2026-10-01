@@ -16,7 +16,6 @@ home/.config/hypr/hyprlock.conf
 # nwg-displays creates these empty at start; its real output goes to ~/.local/state/hypr
 home/.config/hypr/monitors.conf
 home/.config/hypr/workspaces.conf
-home/.config/wlogout/icons/*-hover.png
 home/.config/walker/themes/driftless/style.css
 home/.config/walker/themes/driftless-wallpapers/style.css
 home/.config/emoji/list.txt

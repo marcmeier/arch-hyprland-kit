@@ -24,7 +24,7 @@ NOTCH_LANG=""
 NOTCH_VOICE=""
 NOTCH_NOTES=""
 
-# the wallpaper folder of the settings menu; point it at a folder your cloud client syncs to have the
+# the wallpaper folder of the settings; point it at a folder your cloud client syncs to have the
 # same wallpapers on every machine (empty: ~/Pictures/Wallpapers)
 WALLPAPER_DIR=""
 

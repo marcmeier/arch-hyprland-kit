@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Desktop settings, from a click on the avatar in the bar (or "Desktop settings" in the app launcher).
-# Usage: settings-menu.sh [widgets|size|wallpaper|monitors|sync|keys]  (no argument: pick in walker)
-#        settings-menu.sh wallpaper-pick IMAGE|random|previous|other|folder  (the walker wallpaper menu)
+# Desktop settings. The avatar in the bar opens them as a popup of the shell (bar/SettingsPopup.qml),
+# which calls the actions below; without an argument ("Desktop settings" in the app launcher) this opens
+# that popup, or a walker menu when the shell does not answer.
+# Usage: settings-menu.sh [widgets|size|wallpaper|monitors|sync|keys]
+#        settings-menu.sh wallpaper-pick IMAGE|random|previous|other|folder  (a wallpaper, from both menus)
+#        settings-menu.sh wallpapers           the folder's images: "image<TAB>thumbnail" lines, newest first
+#        settings-menu.sh monitors-arrange|monitors-reset|display-mode
 # Per machine choices: widget layout, bar size and monitor layout (~/.local/state) and the wallpaper with its
 # colours (~/.config/wall.png and the files rendered from it, not in the repository). None of them
 # travels to your other machines.
@@ -102,11 +106,7 @@ monitors() {
   case $choice in
     *Arrange*) arrange ;;
     *"Display mode"*) "$HOME/.config/hypr/display-mode.sh" ;;
-    *Reset*)
-      rm -f "$STATE"/hypr/{monitors,workspaces}.{conf,lua}
-      hyprctl reload > /dev/null
-      notify-send -a settings "Monitors" "Automatic layout again"
-      ;;
+    *Reset*) exec "$0" monitors-reset ;;
   esac
 }
 
@@ -136,6 +136,10 @@ size() {
 }
 
 action=$1
+# no argument: the shell's popup on the focused screen, else the walker menu
+if [[ -z $action ]] && [[ $(quickshell ipc -p "$HOME/.config/quickshell" call bar popup settings 2> /dev/null) == true ]]; then
+  exit 0
+fi
 if [[ -z $action ]]; then
   choice=$(printf '%s\n' "󰕮  Bar widgets (show, hide, move)" "󰯌  Bar size (full, compact, automatic)" "󰸉  Wallpaper and colours" "󰍹  Monitors" "󰓦  Sync with your other machines" "󰌌  Keybindings (search)" |
     pick "Settings") || exit 0
@@ -166,6 +170,17 @@ case $action in
     esac
     ;;
   monitors) monitors ;;
+  monitors-arrange) arrange ;;
+  monitors-reset)
+    rm -f "$STATE"/hypr/{monitors,workspaces}.{conf,lua}
+    hyprctl reload > /dev/null
+    notify-send -a settings "Monitors" "Automatic layout again"
+    ;;
+  display-mode) exec "$HOME/.config/hypr/display-mode.sh" ;;
+  wallpapers)
+    mkdir -p "$WALLS"
+    exec "$HOME/.config/theme/thumbs.py" "$WALLS"
+    ;;
   sync) exec "$SCRIPTS/sync-menu.sh" ;;
   keys) exec "$HOME/.config/hypr/keybinds.py" ;;
   *)

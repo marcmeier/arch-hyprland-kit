@@ -83,7 +83,6 @@ fi
 if [[ -d $walls ]]; then
   setsid -f "$THEME_DIR/thumbs.py" "$walls" > /dev/null 2>&1
 fi
-makoctl reload 2> /dev/null || true
 hyprctl reload > /dev/null 2>&1 || true
 pkill -USR2 -x ghostty 2> /dev/null || true
 

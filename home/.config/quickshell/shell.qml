@@ -8,9 +8,16 @@ import QtQuick
 import qs.services
 import "bar"
 import "notch"
+import "notifications"
+import "osd"
+import "power"
+import "lock"
+import "polkit"
 
 // The driftless shell (driftless-shell.service): a bar on every screen with its tooltips and popups,
-// and the bubble of "ask Claude by voice" (SUPER + A). One process, one theme from the wallpaper.
+// the notifications (it is the notification server), the on-screen display, the power menu, the lock
+// screen, the password dialog (it is the polkit agent) and the bubble of "ask Claude by voice"
+// (SUPER + A). One process, one theme from the wallpaper.
 // Edits to these files apply on save; scripts tell it about changes with scripts/poke NAME.
 ShellRoot {
     Variants {
@@ -20,6 +27,21 @@ ShellRoot {
     }
 
     Notch {}
+    Popups {}
+    Osd {}
+    PowerMenu {}
+    Lock {}
+    PolkitDialog {}
+
+    // the card "N while you were in fullscreen": the list on the focused screen
+    Connections {
+        target: Notifs
+        function onListRequested() {
+            const bar = bars.instances.find(b => b.monitor && b.monitor.focused) || bars.instances[0];
+            if (bar && !Notifs.listOpen)
+                bar.openNamed("notifications");
+        }
+    }
 
     // Quickshell misses the first workspace change after it starts (the new workspace never shows up):
     // on workspace and monitor events ask Hyprland for the whole state
@@ -38,7 +60,7 @@ ShellRoot {
     IpcHandler {
         target: "bar"
 
-        // a feed (sync, calendar, updates, notifications, dictate, claude, weather) or "layout"
+        // a feed (sync, calendar, updates, dictate, claude, weather) or "layout"
         function refresh(name: string): bool {
             if (name === "layout") {
                 BarLayout.reload();
@@ -48,7 +70,7 @@ ShellRoot {
         }
 
         // open or close a popup of the bar on the focused screen: calendar, weather, media, claude,
-        // audio, network, battery (e.g. from a key binding)
+        // audio, network, bluetooth, battery, notifications, settings (e.g. from a key binding)
         function popup(name: string): bool {
             const bar = bars.instances.find(b => b.monitor && b.monitor.focused) || bars.instances[0];
             return !!bar && bar.openNamed(name);

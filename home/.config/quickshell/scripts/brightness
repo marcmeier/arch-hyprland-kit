@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# The brightness keys: brightness up|down, then the shell's on-screen display shows the new level.
+# Machines without a backlight (a desktop with external monitors) do nothing.
+case ${1:-} in
+  up) step=5%+ ;;
+  down) step=5%- ;;
+  *)
+    echo "usage: brightness up|down" >&2
+    exit 2
+    ;;
+esac
+# -m: "device,class,current,percent,max"
+percent=$(brightnessctl -e4 -n2 -m set "$step" 2> /dev/null | cut -d, -f4) || exit 0
+[[ -n $percent ]] || exit 0
+quickshell ipc -p "$HOME/.config/quickshell" call osd brightness "${percent%\%}" > /dev/null 2>&1 || true

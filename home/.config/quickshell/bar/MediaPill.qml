@@ -8,8 +8,15 @@ Pill {
     id: pill
 
     readonly property var player: Media.player
-    readonly property bool playing: !!player && player.isPlaying
-    shown: Media.active
+    readonly property bool playing: Media.playing
+    // fades and folds in and out instead of popping: stays in the bar until it has faded out
+    shown: Media.shown || opacity > 0
+    opacity: Media.shown ? 1 : 0
+    implicitWidth: Media.shown ? row.implicitWidth + padding * 2 : 0
+
+    Behavior on opacity {
+        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+    }
 
     Seg {
         shown: !pill.compact
@@ -60,20 +67,19 @@ Pill {
         spacing: 8
         tip: {
             const p = pill.player;
-            if (!p)
-                return "";
-            const head = p.trackArtist ? `<b>${Apps.esc(p.trackTitle)}</b><br>${Apps.esc(p.trackArtist)}` : `<b>${Apps.esc(p.trackTitle)}</b>`;
-            return head + (p.trackAlbum ? `<br><font color='${Theme.dim}'>${Apps.esc(p.trackAlbum)}</font>` : "");
+            const head = Media.artist ? `<b>${Apps.esc(Media.title)}</b><br>${Apps.esc(Media.artist)}` : `<b>${Apps.esc(Media.title)}</b>`;
+            return head + (p && p.trackAlbum ? `<br><font color='${Theme.dim}'>${Apps.esc(p.trackAlbum)}</font>` : "");
         }
         onClicked: button => {
-            if (button === Qt.MiddleButton)
-                pill.player.togglePlaying();
-            else if (button === Qt.RightButton)
-                pill.player.next();
-            else
+            if (button !== Qt.MiddleButton && button !== Qt.RightButton)
                 title.togglePopup();
+            else if (pill.player)
+                button === Qt.MiddleButton ? pill.player.togglePlaying() : pill.player.next();
         }
-        onScrolled: steps => steps < 0 ? pill.player.next() : pill.player.previous()
+        onScrolled: steps => {
+            if (pill.player)
+                steps < 0 ? pill.player.next() : pill.player.previous();
+        }
 
         popupKey: "media"
         popupComponent: Component {
@@ -82,7 +88,7 @@ Pill {
 
         Marquee {
             anchors.verticalCenter: parent.verticalCenter
-            text: pill.player ? (pill.player.trackTitle || pill.player.identity) : ""
+            text: Media.title
             maxWidth: pill.compact ? 170 : 240
             running: pill.playing
             font.weight: Font.DemiBold
@@ -95,7 +101,7 @@ Pill {
             anchors.verticalCenterOffset: 1
             width: Math.min(implicitWidth, 140)
             elide: Text.ElideRight
-            text: pill.player ? pill.player.trackArtist : ""
+            text: Media.artist
             small: true
             color: Qt.alpha(Theme.text, 0.55)
         }

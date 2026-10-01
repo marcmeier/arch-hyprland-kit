@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Lock the screen: the shell's lock screen (lock/Lock.qml), hyprlock when the shell does not answer
+# (not running, broken QML). hypridle's lock_cmd, so "loginctl lock-session" and sleep end up here.
+# Only the answer "locked" counts: quickshell ipc exits 0 also when no lock screen took the call.
+[[ $(quickshell ipc -p "$HOME/.config/quickshell" call lock lock 2> /dev/null) == locked ]] && exit 0
+pidof hyprlock > /dev/null || exec hyprlock

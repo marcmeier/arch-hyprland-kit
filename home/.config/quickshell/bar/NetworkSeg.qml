@@ -19,7 +19,7 @@ Seg {
     padL: compact ? 6 : 8
     padR: compact ? 6 : 8
     spacing: 6
-    tip: offline ? "Offline" : `${Apps.esc(net ? net.name : wifi.name)}<font color='${Theme.dim}'>  ·  ${Math.round(strength * 100)}%</font>`
+    tip: offline ? "Offline" : `${Apps.esc(net ? net.name : wifi ? wifi.name : "Wired")}<font color='${Theme.dim}'>  ·  ${Math.round(strength * 100)}%</font>`
 
     onClicked: {
         if (hasWifi)

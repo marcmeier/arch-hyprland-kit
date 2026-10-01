@@ -45,14 +45,14 @@ local browser = "brave-origin --hide-crash-restore-bubble"
 
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 
--- The desktop shell (bar and Claude bubble), mako, hypridle, the polkit agent, the clipboard history, the
--- wallpaper and elephant are systemd user units that start with graphical-session.target (driftless setup
+-- The desktop shell (bar, notifications, lock screen, power menu, password dialog, Claude bubble), hypridle,
+-- the clipboard history, the wallpaper and elephant are systemd user units that start with graphical-session.target (driftless setup
 -- enables them), so they restart on a crash and "systemctl --user restart driftless-shell" works. That needs the session from
 -- uwsm ("Hyprland (uwsm-managed)" at the login screen). Started any other way, start them here.
 if not os.getenv("UWSM_FINALIZE_VARNAMES") then
     hl.on("hyprland.start", function ()
         for _, cmd in ipairs({
-            "quickshell -p ~/.config/quickshell", "mako", "hypridle", "/usr/lib/hyprpolkitagent/hyprpolkitagent",
+            "quickshell -p ~/.config/quickshell", "hypridle",
             "wl-paste --watch cliphist store", "elephant", "awww-daemon",
             "sleep 1 && awww img --transition-type none ~/.config/wall.png",
         }) do hl.exec_cmd(cmd) end
@@ -217,6 +217,9 @@ hl.config({
     misc = {
         force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
         disable_hyprland_logo   = false, -- If true disables the random hyprland logo / anime girl background. :(
+        -- the lock screen is part of the shell: when the shell restarts while locked (a crash), the new one
+        -- (or hyprlock from a TTY) takes the lock over; the screen stays locked in between
+        allow_session_lock_restore = true,
     },
 })
 
@@ -261,7 +264,10 @@ local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal), { description = "Terminal (Ghostty)" })
 local closeWindowBind = hl.bind(mainMod .. " + W", hl.dsp.window.close(), { description = "Close window" })
 -- closeWindowBind:set_enabled(false)
-hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/wlogout/wlogout.sh"), { description = "Power menu: lock, log out, suspend, reboot, shut down" })
+hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("quickshell ipc -p ~/.config/quickshell call power toggle"), { description = "Power menu: lock, log out, suspend, reboot, shut down" })
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("~/.config/quickshell/scripts/lock"), { description = "Lock the screen" })
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc -p ~/.config/quickshell call bar popup notifications"), { description = "Notifications: the list" })
+hl.bind(mainMod .. " + SHIFT + N", hl.dsp.exec_cmd("quickshell ipc -p ~/.config/quickshell call notifications dnd toggle"), { description = "Notifications: do not disturb on / off" })
 hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("~/.config/quickshell/scripts/widgets.py"), { description = "Bar widgets: show, hide, move" }) -- the bar's widget manager
 hl.bind(mainMod .. " + SHIFT + RETURN", hl.dsp.exec_cmd(browser), { description = "Browser" })
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { description = "File manager" })
@@ -328,13 +334,13 @@ hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }), { descr
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true, description = "Move window (drag)" })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, description = "Resize window (drag)" })
 
--- Laptop multimedia keys for volume and LCD brightness
+-- Laptop multimedia keys for volume and LCD brightness (the shell's on-screen display shows the level)
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true, description = "Volume up" })
 hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true, description = "Volume down" })
 hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true, description = "Mute speakers" })
 hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true, description = "Mute microphone" })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true, description = "Brightness up" })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true, description = "Brightness down" })
+hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("~/.config/quickshell/scripts/brightness up"),    { locked = true, repeating = true, description = "Brightness up" })
+hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("~/.config/quickshell/scripts/brightness down"),  { locked = true, repeating = true, description = "Brightness down" })
 
 -- Requires playerctl
 hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true, description = "Media: next track" })
@@ -384,20 +390,22 @@ hl.window_rule({
 -- })
 -- overlayLayerRule:set_enabled(false)
 
--- Theme: blur behind the translucent shell surfaces (the bar with its popups and tooltips, mako, walker,
--- wlogout, the Claude bubble); only where they draw, not in their transparent parts
+-- Theme: blur behind the translucent shell surfaces (the bar with its popups and tooltips, the notifications,
+-- the on-screen display, the power menu, the password dialog, the Claude bubble) and walker; only where they draw, not in their
+-- transparent parts
 hl.layer_rule({
     name  = "theme-blur",
-    match = { namespace = "^(driftless-bar|driftless-popup|driftless-tooltip|notifications|walker|logout_dialog|claude-notch)$" },
+    match = { namespace = "^(driftless-bar|driftless-popup|driftless-tooltip|driftless-notifications|driftless-osd|driftless-power|driftless-polkit|walker|claude-notch)$" },
 
     blur        = true,
     ignore_alpha = 0.2,
 })
 
--- The bar's popups and tooltips animate themselves (they fold out below the item)
+-- The shell's popups, tooltips, notifications, on-screen display, power menu and password dialog animate
+-- themselves
 hl.layer_rule({
     name  = "shell-popups-no-anim",
-    match = { namespace = "^(driftless-popup|driftless-tooltip)$" },
+    match = { namespace = "^(driftless-popup|driftless-tooltip|driftless-notifications|driftless-osd|driftless-power|driftless-polkit)$" },
 
     no_anim = true,
 })

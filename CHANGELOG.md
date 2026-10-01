@@ -2,6 +2,44 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## Unreleased: notifications, lock screen, power menu and password dialog in the shell
+
+The Quickshell shell takes over what mako, hyprlock, wlogout and hyprpolkitagent did, and the settings
+move into it, all in the bar's look:
+[FEATURES.md](FEATURES.md#notifications-lock-screen-power-menu-and-password-dialog), [why](ARCHITECTURE.md#9-notifications-lock-screen-power-menu-and-password-dialog-are-the-shell-too).
+
+### Added
+- Notifications drawn by the shell: cards below the bar with the app's icon, progress, buttons and a
+  line that runs out; a list behind the bell, grouped by app, with do not disturb and clear
+  (`SUPER + N`, `SUPER + SHIFT + N`). Critical ones come through do not disturb.
+- An on-screen display for volume, mute, the microphone, a new output device and the brightness keys.
+- A lock screen in the login screen's look (`SUPER + L`, hypridle, before sleep); it counts what came in
+  meanwhile and shows the cards after you unlock. hyprlock stays as the fallback.
+- A power menu (`SUPER + SHIFT + M`, the power button; right click: lock) with keys for every card;
+  suspend locks first.
+- A password dialog: the shell is the polkit agent (hyprpolkitagent before), in the lock screen's look.
+- Bluetooth in the bar: your devices with their battery, the ones nearby to pair, on/off. blueman's
+  tray icon stays out while the bar shows Bluetooth.
+- Quiet in fullscreen: only critical notifications pop up while a fullscreen window is on the
+  workspace you look at; afterwards one card says how many came in.
+- The settings as a popup of the bar (the avatar): wallpaper thumbnails, bar size, widgets on and off
+  with one click, monitors, sync, keys. The walker menus stay for moving widgets and browsing the
+  wallpaper folder.
+- The notification list outlives a restart and a new login (seven days, this machine only, a folder
+  only you can read).
+
+### Changed
+- Notifications that came before a reload of the shell no longer pop up again.
+- The bell: click opens the list (was: do not disturb), right click is do not disturb, middle clear
+  all. It reads the notifications directly instead of asking mako every five seconds.
+- Voice commands for do not disturb and locking go to the shell.
+
+### Removed
+- mako (its unit is retired; a D-Bus activation file hands notifications to the shell), wlogout and
+  their theme files; hyprpolkitagent (retired). The packages stay installed until you remove them
+  (`driftless packages` lists them).
+
+
 ## v2.3.3 (2026-10-01): the ultrawide screenshot
 
 ### Changed

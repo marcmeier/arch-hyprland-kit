@@ -46,6 +46,11 @@ retire_units() {
   done < <(manifest user-unit-retired)
 }
 
+# reload_dbus: the session bus reads its activation files again (a linked one in ~/.local/share/dbus-1)
+reload_dbus() {
+  busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig > /dev/null 2>&1 || true
+}
+
 setup_units() {
   local unit session=0
   # unit files that just arrived (a sync) must be known before they are enabled and started
@@ -79,6 +84,7 @@ cmd_setup() {
   say "folders"
   mkdir -p "$HOME"/{Desktop,Downloads,Documents,Music,Pictures,Videos,Templates,Public,Projects,Games}
   say "user units"
+  reload_dbus
   setup_units
   echo "done. Check with: driftless verify"
 }

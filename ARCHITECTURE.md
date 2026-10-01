@@ -98,8 +98,8 @@ btrfs into LUKS2; `driftless verify` warns on a notebook without it.
 process restarted Waybar whenever monitors changed. Restarting any of it from the sync needed tricks
 (own scopes, a closed lock descriptor, the locale reset).
 
-**Now:** uwsm runs the session; the desktop shell, mako, hypridle, the polkit agent, cliphist, awww
-and elephant are user units bound to `graphical-session.target`. The sync restarts one with
+**Now:** uwsm runs the session; the desktop shell (which is also the polkit agent), hypridle, cliphist,
+awww and elephant are user units bound to `graphical-session.target`. The sync restarts one with
 `systemctl --user try-restart`. A unit the kit drops is listed as `user-unit-retired` in the
 manifest, and the sync switches it off on every machine.
 
@@ -113,10 +113,10 @@ after every change of widgets, bar size or wallpaper; tooltips as the only place
 
 **Now:** one Quickshell process (`driftless-shell.service`, `home/.config/quickshell`) draws a bar per
 screen, its tooltips and popups, and the Claude bubble. Workspaces, the window, sound, media, battery,
-network and the tray come from Quickshell's own services (Hyprland IPC, PipeWire, MPRIS, UPower,
-NetworkManager, StatusNotifierItem), so they follow events without a helper process. Scripts remain
-for what has no service (Claude usage, the sync, weather, calendar, updates, mako) and print plain
-JSON; a script that changes something tells the bar with `scripts/poke NAME` (IPC), where Waybar
+network, Bluetooth and the tray come from Quickshell's own services (Hyprland IPC, PipeWire, MPRIS,
+UPower, NetworkManager, BlueZ, StatusNotifierItem), so they follow events without a helper process.
+Scripts remain for what has no service (Claude usage, the sync, weather, calendar, updates) and print
+plain JSON; a script that changes something tells the bar with `scripts/poke NAME` (IPC), where Waybar
 needed a signal number per module. The theme comes from `theme/colors.json` and the widget layout from
 `layout.json`, both followed live: no restarts. The QML applies on save.
 
@@ -126,7 +126,53 @@ both machines carried over, and `bar.jsonc` lists the widgets as `config.jsonc` 
 *Considered:* keeping Waybar and only moving the popups to Quickshell. Two toolkits would have drawn
 one bar, with two theme systems and the signal plumbing left in place. *Considered:* a ready-made
 Quickshell config (end-4, Caelestia, DankMaterialShell): far more than the bar needs, and they bring
-their own launcher, notifications and settings, which this setup has.
+their own launcher and settings, which this setup has.
+
+## 9. Notifications, lock screen, power menu and password dialog are the shell too
+
+**Before:** mako for notifications (its own config format, rendered from a template; the bell polled
+`makoctl` every five seconds), hyprlock for the lock screen, wlogout for the power menu (CSS, PNG icons
+recoloured per wallpaper, a script to centre it). Three more programs and three more theme files, and
+none of them knew the others or the bar.
+
+**Now:** the shell is the notification server (`services/Notifs.qml`, Quickshell's
+`NotificationServer`), and draws the lock screen (`lock/`, `WlSessionLock` and PAM), the power menu
+(`power/`), an on-screen display for volume and brightness (`osd/`) and, as the session's polkit agent,
+the password dialog (`polkit/`, hyprpolkitagent before), with the same cards, colours and motion as the
+bar; the lock screen and the password dialog share one password field (`bar/PasswordField.qml`). They
+share state instead of polling: the bell reads the list itself, the lock screen and a fullscreen
+window hold the popups, suspend waits until the lock is drawn. One file
+(`services/Session.qml`) is where lock, log out and suspend happen, whoever asks.
+
+Three things keep it safe:
+
+- **Who answers notifications:** a D-Bus activation file in the home
+  (`~/.local/share/dbus-1/services/org.freedesktop.Notifications.service`) comes before mako's, so a
+  notification sent while the shell is down starts the shell. mako is a retired unit.
+- **A lock that never opens by itself:** the lock state outlives a reload of the QML (the sync brings
+  new files every hour), a marker in `$XDG_RUNTIME_DIR` tells a restarted shell to lock again, and
+  Hyprland's `allow_session_lock_restore` lets it. hypridle's `lock_cmd` (`scripts/lock`) falls back to
+  hyprlock when the shell does not answer "locked".
+- **The password check** uses its own PAM file with `pam_unix` only: the `login` stack's faillock would
+  shut you out of your own screen for ten minutes after three typos.
+
+The settings are a popup of the bar too (`bar/SettingsPopup.qml`, walker menus before); the scripts
+behind them stay (`settings-menu.sh`, `bar_layout.py`), so the walker menus remain for what needs more
+room (moving widgets, the wallpaper folder with a preview) and as the way in without the shell. The
+notification list outlives a restart in `~/.local/state/driftless-shell/notifications.json`: per
+machine, in a folder only the user can read, seven days at most. A token per run of the shell tells a
+restart (everything comes back from the file) from a reload (the live ones come back from the server
+and keep their time).
+
+*Considered:* keeping mako, wlogout, hyprlock and hyprpolkitagent and only theming them better. They
+were themed; what was missing was that they work together. walker, hypridle and awww stay: they work
+unseen or already match, and replacing them would add code without adding anything you notice. blueman
+stays for its pairing agent and settings; the bar hides its tray icon, it shows Bluetooth itself.
+
+The polkit agent registers once, when the shell starts, and polkit allows one per session: the sync
+restarts the shell when the agent's files change, after the retired hyprpolkitagent let go. The lock
+screen checks the password with `pam_unix` alone; the password dialog cannot choose, polkit runs its
+own PAM stack (`polkit-1`, with faillock, which also counts a cancelled request).
 
 ## What stayed
 

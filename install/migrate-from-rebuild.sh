@@ -27,7 +27,7 @@ run() { if ((DRY)); then echo "would run: $*"; else "$@"; fi; }
 [[ $EUID -ne 0 ]] || { echo "run as your user, not root" && exit 1; }
 [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] || echo "!! not inside Hyprland: the bar switch (step 5) waits for the next login"
 
-echo "==> 0. repo packages the new setup needs (hyprpolkitagent, ...), with sudo"
+echo "==> 0. repo packages the new setup needs (quickshell, awww, ...), with sudo"
 ((DRY)) || "$DRIFTLESS/driftless" packages install repo
 
 echo "==> 1. old sync timer off"
@@ -88,9 +88,9 @@ pkill -x elephant 2> /dev/null || true
 # down: start the same programs in this session (hyprland.lua does so at every login without uwsm)
 if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && ! systemctl --user is-active -q graphical-session.target; then
   echo "   session without uwsm: starting bar and helpers directly (next login: pick Hyprland (uwsm-managed))"
-  for c in "quickshell -p $HOME/.config/quickshell" \
-    mako hypridle /usr/lib/hyprpolkitagent/hyprpolkitagent "wl-paste --watch cliphist store" \
-    "swaybg -i $HOME/.config/wall.png -m fill" elephant; do
+  # the same list as hyprland.lua's: the shell is also the notification server and the polkit agent
+  for c in "quickshell -p $HOME/.config/quickshell" hypridle "wl-paste --watch cliphist store" elephant \
+    awww-daemon "sleep 1 && awww img --transition-type none $HOME/.config/wall.png"; do
     hyprctl dispatch "hl.dsp.exec_cmd(\"$c\")" > /dev/null
   done
 fi

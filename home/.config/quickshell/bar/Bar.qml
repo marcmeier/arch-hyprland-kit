@@ -90,6 +90,7 @@ PanelWindow {
             "custom/weather": weatherSeg,
             "custom/calendar": eventSeg,
             "network": networkSeg,
+            "bluetooth": bluetoothSeg,
             "pulseaudio": volumeSeg,
             "pulseaudio#mic": micSeg,
             "custom/dictate": dictateSeg,
@@ -118,6 +119,7 @@ PanelWindow {
     Component { id: weatherSeg; WeatherSeg {} }
     Component { id: eventSeg; EventSeg {} }
     Component { id: networkSeg; NetworkSeg {} }
+    Component { id: bluetoothSeg; BluetoothSeg {} }
     Component { id: volumeSeg; VolumeSeg {} }
     Component { id: micSeg; MicSeg {} }
     Component { id: dictateSeg; DictateSeg {} }

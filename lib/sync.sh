@@ -133,8 +133,16 @@ apply_changes() {
     setup_units
   }
   if grep -q '^dconf.ini$' <<< "$files"; then dconf load / < "$DRIFTLESS/dconf.ini" 2> /dev/null || warn "dconf not loaded"; fi
-  grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py)' <<< "$files" && reload+=(theme mako hypr)
+  grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py)' <<< "$files" && reload+=(theme hypr)
   grep -qE '^home/\.config/hypr/' <<< "$files" && reload+=(hypr)
+  # hypridle reads its file once (lock_cmd, the timeouts)
+  grep -qE '^home/\.config/hypr/hypridle\.conf$' <<< "$files" && reload+=(hypridle)
+  # who answers org.freedesktop.Notifications: D-Bus learns the new file, the shell takes the name again
+  # (it could not while a retired mako still had it)
+  grep -qE '^home/\.local/share/dbus-1/' <<< "$files" && reload+=(dbus shell)
+  # the polkit agent registers once at the start: a new or changed one needs the shell restarted (after
+  # a retired hyprpolkitagent let go of the session)
+  grep -qE '^home/\.config/quickshell/polkit/' <<< "$files" && reload+=(shell)
   grep -qE '^home/\.config/systemd/' <<< "$files" && reload+=(systemd)
   # elephant keeps its menus from its start: a changed menu (e.g. a moved script) needs a restart
   grep -qE '^home/\.config/elephant/' <<< "$files" && reload+=(elephant)
@@ -161,7 +169,9 @@ reload() {
     case $r in
       systemd) systemctl --user daemon-reload 2> /dev/null || true ;;
       hypr) hyprctl reload > /dev/null 2>&1 || true ;;
-      mako) makoctl reload 2> /dev/null || true ;;
+      hypridle) systemctl --user try-restart hypridle.service 2> /dev/null || true ;;
+      dbus) reload_dbus ;;
+      shell) systemctl --user try-restart driftless-shell.service 2> /dev/null || true ;;
       elephant)
         # a menu that does not parse takes all of elephant (and walker's launcher) down: keep the old one
         if ! command -v luac > /dev/null || luac -p "$HOME"/.config/elephant/menus/*.lua 2> /dev/null; then

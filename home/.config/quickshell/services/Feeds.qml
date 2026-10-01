@@ -18,7 +18,6 @@ Singleton {
     property alias weather: weather
     property alias calendar: calendar
     property alias updates: updates
-    property alias notifications: notifications
     property alias dictate: dictate
     property string userName: Quickshell.env("USER")
 
@@ -49,11 +48,6 @@ Singleton {
         interval: 1800
     }
     Feed {
-        id: notifications
-        command: [feeds.scripts + "/notifications.sh"]
-        interval: 5
-    }
-    Feed {
         id: dictate
         command: [feeds.home + "/.config/hypr/dictate.py", "status"]
     }
@@ -74,7 +68,7 @@ Singleton {
     function refresh(name) {
         const feed = {
             claude: claude, sync: sync, weather: weather, calendar: calendar, updates: updates,
-            notifications: notifications, dictate: dictate
+            dictate: dictate
         }[name];
         if (feed)
             feed.refresh();

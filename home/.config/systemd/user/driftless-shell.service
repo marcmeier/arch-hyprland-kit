@@ -1,12 +1,13 @@
 [Unit]
-Description=driftless shell: bar, popups and the Claude bubble (Quickshell)
+Description=driftless shell: bar, notifications, lock screen, power menu and the Claude bubble (Quickshell)
 Documentation=file://%h/.config/quickshell/shell.qml
 PartOf=graphical-session.target
 After=graphical-session.target
 Requisite=graphical-session.target
 
 [Service]
-# edits to the QML apply on save; a restart is only needed after a crash
+# edits to the QML apply on save; a restart is only needed after a crash (a locked screen stays
+# locked meanwhile and the restarted shell takes it over: lock/Lock.qml)
 ExecStart=/usr/bin/quickshell -p %h/.config/quickshell
 Restart=on-failure
 RestartSec=2

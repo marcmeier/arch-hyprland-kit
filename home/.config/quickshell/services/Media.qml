@@ -23,6 +23,31 @@ Singleton {
     readonly property bool active: !!player && player.playbackState !== MprisPlaybackState.Stopped
                                    && (player.trackTitle !== "" || player.isPlaying)
 
+    // What the pill shows. Switching tracks in a browser (YouTube Shorts) drops the player or its
+    // metadata for a moment: keep the pill and the last title, state and artist through such gaps
+    // instead of hiding it and building it anew.
+    readonly property bool shown: active || linger.running
+    property string title: ""
+    property string artist: ""
+    property bool playing: false
+    readonly property var live: active ? {
+        title: player.trackTitle || title || player.identity,
+        artist: player.trackArtist || "",
+        playing: player.isPlaying
+    } : null
+    onLiveChanged: {
+        if (!live)
+            return;
+        title = live.title;
+        artist = live.artist;
+        playing = live.playing;
+    }
+    onActiveChanged: if (!active) linger.restart()
+    Timer {
+        id: linger
+        interval: 1500
+    }
+
     // MPRIS only reports the position on seeks: ask while something plays and someone looks
     property int watchers: 0
     Timer {

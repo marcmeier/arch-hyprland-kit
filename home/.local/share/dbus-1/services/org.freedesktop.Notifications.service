@@ -1,0 +1,6 @@
+# Notifications go to the driftless shell (quickshell/services/Notifs.qml). Ahead of mako's own file
+# (/usr/share/dbus-1/services), so a notification sent while the shell is down starts the shell, not mako.
+[D-BUS Service]
+Name=org.freedesktop.Notifications
+Exec=/usr/bin/false
+SystemdService=driftless-shell.service

@@ -11,8 +11,9 @@ Template tokens: @primary@ -> #rrggbb, @primary+88@ -> #rrggbb88 (alpha suffix),
 Names: primary, secondary, primary_dim, secondary_dim (dim = 33 % over the base).
 
 Everything written here is per machine and not in the repository (.gitignore): the wallpaper
-~/.config/wall.png, the rendered configs, the wlogout hover icons, the round avatar from ~/.face and
-the login screen files in ~/.cache/theme (set-wallpaper.sh installs those as root).
+~/.config/wall.png, the rendered configs, the round avatar from ~/.face and the login screen files in
+~/.cache/theme (set-wallpaper.sh installs those as root; the shell's lock screen shows the same image).
+The shell (bar, notifications, lock screen, power menu) reads colors.json itself and follows it live.
 """
 
 import json
@@ -33,7 +34,6 @@ TARGETS = {
     "colors.css": "theme/colors.css",
     "colors.lua": "theme/colors.lua",
     "ghostty-colors": "theme/ghostty-colors",
-    "mako": "mako/config",
     "hyprlock.conf": "hypr/hyprlock.conf",
     "starship.toml": "starship.toml",
     "qt6ct-colors.conf": "qt6ct/colors/driftless.conf",
@@ -87,7 +87,6 @@ def render(text, rgb_colors):
     return TOKEN.sub(replace, text)
 
 
-ICONS = CONFIG / "wlogout" / "icons"
 # keep in step with the background block in hypr/hyprlock.conf (blur_passes 3, blur_size 6)
 BLUR_SIGMA, BRIGHTNESS, CONTRAST = 22, 0.45, 0.9
 
@@ -103,20 +102,6 @@ def _screen_size():
 
 
 SCREEN = _screen_size()
-
-
-def recolor_icons(rgb_colors):
-    """wlogout hover icons: the plain icon's shape (alpha) in the primary colour."""
-    from PIL import Image
-
-    r, g, b = rgb_colors["primary"]
-    for icon in ICONS.glob("*.png"):
-        if icon.stem.endswith(("-hover", "-crit")):
-            continue
-        alpha = Image.open(icon).convert("RGBA").getchannel("A")
-        recolored = Image.new("RGBA", alpha.size, (r, g, b, 0))
-        recolored.putalpha(alpha)
-        recolored.save(icon.with_name(icon.stem + "-hover.png"))
 
 
 def make_avatar(rgb_colors):
@@ -156,7 +141,8 @@ def make_avatar(rgb_colors):
 
 
 def make_login_image(src):
-    """Login screen background: same look as hyprlock (blurred, brightness 0.45, contrast 0.9)."""
+    """Login and lock screen background (the greeter, the shell's lock screen and the hyprlock fallback
+    look alike): blurred, brightness 0.45, contrast 0.9."""
     from PIL import Image, ImageFilter, ImageOps
 
     # crop/scale to the screen first (like the wallpaper, awww "crop"): hyprlock blurs at screen resolution,
@@ -297,7 +283,6 @@ def main(argv):
         write(CONFIG / dest, render((THEME / "templates" / template).read_text(), rgb_colors))
     btop_use_theme()
     vscode_theme(rgb_colors)
-    recolor_icons(rgb_colors)
     make_avatar(rgb_colors)
     # login screen (root-owned): rendered here, installed by set-wallpaper.sh
     cache = HOME / ".cache" / "theme"

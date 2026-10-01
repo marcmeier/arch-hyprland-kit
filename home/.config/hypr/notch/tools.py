@@ -296,17 +296,27 @@ def cmd_bluetooth(args):
     return f"{name}: {action}ed" if ok else f"{name}: {action} failed ({out.splitlines()[-1] if out else '?'})"
 
 
+def shell(*args):
+    """A call to the desktop shell (quickshell/shell.qml and its parts) over its IPC."""
+    return run("quickshell", "ipc", "-p", str(Path.home() / ".config/quickshell"), "call", *args)
+
+
 def cmd_dnd(args):
-    if args[:1] == ["on"]:
-        run("makoctl", "mode", "-a", "dnd")
-    elif args[:1] == ["off"]:
-        run("makoctl", "mode", "-r", "dnd")
-    run(str(Path.home() / ".config/quickshell/scripts/poke"), "notifications")
-    return "do not disturb " + ("on" if "dnd" in run("makoctl", "mode").split() else "off")
+    mode = args[0] if args[:1] in (["on"], ["off"]) else "state"
+    if mode == "state":
+        state = shell("notifications", "state")
+        return "do not disturb " + ("on" if state.endswith("on") else "off")
+    return "do not disturb " + shell("notifications", "dnd", mode)
 
 
 def cmd_lock(_):
-    run("loginctl", "lock-session")
+    # detached: the fallback (hyprlock) runs until you unlock
+    subprocess.Popen(
+        [str(Path.home() / ".config/quickshell/scripts/lock")],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     return "locked"
 
 

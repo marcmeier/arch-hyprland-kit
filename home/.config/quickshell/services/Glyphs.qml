@@ -21,6 +21,15 @@ Singleton {
         return muted ? "\u{F036D}" : "\u{F036C}";
     }
 
+    // a Bluetooth device by BlueZ's icon name (audio-headset, input-mouse, ...)
+    function bluetoothDevice(icon) {
+        const table = [[/headset/, "\u{F02CE}"], [/headphone/, "\u{F02CB}"], [/audio|speaker/, "\u{F04C3}"],
+                       [/keyboard/, "\u{F030C}"], [/mouse|tablet/, "\u{F037D}"], [/gaming|joystick/, "\u{F0297}"],
+                       [/phone/, "\u{F011C}"], [/watch/, "\u{F0589}"]];
+        const hit = table.find(t => t[0].test(icon || ""));
+        return hit ? hit[1] : "\u{F00AF}";
+    }
+
     // percent 0..100
     function battery(percent, charging) {
         if (charging) {

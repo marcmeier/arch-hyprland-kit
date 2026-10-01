@@ -3,49 +3,27 @@
 Changes go to ~/.local/state/driftless-shell/layout.json, per machine (bar_layout.py); the bar follows each
 change at once.
 The spacious and compact bar keep their own order, hidden widgets are hidden on both.
-Opened with SUPER + SHIFT + B or from the settings menu (click on the avatar, settings-menu.sh).
+Opened with SUPER + SHIFT + B or from the settings ("Move widgets" in the avatar's popup).
 Usage: widgets.py [spacious|compact]  (default: the variant of the focused monitor)"""
 
 import json
 import subprocess
 import sys
 
-from bar_layout import SECTIONS, compact_outputs, load_layout, ordered, save_layout, variant_config, variant_for
+from bar_layout import (
+    FIXED,
+    SECTIONS,
+    compact_outputs,
+    load_layout,
+    name,
+    ordered,
+    save_layout,
+    toggle,
+    variant_config,
+    variant_for,
+)
 
 SECTION_NAMES = {"modules-left": "Left", "modules-center": "Center", "modules-right": "Right"}
-NAMES = {
-    "group/user": "User",
-    "group/workspaces": "Workspaces",
-    "custom/window": "Active window",
-    "group/datetime": "Clock & calendar",
-    "clock": "Clock",
-    "custom/calendar": "Next event",
-    "custom/weather": "Weather",
-    "group/media": "Media",
-    "tray": "Tray icons",
-    "pulseaudio": "Volume",
-    "pulseaudio#mic": "Microphone",
-    "custom/dictate": "Dictation",
-    "group/claude": "Voice and Claude",
-    "custom/ask": "Ask Claude (button)",
-    "custom/claude": "Claude usage",
-    "group/tray": "Tray",
-    "battery": "Battery",
-    "network": "Network",
-    "custom/updates": "Updates",
-    "custom/sync": "Sync",
-    "idle_inhibitor": "Idle inhibitor",
-    "custom/notifications": "Notifications",
-    "group/status": "Status",
-    "group/system": "System",
-    "custom/power": "Power",
-}
-# group members that only make sense together with their group (drawn as one pill)
-FIXED = {"custom/avatar", "custom/username", "custom/media-prev", "custom/media-play", "custom/media-next"}
-
-
-def name(mod):
-    return NAMES.get(mod) or mod.split("/")[-1].replace("-", " ").replace("#", " ").capitalize()
 
 
 def focused_variant():
@@ -109,16 +87,6 @@ def widget_menu(variant, mod):
             order[action].append(mod)
         layout["order"][variant] = order
         save_layout(layout)
-
-
-def toggle(mod):
-    layout = load_layout()
-    hidden = layout["hidden"]
-    if mod in hidden:
-        hidden.remove(mod)
-    else:
-        hidden.append(mod)
-    save_layout(layout)
 
 
 def main():

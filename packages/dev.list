@@ -8,4 +8,6 @@ python-installer
 qemu-desktop
 qt6-tools
 ruff
+shellcheck
+shfmt
 wev

@@ -9,7 +9,7 @@ setup_sandbox() {
   T=$BATS_TEST_TMPDIR
   mkdir -p "$T/bin" "$T/hw/proc" "$T/hw/sys"
   local c
-  for c in notify-send hyprctl makoctl pkill systemd-run walker dbus-run-session; do
+  for c in notify-send hyprctl pkill systemd-run walker dbus-run-session; do
     printf '#!/bin/sh\nexit 0\n' > "$T/bin/$c"
   done
   # no user manager in the sandbox (as during bootstrap): every --user call fails, system calls succeed

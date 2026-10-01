@@ -9,15 +9,15 @@
     "modules-right": ["group/media", "group/claude", "group/status", "group/tray", "group/system"],
 
     "groups": {
-        // avatar and name; a click opens the settings menu
+        // avatar and name; a click opens the settings (bar/SettingsPopup.qml)
         "group/user": ["custom/avatar", "custom/username"],
         // your voice: ask Claude (the bubble grows out of this button), dictation, and how much of
         // Claude is left
         "group/claude": ["custom/ask", "custom/dictate", "custom/claude"],
         // one island: time and date · weather · the next event
         "group/datetime": ["clock", "custom/weather", "custom/calendar"],
-        // how this machine is connected: network, output, microphone, battery
-        "group/status": ["network", "pulseaudio", "pulseaudio#mic", "battery"],
+        // how this machine is connected: network, Bluetooth, output, microphone, battery
+        "group/status": ["network", "bluetooth", "pulseaudio", "pulseaudio#mic", "battery"],
         // the apps' own icons, apart from the kit's monochrome ones
         "group/tray": ["tray"],
         // the machine itself: what waits (updates, sync), keep awake, notifications, power

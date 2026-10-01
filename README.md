@@ -30,18 +30,19 @@ A new machine gets everything from two scripts.
 
 ## What you get
 
-- **A complete Hyprland desktop** in the colours of your wallpaper: the bar, walker, mako, hyprlock,
-  wlogout, the ReGreet login screen, Ghostty, GTK, Qt, btop and VS Code, all themed by
-  `set-wallpaper IMAGE`. A new wallpaper grows in from the mouse pointer, and every day another one
-  from your folder takes over
+- **A complete Hyprland desktop** in the colours of your wallpaper: the bar, notifications, lock
+  screen, power menu and password dialog (one Quickshell shell), walker, the ReGreet login screen,
+  Ghostty, GTK, Qt, btop and VS Code, all themed by `set-wallpaper IMAGE`. A new wallpaper grows in
+  from the mouse pointer, and every day another one from your folder takes over
 - **Dictation** (`SUPER + D`): speak into any window. whisper.cpp and a small LLM tidy the text up,
   both locally on the GPU
 - **Ask Claude by voice** (`SUPER + A`): the answer appears in a bubble at the top and is read out;
   timers, calendar, weather, what is on your screen, media, notes, apps and web search included
 - **One bar per monitor** (Quickshell) with a pill for everything (weather, calendar, media, updates,
   sync, ...), compact on notebook panels; a click opens the details: the month with your events, the
-  forecast, cover and controls, outputs and levels per app, Wi-Fi networks, power profiles
-- **Settings menu** on the avatar: widgets, bar size, wallpaper (with thumbnails and a preview),
+  forecast, cover and controls, outputs and levels per app, Wi-Fi networks, Bluetooth devices, power
+  profiles
+- **Settings** on the avatar, a popup of the bar: wallpaper (with thumbnails), bar size, widgets,
   monitors, sync, and every keybinding in a list you search as you type (`SUPER + SHIFT + K`)
 - **Gaming stack**: Steam, Proton-GE, Lutris, gamescope, gamemode, tearing for games
 - **Base system**: btrfs with snapper, optional LUKS2, unified kernel images, zram, firewall
@@ -55,11 +56,11 @@ A new machine gets everything from two scripts.
 <td width="50%"><img src="docs/img/theme-walker.jpg" alt="walker app launcher"><br><sub>walker (<code>SUPER + SPACE</code>): apps, calculator, web search.</sub></td>
 </tr>
 <tr>
-<td><img src="docs/img/theme-wlogout.jpg" alt="wlogout power menu"><br><sub>wlogout (<code>SUPER + SHIFT + M</code>).</sub></td>
-<td><img src="docs/img/theme-mako.jpg" alt="mako notification"><br><sub>mako; the bell pill counts and toggles do-not-disturb.</sub></td>
+<td><img src="docs/img/theme-power.jpg" alt="The power menu over the blurred desktop"><br><sub>The power menu (<code>SUPER + SHIFT + M</code>).</sub></td>
+<td><img src="docs/img/theme-notifications.jpg" alt="Notifications below the bar"><br><sub>Notifications; the bell keeps the list and do not disturb.</sub></td>
 </tr>
 <tr>
-<td><img src="docs/img/theme-hyprlock.jpg" alt="hyprlock lock screen"><br><sub>hyprlock.</sub></td>
+<td><img src="docs/img/theme-lock.jpg" alt="The lock screen"><br><sub>The lock screen (<code>SUPER + L</code>), like the login screen.</sub></td>
 <td><img src="docs/img/theme-greeter.jpg" alt="ReGreet login screen"><br><sub>ReGreet, with the wallpaper, avatar and hostname.</sub></td>
 </tr>
 </table>

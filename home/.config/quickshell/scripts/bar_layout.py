@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The bar's widget layout, for widgets.py (the widget manager) and the settings menu; the shell reads the
+"""The bar's widget layout, for widgets.py (the widget manager) and the settings popup; the shell reads the
 same files with the same rules (services/BarLayout.qml) and follows every change at once.
 
 layout.json holds what the widget manager changed. It lives in ~/.local/state/driftless-shell, per machine
@@ -12,7 +12,9 @@ and outside the repository, so every machine keeps its own bar.
 bar.jsonc is the source of every widget: a widget missing from the saved order (new in bar.jsonc) goes in
 right after the widget before it there (first in its section when there is none), a saved one gone from
 bar.jsonc is ignored.
-Usage: bar_layout.py --get-mode | --mode auto|spacious|compact   (the bar size of this machine)"""
+Usage: bar_layout.py --get-mode | --mode auto|spacious|compact   (the bar size of this machine)
+       bar_layout.py --widgets          every widget as JSON: [{"id", "name", "group", "hidden"}, ...]
+       bar_layout.py --toggle WIDGET    show or hide a widget (the settings popup, widgets.py)"""
 
 import json
 import os
@@ -28,6 +30,42 @@ HOST_CONFIG = os.path.expanduser("~/.config/driftless/host/bar.json")
 DEFAULT_COMPACT = ["eDP-1", "eDP-2"]
 SECTIONS = ("modules-left", "modules-center", "modules-right")
 MODES = ("auto", "spacious", "compact")
+
+NAMES = {
+    "group/user": "User",
+    "group/workspaces": "Workspaces",
+    "custom/window": "Active window",
+    "group/datetime": "Clock & calendar",
+    "clock": "Clock",
+    "custom/calendar": "Next event",
+    "custom/weather": "Weather",
+    "group/media": "Media",
+    "tray": "Tray icons",
+    "pulseaudio": "Volume",
+    "pulseaudio#mic": "Microphone",
+    "custom/dictate": "Dictation",
+    "group/claude": "Voice and Claude",
+    "custom/ask": "Ask Claude (button)",
+    "custom/claude": "Claude usage",
+    "group/tray": "Tray",
+    "battery": "Battery",
+    "network": "Network",
+    "bluetooth": "Bluetooth",
+    "custom/updates": "Updates",
+    "custom/sync": "Sync",
+    "idle_inhibitor": "Idle inhibitor",
+    "custom/notifications": "Notifications",
+    "group/status": "Status",
+    "group/system": "System",
+    "custom/power": "Power",
+}
+# group members that only make sense together with their group (drawn as one pill)
+FIXED = {"custom/avatar", "custom/username", "custom/media-prev", "custom/media-play", "custom/media-next"}
+
+
+def name(mod):
+    return NAMES.get(mod) or mod.split("/")[-1].replace("-", " ").replace("#", " ").capitalize()
+
 
 COMMENT = re.compile(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*.*?\*/', re.S)
 TRAILING = re.compile(r'"(?:\\.|[^"\\])*"|,(?=\s*[}\]])')
@@ -120,6 +158,31 @@ def ordered(cfg, variant, layout):
     return result
 
 
+def toggle(mod):
+    layout = load_layout()
+    hidden = layout["hidden"]
+    if mod in hidden:
+        hidden.remove(mod)
+    else:
+        hidden.append(mod)
+    save_layout(layout)
+
+
+def widgets(variant="spacious"):
+    """Every widget in the bar's order, a group's members right after it (the ones that only go with
+    their group left out)."""
+    cfg = variant_config(variant)
+    layout = load_layout()
+    result = []
+    for section in ordered(cfg, variant, layout).values():
+        for mod in section:
+            result.append({"id": mod, "name": name(mod), "group": "", "hidden": mod in layout["hidden"]})
+            for sub in cfg.get(mod, {}).get("modules", []) if mod.startswith("group/") else []:
+                if sub not in FIXED:
+                    result.append({"id": sub, "name": name(sub), "group": mod, "hidden": sub in layout["hidden"]})
+    return result
+
+
 if __name__ == "__main__":
     if sys.argv[1:2] == ["--get-mode"]:
         print(bar_mode(load_layout()))
@@ -127,5 +190,9 @@ if __name__ == "__main__":
         current = load_layout()
         current["mode"] = sys.argv[2]
         save_layout(current)
+    elif sys.argv[1:2] == ["--widgets"]:
+        print(json.dumps(widgets()))
+    elif sys.argv[1:2] == ["--toggle"] and sys.argv[2:3]:
+        toggle(sys.argv[2])
     else:
-        sys.exit(f"usage: {sys.argv[0]} --get-mode | --mode {'|'.join(MODES)}")
+        sys.exit(f"usage: {sys.argv[0]} --get-mode | --mode {'|'.join(MODES)} | --widgets | --toggle WIDGET")

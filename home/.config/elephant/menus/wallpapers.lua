@@ -1,5 +1,5 @@
 -- Wallpaper menu for walker (elephant-menus): the wallpaper folder with thumbnails and a large
--- preview. Opened by "Wallpaper and colours" in the settings menu
+-- preview. Opened by "Browse" in the settings popup (or "Wallpaper and colours" in the walker menu)
 -- (walker -m menus:wallpapers -t driftless-wallpapers). Enter hands the entry's value (an image, or
 -- random|previous|other|folder) to settings-menu.sh wallpaper-pick.
 Name = "wallpapers"

@@ -46,33 +46,11 @@ Item {
                     font.pixelSize: 15
                 }
             }
-            // the switch
-            Rectangle {
+            PSwitch {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                width: 42
-                height: 24
-                radius: 12
-                color: Networking.wifiEnabled ? Theme.accent2 : Qt.rgba(1, 1, 1, 0.12)
-                Behavior on color {
-                    ColorAnimation { duration: 150 }
-                }
-                Rectangle {
-                    width: 18
-                    height: 18
-                    radius: 9
-                    y: 3
-                    x: Networking.wifiEnabled ? parent.width - width - 3 : 3
-                    color: Networking.wifiEnabled ? Theme.accentInk : Theme.text
-                    Behavior on x {
-                        NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-                    }
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Networking.wifiEnabled = !Networking.wifiEnabled
-                }
+                checked: Networking.wifiEnabled
+                onToggled: Networking.wifiEnabled = !Networking.wifiEnabled
             }
         }
 

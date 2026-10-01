@@ -12,7 +12,6 @@ link .config/ghostty
 link .config/uwsm
 link .config/walker
 link .config/elephant/menus
-link .config/wlogout
 link .config/emoji
 link .config/fastfetch
 link .config/systemd
@@ -25,6 +24,8 @@ link .local/share/applications/discord.desktop
 link .local/share/applications/avahi-discover.desktop
 link .local/share/applications/bssh.desktop
 link .local/share/applications/bvnc.desktop
+# notifications start the shell, not mako (D-Bus activation)
+link .local/share/dbus-1/services/org.freedesktop.Notifications.service
 link .local/bin/driftless driftless
 link .local/bin/set-wallpaper home/.config/theme/set-wallpaper.sh
 link .local/bin/cfg-backup
@@ -68,9 +69,7 @@ user-unit pipewire.socket
 user-unit pipewire-pulse.socket
 user-unit wireplumber.service
 user-unit gnome-keyring-daemon.socket
-user-unit mako.service
 user-unit hypridle.service
-user-unit hyprpolkitagent.service
 user-unit cliphist.service
 user-unit driftless-wallpaper.service
 user-unit driftless-wallpaper-rotate.timer
@@ -79,6 +78,7 @@ user-unit elephant.service
 user-unit driftless-sync.timer
 
 # ---- user units the kit no longer uses: switched off where they still run
-# Waybar and its feeds (driftless-bar) gave way to the Quickshell desktop shell (driftless-shell)
-user-unit-retired waybar.service
-user-unit-retired driftless-bar.service
+# the shell is the notification server now (quickshell/services/Notifs.qml)
+user-unit-retired mako.service
+# and the polkit agent (quickshell/polkit/PolkitDialog.qml); polkit allows one per session
+user-unit-retired hyprpolkitagent.service

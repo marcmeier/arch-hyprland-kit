@@ -6,12 +6,14 @@ import qs.services
 
 // The tray (StatusNotifierItem): left click activates the app (or opens its menu when that is all it
 // has) · right click: its menu, drawn like the rest of the shell · middle: its secondary action.
+// blueman's icon stays out while the bar shows Bluetooth itself (bar/BluetoothSeg.qml).
 Item {
     id: tray
 
     property var bar: null
     readonly property bool compact: bar ? bar.compact : false
-    readonly property var items: SystemTray.items.values
+    readonly property bool ownBluetooth: !!bar && BarLayout.members("group/status", bar.variant).includes("bluetooth")
+    readonly property var items: SystemTray.items.values.filter(i => !(ownBluetooth && i.id === "blueman"))
     property bool shown: items.length > 0
 
     implicitWidth: row.implicitWidth + (compact ? 6 : 8)

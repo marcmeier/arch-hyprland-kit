@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every keybinding of the running Hyprland in walker, searchable as you type (settings menu on the
+"""Every keybinding of the running Hyprland in walker, searchable as you type (the settings on the
 avatar, or SUPER + SHIFT + K). Read from `hyprctl binds`, so it lists what is bound right now, the host
 and personal layers included; the text is each bind's description in hyprland.lua.
 Binds with the same description share one line ("SUPER + 1 … 0  →  Go to workspace 1-10").

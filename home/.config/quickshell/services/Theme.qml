@@ -4,9 +4,10 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
-// The shell's look in one place. The two accents come from the wallpaper (theme/apply.py writes
+// The shell's look in one place (the bar, the notifications, the lock screen, the power menu, the
+// on-screen display). The two accents come from the wallpaper (theme/apply.py writes
 // ~/.config/theme/colors.json) and follow a new one at once; everything else is the kit's fixed
-// palette, the same as mako, walker, wlogout and the terminal use.
+// palette, the same as walker, the login screen and the terminal use.
 Singleton {
     id: theme
 

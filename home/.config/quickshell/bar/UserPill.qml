@@ -2,7 +2,7 @@ import QtQuick
 import qs.services
 
 // You: the round avatar (theme/apply.py renders it from ~/.face) and your name. A click opens the
-// desktop settings (widgets, bar size, wallpaper, monitors, sync, keybindings).
+// desktop settings (bar/SettingsPopup.qml: wallpaper, bar size and widgets, monitors, sync, keys).
 Pill {
     id: pill
 
@@ -16,8 +16,12 @@ Pill {
         padL: pill.showAvatar ? 2 : 10
         padR: pill.showName ? 10 : 2
         spacing: 8
-        tip: "Desktop settings<br><font color='" + Theme.dim + "'>widgets · bar size · wallpaper · monitors · sync · keys</font>"
-        onClicked: Actions.script("settings-menu.sh")
+        tip: "Desktop settings<br><font color='" + Theme.dim + "'>wallpaper · bar size and widgets · monitors · sync · keys</font>"
+        onClicked: togglePopup()
+        popupKey: "settings"
+        popupComponent: Component {
+            SettingsPopup {}
+        }
 
         Item {
             visible: pill.showAvatar

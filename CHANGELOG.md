@@ -2,7 +2,7 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
-## Unreleased: notifications, lock screen, power menu and password dialog in the shell
+## v2.4.0 (2026-10-01): the whole desktop in one shell
 
 The Quickshell shell takes over what mako, hyprlock, wlogout and hyprpolkitagent did, and the settings
 move into it, all in the bar's look:
@@ -29,7 +29,6 @@ move into it, all in the bar's look:
   only you can read).
 
 ### Changed
-- Notifications that came before a reload of the shell no longer pop up again.
 - The bell: click opens the list (was: do not disturb), right click is do not disturb, middle clear
   all. It reads the notifications directly instead of asking mako every five seconds.
 - Voice commands for do not disturb and locking go to the shell.
@@ -38,6 +37,11 @@ move into it, all in the bar's look:
 - mako (its unit is retired; a D-Bus activation file hands notifications to the shell), wlogout and
   their theme files; hyprpolkitagent (retired). The packages stay installed until you remove them
   (`driftless packages` lists them).
+
+### Fixed
+- The network pill's tooltip logged an error on a machine with only a cable.
+- Moving over from the old kit in a session without uwsm started mako and the polkit agent next to the
+  shell.
 
 
 ## v2.3.3 (2026-10-01): the ultrawide screenshot

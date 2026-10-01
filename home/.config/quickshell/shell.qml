@@ -27,7 +27,8 @@ ShellRoot {
         target: Hyprland
         function onRawEvent(event) {
             if (["workspacev2", "createworkspacev2", "destroyworkspacev2", "moveworkspacev2", "focusedmon",
-                 "renameworkspace", "monitoraddedv2", "monitorremovedv2"].includes(event.name)) {
+                 "focusedmonv2", "renameworkspace", "monitoradded", "monitoraddedv2", "monitorremoved",
+                 "monitorremovedv2"].includes(event.name)) {
                 Hyprland.refreshWorkspaces();
                 Hyprland.refreshMonitors();
             }

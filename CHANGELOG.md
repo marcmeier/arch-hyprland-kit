@@ -2,6 +2,16 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.3.3 (2026-10-01): the ultrawide screenshot
+
+### Changed
+- The first screenshot in README and in FEATURES (the spacious bar on a 3440x1440 ultrawide) shows the
+  Quickshell bar now; v2.3.2 still had the Waybar one there.
+
+### Fixed
+- The bar follows a monitor that is plugged in at once (its active workspace showed only after the
+  next workspace change).
+
 ## v2.3.2 (2026-10-01): new screenshots
 
 Every screenshot shows the setup as it is now, and two fixes for the bar.

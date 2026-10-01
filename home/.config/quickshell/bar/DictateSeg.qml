@@ -9,8 +9,8 @@ Seg {
     readonly property string mode: Feeds.dictate.data?.["class"] ?? "idle"
     readonly property string script: Actions.home + "/.config/hypr/dictate.py"
 
-    padL: 3
-    padR: 5
+    padL: compact ? 4 : 5
+    padR: compact ? 4 : 5
     tip: Apps.esc(Feeds.dictate.data?.tooltip ?? "").replace(/\n/g, "<br>")
 
     onClicked: button => {

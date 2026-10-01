@@ -2,6 +2,30 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.3.1 (2026-10-01): an ask button
+
+Ask Claude from the bar without knowing `SUPER + A`, and the bar's right side grouped by topic:
+[FEATURES.md](FEATURES.md#the-bar).
+
+### Added
+- An ask button (✨) in the bar: ask Claude by voice without knowing `SUPER + A` (click: talk, click
+  again: send, right click: stop). The bubble grows out of it, also for `SUPER + A`, and the button
+  shows what Claude does (red while it listens, breathing while it thinks).
+
+### Changed
+- The right side of the bar in groups by topic: media · voice and Claude (ask button, dictation,
+  usage) · status · tray (the apps' own icons, apart from the kit's monochrome ones) · system
+  (updates, sync, keep awake, notifications, power) · you. Saved widget layouts follow by themselves.
+
+### Fixed
+- The wallpaper menu in walker called the settings menu at its old place (`~/.config/waybar`) after
+  the update to v2.3.0: elephant keeps its menus from its start. The sync restarts elephant now when a
+  menu changes (not when one does not parse). After updating to v2.3.0 once:
+  `systemctl --user restart elephant.service` (or log in again).
+- The active workspace's gradient stayed dimmed on the focused screen (Quickshell does not keep a
+  monitor's focus up to date; the bar compares with the focused monitor now).
+- The window pill showed the last window on an empty workspace, and the sound popup listed no apps.
+
 ## v2.3.0 (2026-10-01): the Quickshell bar and Claude by voice
 
 The bar is drawn by Quickshell now, with popups for everything behind its pills, and Claude answers

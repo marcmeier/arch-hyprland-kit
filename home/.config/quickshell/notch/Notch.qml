@@ -1,11 +1,13 @@
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
 import qs.services
 
-// The bubble of hypr/notch/notch.py (ask Claude by voice), floating at the top of the screen. notch.py
-// drives it over IPC, e.g.:
+// The bubble of hypr/notch/notch.py (ask Claude by voice). It grows out of the ask button in the bar
+// (bar/AskSeg.qml) on the focused screen, or from the top centre when the bar has none. notch.py drives
+// it over IPC, e.g.:
 //   quickshell ipc -p ~/.config/quickshell call notch think "Do I have meetings today?"
 // (listening, think, answer, append, error, setLevel, speaking, ringing, hide, state)
 Scope {
@@ -21,6 +23,22 @@ Scope {
     property bool ringing: false     // a timer rings: stay open until it is stopped
 
     readonly property bool open: mode !== "idle"
+
+    // where it grows from: the ask button's x on the focused screen (-1: the middle)
+    property real anchorX: -1
+    function place() {
+        const name = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : "";
+        const target = Quickshell.screens.find(s => s.name === name) || Quickshell.screens[0];
+        if (target && win.screen !== target)
+            win.screen = target;
+        anchorX = target ? Voice.anchorX(target.name) : -1;
+    }
+    onModeChanged: {
+        if (mode !== "idle" && Voice.mode === "idle")
+            place();
+        Voice.mode = mode;
+    }
+    onSpeakingChanged: Voice.speaking = speaking
 
     function reset() {
         fullText = "";
@@ -100,8 +118,11 @@ Scope {
     PanelWindow {
         id: win
 
-        anchors.top: true
-        implicitWidth: 560
+        anchors {
+            top: true
+            left: true
+            right: true
+        }
         implicitHeight: 360
         color: "transparent"
 
@@ -136,8 +157,9 @@ Scope {
                 return root.open ? headerH : 26;
             }
 
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: root.open ? 6 : -4
+            readonly property real from: root.anchorX >= 0 ? root.anchorX : win.width / 2
+            x: Math.round(Math.max(10, Math.min(win.width - width - 10, from - width / 2)))
+            y: root.open ? 6 : -16
             width: targetW
             height: targetH
             radius: Math.min(height / 2, 18)
@@ -147,13 +169,19 @@ Scope {
             clip: true
 
             opacity: root.open ? 1 : 0
-            scale: root.open ? 1 : 0.55
-            transformOrigin: Item.Top
+            // grows out of the button: the scale's origin is the button, wherever the bubble sits
+            property real grow: root.open ? 1 : 0.4
+            transform: Scale {
+                origin.x: bubble.from - bubble.x
+                origin.y: 0
+                xScale: bubble.grow
+                yScale: bubble.grow
+            }
 
             // springy bloom
             Behavior on width { SpringAnimation { spring: 4.5; damping: 0.28; epsilon: 0.3 } }
             Behavior on height { SpringAnimation { spring: 4.5; damping: 0.32; epsilon: 0.3 } }
-            Behavior on scale { SpringAnimation { spring: 5; damping: 0.3; epsilon: 0.005 } }
+            Behavior on grow { SpringAnimation { spring: 5; damping: 0.3; epsilon: 0.005 } }
             Behavior on y { SpringAnimation { spring: 5; damping: 0.35 } }
             Behavior on opacity { NumberAnimation { duration: root.open ? 140 : 260 } }
             Behavior on border.color { ColorAnimation { duration: 300 } }

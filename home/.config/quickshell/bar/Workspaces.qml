@@ -12,7 +12,8 @@ Pill {
     readonly property var monitor: bar ? bar.monitor : null
     readonly property var activeWs: monitor && monitor.activeWorkspace ? monitor.activeWorkspace : Hyprland.focusedWorkspace
     readonly property int active: activeWs ? activeWs.id : 0
-    readonly property bool focusedHere: monitor ? monitor.focused : true
+    // monitor.focused is not kept up to date by Quickshell: compare with the focused monitor instead
+    readonly property bool focusedHere: !monitor || !Hyprland.focusedMonitor || Hyprland.focusedMonitor.name === monitor.name
     readonly property var all: Hyprland.workspaces.values
 
     function windows(id) {

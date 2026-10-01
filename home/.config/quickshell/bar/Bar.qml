@@ -80,7 +80,10 @@ PanelWindow {
             "custom/window": windowPill,
             "group/datetime": dateTime,
             "group/media": mediaPill,
-            "custom/claude": claudePill,
+            "group/claude": claudeGroup,
+            "group/tray": trayGroup,
+            "custom/ask": askSeg,
+            "custom/claude": claudeSeg,
             "group/status": statusPill,
             "group/system": systemPill,
             "clock": clockSeg,
@@ -105,7 +108,10 @@ PanelWindow {
     Component { id: windowPill; WindowPill {} }
     Component { id: dateTime; GroupPill { name: "group/datetime"; separators: true } }
     Component { id: mediaPill; MediaPill {} }
-    Component { id: claudePill; ClaudePill {} }
+    Component { id: claudeGroup; GroupPill { name: "group/claude" } }
+    Component { id: trayGroup; GroupPill { name: "group/tray" } }
+    Component { id: askSeg; AskSeg {} }
+    Component { id: claudeSeg; ClaudeSeg {} }
     Component { id: statusPill; GroupPill { name: "group/status" } }
     Component { id: systemPill; GroupPill { name: "group/system" } }
     Component { id: clockSeg; ClockSeg {} }

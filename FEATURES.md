@@ -38,8 +38,8 @@ the GPU (Vulkan: AMD, Intel and NVIDIA):
 - the model leaves VRAM after 5 minutes, so games get it back
 - language, models and names Whisper should know: `DICTATE_*` in `personal/config`
 
-<img src="docs/img/dictation-pill.png" alt="The dictation pill next to the microphone: ready, recording, transcribing" width="600"><br>
-<sub>The pill next to the microphone: ready, recording, transcribing. Click: start/stop, right click: without the LLM, middle: cancel.</sub>
+<img src="docs/img/dictation-pill.png" alt="The dictation icon in the bar: ready, recording, transcribing" width="600"><br>
+<sub>The dictation icon in the bar: ready, recording, transcribing. Click: start/stop, right click: without the LLM, middle: cancel.</sub>
 
 ## Asking Claude
 
@@ -99,12 +99,14 @@ live, without a restart. Pills from left to right:
   ikhal. Click the weather: the next hours and three days
 - **Media**: play/pause, skip, the title slides through when it is long. Click it: cover, progress (click
   to jump), shuffle and repeat, and every player that runs
-- **Claude Code usage**: session and weekly limits; click: both with their resets and the tokens per day
+- **Voice and Claude**: the ✨ button asks Claude by voice (click: talk, click again: send; the bubble
+  grows out of it), dictation next to it, then Claude's session and weekly limits; click them: both
+  with their resets and the tokens per day
 - **Status**: network (click: Wi-Fi networks, join a known one, on/off), volume (wheel: level; click:
-  outputs, microphones and a level per app that plays; right: mute), microphone, dictation, battery
+  outputs, microphones and a level per app that plays; right: mute), microphone, battery
   (click: time left, power draw, health, power profile)
-- **System**: tray (right click: the app's menu in the same style), pending updates, the sync, keep
-  awake, notifications (click: do not disturb), power
+- **Tray**: the apps' own icons (right click: the app's menu in the same style)
+- **System**: pending updates, the sync, keep awake, notifications (click: do not disturb), power
 
 Hover anything for a tooltip; a click elsewhere or `Esc` closes a popup. Popups also open from a key
 binding or a script: `quickshell ipc -p ~/.config/quickshell call bar popup calendar` (`weather`,

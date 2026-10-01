@@ -6,17 +6,22 @@
 {
     "modules-left": ["group/user", "group/workspaces", "custom/window"],
     "modules-center": ["group/datetime"],
-    "modules-right": ["group/media", "custom/claude", "group/status", "group/system"],
+    "modules-right": ["group/media", "group/claude", "group/status", "group/tray", "group/system"],
 
     "groups": {
         // avatar and name; a click opens the settings menu
         "group/user": ["custom/avatar", "custom/username"],
+        // your voice: ask Claude (the bubble grows out of this button), dictation, and how much of
+        // Claude is left
+        "group/claude": ["custom/ask", "custom/dictate", "custom/claude"],
         // one island: time and date · weather · the next event
         "group/datetime": ["clock", "custom/weather", "custom/calendar"],
-        // how this machine is connected: network, output, microphone, dictation, battery
-        "group/status": ["network", "pulseaudio", "pulseaudio#mic", "custom/dictate", "battery"],
-        // the machine itself: tray, what waits (updates, sync), idle inhibitor, notifications, power
-        "group/system": ["tray", "custom/updates", "custom/sync", "idle_inhibitor", "custom/notifications", "custom/power"]
+        // how this machine is connected: network, output, microphone, battery
+        "group/status": ["network", "pulseaudio", "pulseaudio#mic", "battery"],
+        // the apps' own icons, apart from the kit's monochrome ones
+        "group/tray": ["tray"],
+        // the machine itself: what waits (updates, sync), keep awake, notifications, power
+        "group/system": ["custom/updates", "custom/sync", "idle_inhibitor", "custom/notifications", "custom/power"]
     },
 
     // the compact bar (narrow screens) has the same pills with fewer words; these groups lose members

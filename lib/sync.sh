@@ -136,6 +136,8 @@ apply_changes() {
   grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py)' <<< "$files" && reload+=(theme mako hypr)
   grep -qE '^home/\.config/hypr/' <<< "$files" && reload+=(hypr)
   grep -qE '^home/\.config/systemd/' <<< "$files" && reload+=(systemd)
+  # elephant keeps its menus from its start: a changed menu (e.g. a moved script) needs a restart
+  grep -qE '^home/\.config/elephant/' <<< "$files" && reload+=(elephant)
   grep -qE '^system/' <<< "$files" && notify_once system normal "driftless-system changed: run  driftless system  to update this machine's system files"
   ((${#reload[@]} == 0)) || reload "${reload[@]}"
   if grep -qE '^((personal/)?packages/|(personal/|hosts/[^/]+/)?manifest$)' <<< "$files"; then
@@ -160,6 +162,14 @@ reload() {
       systemd) systemctl --user daemon-reload 2> /dev/null || true ;;
       hypr) hyprctl reload > /dev/null 2>&1 || true ;;
       mako) makoctl reload 2> /dev/null || true ;;
+      elephant)
+        # a menu that does not parse takes all of elephant (and walker's launcher) down: keep the old one
+        if ! command -v luac > /dev/null || luac -p "$HOME"/.config/elephant/menus/*.lua 2> /dev/null; then
+          systemctl --user try-restart elephant.service 2> /dev/null || true
+        else
+          warn "an elephant menu does not parse, elephant not restarted"
+        fi
+        ;;
     esac
   done
   return 0

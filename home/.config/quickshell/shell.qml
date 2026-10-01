@@ -3,6 +3,7 @@
 
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import QtQuick
 import qs.services
 import "bar"
@@ -19,6 +20,19 @@ ShellRoot {
     }
 
     Notch {}
+
+    // Quickshell misses the first workspace change after it starts (the new workspace never shows up):
+    // on workspace and monitor events ask Hyprland for the whole state
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (["workspacev2", "createworkspacev2", "destroyworkspacev2", "moveworkspacev2", "focusedmon",
+                 "renameworkspace", "monitoraddedv2", "monitorremovedv2"].includes(event.name)) {
+                Hyprland.refreshWorkspaces();
+                Hyprland.refreshMonitors();
+            }
+        }
+    }
 
     IpcHandler {
         target: "bar"

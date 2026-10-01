@@ -89,8 +89,9 @@ Item {
                     Label {
                         width: parent.width - 50
                         elide: Text.ElideRight
-                        text: props["application.name"] || modelData.description || modelData.nickname
-                              || modelData.name.split(".").pop()
+                        // an app id like io.github.celluloid_player.Celluloid: its last part
+                        text: (props["application.name"] || modelData.description || modelData.nickname
+                               || modelData.name).replace(/^(\w+\.)+(?=\w+$)/, "")
                         font.pixelSize: 12
                         dim: true
                     }

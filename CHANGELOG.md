@@ -2,6 +2,20 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.3.2 (2026-10-01): new screenshots
+
+Every screenshot shows the setup as it is now, and two fixes for the bar.
+
+### Changed
+- New screenshots in README and FEATURES: the Quickshell bar, its popups, the ask button with the
+  bubble growing out of it, dictation, the tiled desktop, walker, mako, wlogout and the menus.
+
+### Fixed
+- The bar missed the first workspace change after the shell started (the new workspace did not show
+  up, the old window stayed in the window pill): it asks Hyprland for the state on workspace events.
+- The sound popup names apps by their name instead of their app id (`Celluloid`, not
+  `io.github.celluloid_player.Celluloid`).
+
 ## v2.3.1 (2026-10-01): an ask button
 
 Ask Claude from the bar without knowing `SUPER + A`, and the bar's right side grouped by topic:

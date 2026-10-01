@@ -8,6 +8,7 @@
 #   group      NAME               packages/NAME.list is installed
 #   unit       NAME               system unit that is enabled
 #   user-unit  NAME               user unit that is enabled
+#   user-unit-retired NAME        user unit that is disabled and stopped (one that left the kit)
 #
 # Any line can end in "if=FACT" (or "if=!FACT"); facts come from lib/hardware.sh (hw_facts), plus
 # "host:NAME". SOURCE may contain {host}. Blank lines and "#" comments are ignored.
@@ -86,5 +87,5 @@ notify() {
   notify-send -u "$1" -a driftless "driftless" "$2" 2> /dev/null || true
 }
 
-# refresh the sync pill in waybar
-poke_bar() { pkill -RTMIN+11 -x waybar 2> /dev/null || true; }
+# refresh the sync icon in the bar (the desktop shell, home/.config/quickshell)
+poke_bar() { quickshell ipc -p "$HOME/.config/quickshell" call bar refresh sync > /dev/null 2>&1 || true; }

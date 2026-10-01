@@ -1,4 +1,4 @@
-# Matches waybar / wlogout / mako / walker. Stock config was empty: config.ghostty.bak-default
+# Matches the bar / wlogout / mako / walker. Stock config was empty: config.ghostty.bak-default
 
 font-family = JetBrainsMono Nerd Font
 font-size = 12

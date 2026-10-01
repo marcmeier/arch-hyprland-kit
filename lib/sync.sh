@@ -110,6 +110,17 @@ update() {
 # changed OLD: the files that differ between OLD and HEAD
 changed() { if [[ -n $1 ]]; then git_ diff --name-only "$1" HEAD; else git_ ls-files; fi; }
 
+# reload_code OLD: an update that changed driftless itself is applied by the new code, not by the old
+# code that is running (a new manifest kind, a new reload rule, a unit to switch off, ...)
+reload_code() {
+  local lib
+  git_ diff --quiet "$1" HEAD -- lib && return 0
+  for lib in ${LIBS:-common link packages signing sync setup system verify publish}; do
+    # shellcheck source=/dev/null
+    source "$DRIFTLESS/lib/$lib.sh"
+  done
+}
+
 # apply_changes OLD: links, reloads and packages for what came in
 apply_changes() {
   local old=$1 files
@@ -122,10 +133,8 @@ apply_changes() {
     setup_units
   }
   if grep -q '^dconf.ini$' <<< "$files"; then dconf load / < "$DRIFTLESS/dconf.ini" 2> /dev/null || warn "dconf not loaded"; fi
-  grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py)' <<< "$files" && reload+=(theme waybar mako hypr)
+  grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py)' <<< "$files" && reload+=(theme mako hypr)
   grep -qE '^home/\.config/hypr/' <<< "$files" && reload+=(hypr)
-  grep -qE '^home/\.config/waybar/(config.*\.jsonc|render\.py|bar_layout\.py)$' <<< "$files" && reload+=(waybar)
-  grep -qE '^home/\.config/waybar/feeds\.py$' <<< "$files" && reload+=(feeds)
   grep -qE '^home/\.config/systemd/' <<< "$files" && reload+=(systemd)
   grep -qE '^system/' <<< "$files" && notify_once system normal "driftless-system changed: run  driftless system  to update this machine's system files"
   ((${#reload[@]} == 0)) || reload "${reload[@]}"
@@ -151,8 +160,6 @@ reload() {
       systemd) systemctl --user daemon-reload 2> /dev/null || true ;;
       hypr) hyprctl reload > /dev/null 2>&1 || true ;;
       mako) makoctl reload 2> /dev/null || true ;;
-      waybar) systemctl --user try-restart waybar.service 2> /dev/null || true ;;
-      feeds) systemctl --user try-restart driftless-bar.service 2> /dev/null || true ;;
     esac
   done
   return 0
@@ -254,10 +261,12 @@ cmd_sync() {
         return 1
       fi
       rm -f "$STATE/conflict" "$STATE/conflict.notified"
+      reload_code "$old"
     else
       RESULT=offline
     fi
     apply_changes "$old"
+    retire_units
     [[ $RESULT == offline ]] || install_missing
   fi
 

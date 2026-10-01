@@ -45,15 +45,14 @@ local browser = "brave-origin --hide-crash-restore-bubble"
 
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 
--- Waybar, mako, hypridle, the polkit agent, the clipboard history, the wallpaper and elephant are
--- systemd user units that start with graphical-session.target (driftless setup enables them), so
--- they restart on a crash and "systemctl --user restart waybar" works. That needs the session from
+-- The desktop shell (bar and Claude bubble), mako, hypridle, the polkit agent, the clipboard history, the
+-- wallpaper and elephant are systemd user units that start with graphical-session.target (driftless setup
+-- enables them), so they restart on a crash and "systemctl --user restart driftless-shell" works. That needs the session from
 -- uwsm ("Hyprland (uwsm-managed)" at the login screen). Started any other way, start them here.
 if not os.getenv("UWSM_FINALIZE_VARNAMES") then
     hl.on("hyprland.start", function ()
         for _, cmd in ipairs({
-            "~/.config/waybar/render.py && waybar -c ~/.cache/waybar/config.jsonc",
-            "~/.config/waybar/feeds.py", "mako", "hypridle", "/usr/lib/hyprpolkitagent/hyprpolkitagent",
+            "quickshell -p ~/.config/quickshell", "mako", "hypridle", "/usr/lib/hyprpolkitagent/hyprpolkitagent",
             "wl-paste --watch cliphist store", "elephant", "awww-daemon",
             "sleep 1 && awww img --transition-type none ~/.config/wall.png",
         }) do hl.exec_cmd(cmd) end
@@ -263,7 +262,7 @@ hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal), { description = "Term
 local closeWindowBind = hl.bind(mainMod .. " + W", hl.dsp.window.close(), { description = "Close window" })
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/wlogout/wlogout.sh"), { description = "Power menu: lock, log out, suspend, reboot, shut down" })
-hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("~/.config/waybar/widgets.py"), { description = "Waybar widgets: show, hide, move" }) -- waybar widget manager
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("~/.config/quickshell/scripts/widgets.py"), { description = "Bar widgets: show, hide, move" }) -- the bar's widget manager
 hl.bind(mainMod .. " + SHIFT + RETURN", hl.dsp.exec_cmd(browser), { description = "Browser" })
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { description = "File manager" })
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen("maximized", "toggle"), { description = "Maximise window (fullscreen)" })
@@ -284,6 +283,9 @@ hl.bind(mainMod .. " + D",         hl.dsp.exec_cmd("~/.config/hypr/dictate.py do
 hl.bind(mainMod .. " + D",         hl.dsp.exec_cmd("~/.config/hypr/dictate.py up"), { release = true })
 hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("~/.config/hypr/dictate.py down --raw"), { description = "Dictation, voice to text, without the LLM tidying up" })
 hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("~/.config/hypr/dictate.py up"), { release = true })
+-- Ask Claude by voice (notch/notch.py): same keys as dictation, the answer appears in a bubble at the top and is spoken
+hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("~/.config/hypr/notch/notch.py down"), { description = "Ask Claude by voice: tap to start and stop, hold to talk" })
+hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("~/.config/hypr/notch/notch.py up"), { release = true })
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo(), { description = "Pseudo-tile window" })
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/display-mode.sh"), { description = "Display mode: extend, mirror, one screen" })
 hl.bind("XF86Display", hl.dsp.exec_cmd("~/.config/hypr/display-mode.sh"), { description = "Display mode: extend, mirror, one screen" })
@@ -382,13 +384,22 @@ hl.window_rule({
 -- })
 -- overlayLayerRule:set_enabled(false)
 
--- Theme: blur behind the translucent shell surfaces (waybar, mako, walker, wlogout)
+-- Theme: blur behind the translucent shell surfaces (the bar with its popups and tooltips, mako, walker,
+-- wlogout, the Claude bubble); only where they draw, not in their transparent parts
 hl.layer_rule({
     name  = "theme-blur",
-    match = { namespace = "^(waybar|notifications|walker|logout_dialog)$" },
+    match = { namespace = "^(driftless-bar|driftless-popup|driftless-tooltip|notifications|walker|logout_dialog|claude-notch)$" },
 
     blur        = true,
     ignore_alpha = 0.2,
+})
+
+-- The bar's popups and tooltips animate themselves (they fold out below the item)
+hl.layer_rule({
+    name  = "shell-popups-no-anim",
+    match = { namespace = "^(driftless-popup|driftless-tooltip)$" },
+
+    no_anim = true,
 })
 
 -- hyprpicker: no fade on the frozen overlay, so the picker appears/disappears instantly
@@ -431,7 +442,7 @@ hl.window_rule({
     move       = "0 0",
 })
 
--- Calendar (ikhal, started from the waybar calendar pill): floating, centered
+-- Calendar (ikhal, started from the calendar in the bar): floating, centered
 hl.window_rule({
     name  = "calendar-float",
     match = { class = "^com\\.mitchellh\\.ghostty\\.calendar$" },

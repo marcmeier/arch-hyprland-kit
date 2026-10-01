@@ -11,8 +11,8 @@ A new machine gets everything from two scripts.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/img/desktop.jpg" alt="Desktop: Hyprland with the spacious Waybar on a 3440x1440 ultrawide"><br><sub>Desktop, 3440x1440 ultrawide.</sub></td>
-<td width="50%"><img src="docs/img/desktop-notebook.jpg" alt="Notebook: the same setup on a 1920x1080 panel with the compact Waybar"><br><sub>Notebook: the same setup with the compact bar.</sub></td>
+<td width="50%"><img src="docs/img/desktop.jpg" alt="Desktop: Hyprland with the spacious bar on a 3440x1440 ultrawide"><br><sub>Desktop, 3440x1440 ultrawide.</sub></td>
+<td width="50%"><img src="docs/img/desktop-notebook.jpg" alt="Notebook: the same setup on a 1920x1080 panel with the compact bar"><br><sub>Notebook: the same setup with the compact bar.</sub></td>
 </tr>
 </table>
 
@@ -30,14 +30,17 @@ A new machine gets everything from two scripts.
 
 ## What you get
 
-- **A complete Hyprland desktop** in the colours of your wallpaper: Waybar, walker, mako, hyprlock,
+- **A complete Hyprland desktop** in the colours of your wallpaper: the bar, walker, mako, hyprlock,
   wlogout, the ReGreet login screen, Ghostty, GTK, Qt, btop and VS Code, all themed by
   `set-wallpaper IMAGE`. A new wallpaper grows in from the mouse pointer, and every day another one
   from your folder takes over
 - **Dictation** (`SUPER + D`): speak into any window. whisper.cpp and a small LLM tidy the text up,
   both locally on the GPU
-- **One bar per monitor** with a pill for everything (weather, calendar, media, updates, sync, ...),
-  compact on notebook panels
+- **Ask Claude by voice** (`SUPER + A`): the answer appears in a bubble at the top and is read out;
+  timers, calendar, weather, what is on your screen, media, notes, apps and web search included
+- **One bar per monitor** (Quickshell) with a pill for everything (weather, calendar, media, updates,
+  sync, ...), compact on notebook panels; a click opens the details: the month with your events, the
+  forecast, cover and controls, outputs and levels per app, Wi-Fi networks, power profiles
 - **Settings menu** on the avatar: widgets, bar size, wallpaper (with thumbnails and a preview),
   monitors, sync, and every keybinding in a list you search as you type (`SUPER + SHIFT + K`)
 - **Gaming stack**: Steam, Proton-GE, Lutris, gamescope, gamemode, tearing for games
@@ -80,7 +83,7 @@ files are declared in lists and a package, and `driftless verify` shows where a 
 | `manifest` | What a machine gets: `link`, `group` (packages), `unit`, `user-unit`, each optionally `if=FACT` |
 | `home/` | The dotfiles. Whole folders are linked (`~/.config/hypr` → `home/.config/hypr`) |
 | `packages/*.list` | Package groups you write by hand. `aur:` marks AUR packages |
-| `hosts/<hostname>/` | Per machine: `hyprland.lua`, `waybar.json`, `env`, a `manifest` with extra lines |
+| `hosts/<hostname>/` | Per machine: `hyprland.lua`, `bar.json`, `env`, a `manifest` with extra lines |
 | `personal/` | Your layer: manifest, config (weather, mirrors, ...), private dotfiles. Never published |
 | `system/` | The `driftless-system` package: every system file as a drop-in (sysctl.d, service.d, conf.d ...) |
 | `dconf.ini` | The GNOME/GTK settings every machine gets |
@@ -92,7 +95,7 @@ Facts come from the hardware (`driftless facts`): `cpu-amd`, `cpu-intel`, `gpu-a
 package groups with them, e.g. `group hw-gpu-nvidia if=gpu-nvidia`.
 
 What stays on each machine and is never in the repository: the wallpaper and everything rendered
-from it, the Waybar widget layout (`~/.local/state/waybar`), the monitor layout
+from it, the bar's widget layout (`~/.local/state/driftless-shell`), the monitor layout
 (`~/.local/state/hypr`), the sync mode and the list of trusted machines (`~/.local/state/driftless`).
 
 ## Make it yours
@@ -154,7 +157,7 @@ set-wallpaper ~/Pictures/x.jpg     # wallpaper and colours, on this machine only
 set-wallpaper --random             # another one from your wallpaper folder (the daily timer does this)
 ```
 
-The Waybar sync pill shows the same: incoming (`↓n`) and outgoing (`↑n`) changes, who changed what,
+The sync icon in the bar shows the same: incoming (`↓n`) and outgoing (`↑n`) changes, who changed what,
 and a menu for everything above.
 
 ### What the sync does and doesn't do

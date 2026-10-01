@@ -15,6 +15,15 @@ DICTATE_LLM=gemma3:4b
 DICTATE_WHISPER_MODEL=large-v3-turbo-q5_0
 DICTATE_PROMPT=""
 
+# asking Claude by voice (SUPER + A): the Claude model, the language for Whisper (empty: DICTATE_LANG),
+# the Piper voice (empty: de_DE-thorsten-high for German, en_US-lessac-high otherwise; "off": not
+# spoken; https://huggingface.co/rhasspy/piper-voices) and the notes file ("Note: ...";
+# empty: ~/Documents/notes.md)
+NOTCH_MODEL=haiku
+NOTCH_LANG=""
+NOTCH_VOICE=""
+NOTCH_NOTES=""
+
 # the wallpaper folder of the settings menu; point it at a folder your cloud client syncs to have the
 # same wallpapers on every machine (empty: ~/Pictures/Wallpapers)
 WALLPAPER_DIR=""

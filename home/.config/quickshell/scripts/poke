@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Tell the bar that something it shows has changed: poke NAME...
+# NAME: sync, calendar, updates, notifications, dictate, claude, weather, layout (the widget layout).
+# Quiet and harmless when the shell is not running.
+for name in "$@"; do
+  quickshell ipc -p "$HOME/.config/quickshell" call bar refresh "$name" > /dev/null 2>&1 || true
+done

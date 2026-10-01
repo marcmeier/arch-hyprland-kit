@@ -93,7 +93,7 @@ setup() {
 
 @test "link_problems names a missing link" {
   dl A link
-  rm "$(home A)/.config/waybar"
+  rm "$(home A)/.config/quickshell"
   run dl A status
-  [[ $output == *"~/.config/waybar is missing"* ]]
+  [[ $output == *"~/.config/quickshell is missing"* ]]
 }

@@ -88,7 +88,7 @@ pkill -x elephant 2> /dev/null || true
 # down: start the same programs in this session (hyprland.lua does so at every login without uwsm)
 if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && ! systemctl --user is-active -q graphical-session.target; then
   echo "   session without uwsm: starting bar and helpers directly (next login: pick Hyprland (uwsm-managed))"
-  for c in "$HOME/.config/waybar/render.py && waybar -c $HOME/.cache/waybar/config.jsonc" "$HOME/.config/waybar/feeds.py" \
+  for c in "quickshell -p $HOME/.config/quickshell" \
     mako hypridle /usr/lib/hyprpolkitagent/hyprpolkitagent "wl-paste --watch cliphist store" \
     "swaybg -i $HOME/.config/wall.png -m fill" elephant; do
     hyprctl dispatch "hl.dsp.exec_cmd(\"$c\")" > /dev/null

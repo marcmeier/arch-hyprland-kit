@@ -140,6 +140,15 @@ hypr() { echo "$(home "$1")/.config/hypr/hyprland.lua"; }
   [ -L "$(home B)/.config/newapp" ]
 }
 
+@test "an update of driftless itself is applied by the new code, not by the running one" {
+  # the new code leaves a mark when it applies changes; the code that starts B's sync knows nothing of it
+  sed -i 's|^apply_changes() {$|apply_changes() {\n  touch "$STATE/applied-by-new-code"|' "$(repo A)/lib/sync.sh"
+  git -C "$(repo A)" commit -qam "apply_changes leaves a mark"
+  dl A sync
+  dl B sync
+  [ -e "$T/B/state/driftless/applied-by-new-code" ]
+}
+
 @test "a new package in a list asks for the password once, AUR packages wait" {
   echo "newpkg" >> "$(repo A)/packages/desktop.list"
   echo "aur:newaur" >> "$(repo A)/packages/desktop.list"

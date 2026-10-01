@@ -1,0 +1,15 @@
+[Unit]
+Description=driftless shell: bar, popups and the Claude bubble (Quickshell)
+Documentation=file://%h/.config/quickshell/shell.qml
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+# edits to the QML apply on save; a restart is only needed after a crash
+ExecStart=/usr/bin/quickshell -p %h/.config/quickshell
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

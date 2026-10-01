@@ -9,7 +9,7 @@ alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 PS1='[\u@\h \W]\$ '
 
-# starship prompt (themed to match waybar/ghostty); skipped if not installed
+# starship prompt (themed to match the bar/ghostty); skipped if not installed
 command -v starship >/dev/null && eval "$(starship init bash)"
 
 # default editor (used by starship config, git, sudoedit, ...)

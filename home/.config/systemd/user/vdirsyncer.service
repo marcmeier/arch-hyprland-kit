@@ -5,4 +5,4 @@ ConditionPathExists=%h/.local/share/vdirsyncer/status
 
 [Service]
 Type=oneshot
-ExecStart=%h/.config/waybar/calendar-sync.sh
+ExecStart=%h/.config/quickshell/scripts/calendar-sync.sh

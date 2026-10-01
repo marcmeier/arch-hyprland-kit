@@ -1,0 +1,26 @@
+// The bar's widgets and their default order: the source of every widget. The widget manager
+// (SUPER + SHIFT + B, scripts/widgets.py) hides and moves them per machine and saves that in
+// ~/.local/state/driftless-shell/layout.json; scripts/bar_layout.py and services/BarLayout.qml both read this
+// file. A widget missing from a saved order (new here) goes in right after the widget before it.
+// Groups are drawn as one pill; their members can be hidden one by one, they move with the group.
+{
+    "modules-left": ["group/user", "group/workspaces", "custom/window"],
+    "modules-center": ["group/datetime"],
+    "modules-right": ["group/media", "custom/claude", "group/status", "group/system"],
+
+    "groups": {
+        // avatar and name; a click opens the settings menu
+        "group/user": ["custom/avatar", "custom/username"],
+        // one island: time and date · weather · the next event
+        "group/datetime": ["clock", "custom/weather", "custom/calendar"],
+        // how this machine is connected: network, output, microphone, dictation, battery
+        "group/status": ["network", "pulseaudio", "pulseaudio#mic", "custom/dictate", "battery"],
+        // the machine itself: tray, what waits (updates, sync), idle inhibitor, notifications, power
+        "group/system": ["tray", "custom/updates", "custom/sync", "idle_inhibitor", "custom/notifications", "custom/power"]
+    },
+
+    // the compact bar (narrow screens) has the same pills with fewer words; these groups lose members
+    "compact": {
+        "group/user": ["custom/avatar"]
+    }
+}

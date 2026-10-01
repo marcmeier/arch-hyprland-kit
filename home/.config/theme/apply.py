@@ -120,7 +120,7 @@ def recolor_icons(rgb_colors):
 
 
 def make_avatar(rgb_colors):
-    """Round avatar from ~/.face for waybar (THEME/avatar.png) and the login screen (cache).
+    """Round avatar from ~/.face for the bar (THEME/avatar.png) and the login screen (cache).
     Without ~/.face: the first letter of the login name on the primary colour."""
     from PIL import Image, ImageDraw, ImageFont
 

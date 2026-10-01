@@ -1,4 +1,4 @@
-# Matches waybar / ghostty: cyan path, green accent, dim details.
+# Matches the bar / ghostty: cyan path, green accent, dim details.
 add_newline = false
 command_timeout = 500
 

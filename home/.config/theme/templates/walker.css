@@ -1,5 +1,5 @@
 /* rendered by theme/apply.py into ~/.config/walker/themes/driftless/style.css (the path to colors.css is absolute there) */
-/* Matches waybar / wlogout / mako. Falls back to the default theme for layouts. */
+/* Matches the bar / wlogout / mako. Falls back to the default theme for layouts. */
 
 @import url("file://@home@/.config/theme/colors.css");
 

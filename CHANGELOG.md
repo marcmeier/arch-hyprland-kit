@@ -2,6 +2,55 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.3.0 (2026-10-01): the Quickshell bar and Claude by voice
+
+The bar is drawn by Quickshell now, with popups for everything behind its pills, and Claude answers
+by voice: [FEATURES.md](FEATURES.md#the-bar), [FEATURES.md](FEATURES.md#asking-claude).
+
+### Added
+- Ask Claude by voice (`SUPER + A`, tap or hold like dictation): whisper.cpp transcribes, `claude -p`
+  answers, and the answer streams into a bubble at the top of the screen while Piper reads it out
+  sentence by sentence. Timers and reminders (a gentle alarm that rings until a click or `SUPER + A`),
+  calendar (read and add), weather, the screen (Claude looks at a screenshot), clipboard and typing
+  into the active window, notes, media, volume, brightness, battery and system, updates, Bluetooth,
+  do not disturb, lock, suspend, wallpaper, finding files, apps and web search. Claude may use only
+  `notch/tools.py`, the screenshot and web search, and runs without your Claude Code settings. A
+  question within two minutes continues the conversation; a click or a new question stops it. The
+  bubble is part of the desktop shell and takes the wallpaper's colours. `home/.config/hypr/notch/`
+  (the voice side) and `home/.config/quickshell/notch/` (the bubble); Piper and the voice install
+  themselves into `~/.local/share` on first use. Settings: `NOTCH_*` in `personal/config`.
+- Popups in the bar: the month with your events (click a day for its events), the weather of the next
+  hours and days, media with cover, progress and every player, sound with outputs, microphones and a
+  level per app, Wi-Fi networks, the battery with power profiles, Claude usage in detail, and tray menus
+  in the bar's style. They open below the pill, slide from one to the next and close on a click
+  elsewhere or `Esc`; `quickshell ipc -p ~/.config/quickshell call bar popup NAME` opens one from a key.
+- `user-unit-retired` in the manifest: a user unit the kit dropped is switched off on every machine
+  (at every sync run, also when its unit file is gone already).
+
+### Changed
+- The bar is a Quickshell shell now instead of Waybar
+  ([ARCHITECTURE.md](ARCHITECTURE.md#8-the-bar-is-a-quickshell-shell)): one process
+  (`driftless-shell.service`, `home/.config/quickshell`) draws the bars, their tooltips and popups and
+  the Claude bubble, in one theme. Same pills, same order, same clicks; workspaces, window, sound,
+  media, battery, network and tray come from Quickshell's services, so `feeds.py` and
+  `driftless-bar.service` are gone. Theme, widget layout and bar size apply live, without a restart.
+  The scripts moved from `~/.config/waybar` to `~/.config/quickshell/scripts` and print plain JSON;
+  they tell the bar about changes with `scripts/poke NAME` instead of signals. `host/waybar.json` is
+  `host/bar.json` now (the old name is still read).
+
+### Fixed
+- An update that changes driftless itself is applied by the new code: the sync reads `lib/` again
+  after the update. Before, the code that started the run applied it and knew nothing of what came in
+  (a new manifest kind, a new reload rule).
+
+### Upgrading
+- The sync does it: it links `~/.config/quickshell`, starts `driftless-shell.service` and switches
+  Waybar and `driftless-bar.service` off (a sync still running v2.2.0's code finishes that on its next
+  run; a drop-in keeps Waybar from starting in between). Your widget layout moves from
+  `~/.local/state/waybar` to `~/.local/state/driftless-shell` by itself.
+- `quickshell` is in the `desktop` group: the sync offers it in its password dialog.
+- Waybar is in no list any more: `sudo pacman -Rns waybar` if you like.
+
 ## v2.2.0 (2026-09-30): the wallpaper menu
 
 Pick a wallpaper from thumbnails with a large preview, get a new one every day, and see the colours

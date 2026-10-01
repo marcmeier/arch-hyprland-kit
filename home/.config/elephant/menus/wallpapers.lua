@@ -12,7 +12,7 @@ Cache = false
 FixedOrder = true
 
 local home = os.getenv("HOME")
-Action = home .. "/.config/waybar/settings-menu.sh wallpaper-pick '%VALUE%'"
+Action = home .. "/.config/quickshell/scripts/settings-menu.sh wallpaper-pick '%VALUE%'"
 
 local function quote(s)
     return "'" .. s:gsub("'", "'\\''") .. "'"

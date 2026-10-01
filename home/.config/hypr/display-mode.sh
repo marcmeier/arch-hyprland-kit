@@ -1,7 +1,7 @@
 #!/bin/sh
 # Switch between internal / external / extended / mirrored display, like Win+P.
 # Usage: display-mode.sh [extend|mirror|internal|external]  (no argument: pick in walker)
-# Changes last until the next config reload. Waybar follows by itself (one bar per output).
+# Changes last until the next config reload. The bar follows by itself (one bar per output).
 
 INTERNAL=eDP-1
 EXTERNAL=$(hyprctl -j monitors all | python3 -c '

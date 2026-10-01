@@ -4,12 +4,12 @@
 
 One key does both (hyprland.lua, SUPER + D): tap it to start and tap again to stop, or hold it and
 let go to stop (push-to-talk). SUPER + SHIFT + D pastes Whisper's text without the LLM.
-The Waybar pill (custom/dictate) shows the state; click: start/stop, right click: raw, middle: cancel.
+The bar shows the state next to the microphone; click: start/stop, right click: raw, middle: cancel.
 
 Usage: dictate.py down|up [--raw]   key pressed / released (the Hyprland binds)
-       dictate.py toggle [--raw]     start or stop (the Waybar pill)
+       dictate.py toggle [--raw]     start or stop (the bar)
        dictate.py cancel             stop without transcribing
-       dictate.py status             JSON for Waybar
+       dictate.py status             JSON for the bar
 
 Settings (optional, personal/config or hosts/<host>/env): DICTATE_LANG (de, en, ... or auto;
 default auto), DICTATE_LLM (Ollama model, default gemma3:4b; "off": no LLM), DICTATE_WHISPER_MODEL
@@ -35,7 +35,6 @@ VAD_MODEL = "ggml-silero-v5.1.2.bin"
 HF = "https://huggingface.co"
 OLLAMA = "http://127.0.0.1:11434"
 HOLD = 0.5  # held longer than this (seconds): push-to-talk, shorter: toggle
-SIGNAL = 15  # custom/dictate in config.jsonc
 KEEP = "5m"  # the LLM stays in VRAM this long after a dictation (it takes ~3.5 GB; games want it back)
 TERMINALS = ("com.mitchellh.ghostty", "kitty", "foot", "alacritty", "wezterm", "konsole", "terminal")
 # what Whisper makes of silence or noise (VAD catches most of it, these slip through now and then);
@@ -53,7 +52,7 @@ def settings():
     path = Path.home() / ".config/driftless/personal/config"
     if path.is_file():
         out = subprocess.run(
-            ["bash", "-c", 'source "$1" >/dev/null 2>&1; env -0', "_", str(path)],
+            ["bash", "-c", 'set -a; source "$1" >/dev/null 2>&1; env -0', "_", str(path)],
             capture_output=True,
             text=True,
             check=False,
@@ -98,7 +97,10 @@ def write_state(st):
         STATE.write_text(json.dumps(st))
     else:
         STATE.unlink(missing_ok=True)
-    subprocess.run(["pkill", f"-RTMIN+{SIGNAL}", "waybar"], check=False)
+    # the bar shows the new state (quickshell/scripts/poke; never waits for it)
+    poke = Path.home() / ".config/quickshell/scripts/poke"
+    if poke.exists():
+        subprocess.Popen([poke, "dictate"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def log(msg):

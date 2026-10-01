@@ -10,6 +10,7 @@ searchable as you type.
 | `SUPER + SPACE` | App launcher: apps, calculator, web search |
 | `SUPER + RETURN` / `SUPER + SHIFT + RETURN` | Terminal / browser |
 | `SUPER + D` | Dictation into the active window (tap: start/stop, hold: push-to-talk) |
+| `SUPER + A` | Ask Claude by voice: the answer appears at the top and is spoken (tap or hold, like dictation) |
 | `SUPER + C` | Clipboard history |
 | `SUPER + .` | Emoji picker |
 | `SUPER + SHIFT + S` · `SUPER + SHIFT + A` | Screenshot of an area · the same, to annotate |
@@ -40,22 +41,77 @@ the GPU (Vulkan: AMD, Intel and NVIDIA):
 <img src="docs/img/dictation-pill.png" alt="The dictation pill next to the microphone: ready, recording, transcribing" width="600"><br>
 <sub>The pill next to the microphone: ready, recording, transcribing. Click: start/stop, right click: without the LLM, middle: cancel.</sub>
 
+## Asking Claude
+
+`SUPER + A`, a question, and the answer appears in a bubble at the top of the screen while a voice
+reads it out. Like Siri or Alexa, for the quick things, without opening a window:
+
+<table>
+<tr>
+<td width="50%"><img src="docs/img/notch-listening.png" alt="The bubble listening, with level bars"><br><sub>Listening: the orb and the bars follow your voice.</sub></td>
+<td width="50%"><img src="docs/img/notch-thinking.png" alt="The bubble showing the question while Claude thinks"><br><sub>Your question while Claude works on it.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/img/notch-answer.png" alt="The bubble opened up with the answer"><br><sub>The answer, typed in as it arrives and read out at the same time.</sub></td>
+<td width="50%"><img src="docs/img/notch-timer.png" alt="A timer ringing in the bubble"><br><sub>A timer rings until you stop it.</sub></td>
+</tr>
+</table>
+
+| Say | What happens |
+|---|---|
+| "Set a timer for 10 minutes for the pasta", "Remind me at 3 to call Anna" | a gentle marimba alarm that swells until a click or `SUPER + A` stops it, and the voice says what it was for; "Which timers are running?", "Cancel the timer" |
+| "Do I have anything on this afternoon?", "Put the dentist in for Tuesday at 3" | reads and adds calendar events (khal, synced right away) |
+| "What will the weather be like tomorrow?" | now and three days, for your `WTTR_LOCATION` or any place |
+| "What's on my screen?", "Summarise this article", "What does this error mean?" | Claude looks at a screenshot of your monitor |
+| "Translate what I copied", "Write a polite reply that I'm ill and paste it" | reads the clipboard, types text into the active window |
+| "Note: buy milk", "What did I note?" | a notes file (`NOTCH_NOTES`, default `~/Documents/notes.md`) |
+| "Pause the music", "Next song", "Volume to 30", "Brighter" | media, volume, screen brightness |
+| "How full is the battery?", "Are there updates?", "Connect my headphones" | battery, disk, memory, network, pending updates, Bluetooth |
+| "Do not disturb", "Lock the screen", "New wallpaper", "Suspend" | |
+| "Open Firefox", "Find my tax return", "Open the Arch Wiki on PipeWire" | starts apps, finds files by name, opens files and pages |
+| "What's 18 % of 240?", "How do you say thank you in Japanese?", news, facts | answered directly or from a web search |
+
+A question within two minutes continues the conversation ("And on Friday?"). A click on the bubble or
+a new question stops everything.
+
+Whisper transcribes locally (the dictation setup), Claude Code answers (`claude -p`, Haiku by default)
+and may use only `notch/tools.py` (the actions above), the screenshot and web search, without asking
+and without your Claude Code settings. Piper speaks the answer sentence by sentence as it arrives,
+locally too (installed into a venv on first use). The bubble is part of the desktop shell, in the colours
+of your wallpaper (it follows a new one at once): listening with level bars, thinking, then it opens up
+for the answer. Model, language, voice and notes file:
+`NOTCH_*` in `personal/config`.
+
 ## The bar
 
-One Waybar per monitor: compact on notebook panels, spacious everywhere else. Pills from left to right:
+One bar per monitor, drawn by Quickshell together with its popups and the Claude bubble: compact on
+notebook panels, spacious everywhere else. It follows the wallpaper's colours and your widget layout
+live, without a restart. Pills from left to right:
 
-<img src="docs/img/desktop.jpg" alt="Desktop with the spacious Waybar on an ultrawide monitor"><br>
+<img src="docs/img/desktop.jpg" alt="Desktop with the spacious bar on an ultrawide monitor"><br>
 <sub>The spacious bar on a 3440x1440 ultrawide.</sub>
 
 
 - **You**: avatar and name; a click opens the settings menu
-- **Workspaces** and the **active window**
-- **Clock, weather and your next calendar event** (khal); a click opens the calendar
-- **Media**: play/pause, skip, the title that is playing
-- **Claude Code usage**: session and weekly limits, reset times in the tooltip
-- **Status**: network, volume (click: next output), microphone, dictation, battery
-- **System**: tray, pending updates, the sync, idle inhibitor, notifications (click: do not disturb),
-  power
+- **Workspaces** (the active one's gradient slides along) and the **active window**
+- **Clock, weather and your next calendar event**. Click the clock: the month with a dot on every day
+  that has events, click a day for its events, and what comes up; right click or a click on the event:
+  ikhal. Click the weather: the next hours and three days
+- **Media**: play/pause, skip, the title slides through when it is long. Click it: cover, progress (click
+  to jump), shuffle and repeat, and every player that runs
+- **Claude Code usage**: session and weekly limits; click: both with their resets and the tokens per day
+- **Status**: network (click: Wi-Fi networks, join a known one, on/off), volume (wheel: level; click:
+  outputs, microphones and a level per app that plays; right: mute), microphone, dictation, battery
+  (click: time left, power draw, health, power profile)
+- **System**: tray (right click: the app's menu in the same style), pending updates, the sync, keep
+  awake, notifications (click: do not disturb), power
+
+Hover anything for a tooltip; a click elsewhere or `Esc` closes a popup. Popups also open from a key
+binding or a script: `quickshell ipc -p ~/.config/quickshell call bar popup calendar` (`weather`,
+`media`, `claude`, `audio`, `network`, `battery`).
+
+<img src="docs/img/bar-popups.jpg" alt="Four popups of the bar: media, sound, Claude usage, battery" width="700"><br>
+<sub>Popups: what plays, sound with a level per app, Claude usage, battery and power profile.</sub>
 
 ## Settings menu
 
@@ -74,7 +130,7 @@ A click on the avatar, every choice per machine:
 
 ## Theme from the wallpaper
 
-`set-wallpaper IMAGE` derives two accent colours from the image and renders them into Waybar, walker,
+`set-wallpaper IMAGE` derives two accent colours from the image and renders them into the bar, walker,
 wlogout, mako, Ghostty, hyprlock, the login screen, GTK, Qt, btop and VS Code (theme "driftless": 2026
 Dark with your accents). The calendar, fastfetch, bat and fzf use the terminal's accent slots, so they
 follow too.

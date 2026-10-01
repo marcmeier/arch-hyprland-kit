@@ -23,8 +23,34 @@ enable_user_unit() {
   done
 }
 
+# retire_user_unit UNIT: off for good (a unit the kit no longer uses), also when its file is gone already
+# (then "disable" fails, but a running unit still stops and the links of "enable" are left behind)
+retire_user_unit() {
+  local unit=$1 link
+  systemctl --user stop "$unit" 2> /dev/null || true
+  systemctl --user disable -q "$unit" 2> /dev/null || true
+  for link in "$HOME"/.config/systemd/user/*.wants/"$unit"; do
+    [[ -L $link ]] && rm -f "$link"
+  done
+  return 0
+}
+
+# retire_units: every retired unit that is still enabled or running here (each sync run; cheap)
+retire_units() {
+  local unit
+  while read -r unit; do
+    if systemctl --user is-enabled -q "$unit" 2> /dev/null || systemctl --user is-active -q "$unit" 2> /dev/null ||
+      compgen -G "$HOME/.config/systemd/user/*.wants/$unit" > /dev/null; then
+      retire_user_unit "$unit"
+    fi
+  done < <(manifest user-unit-retired)
+}
+
 setup_units() {
   local unit session=0
+  # unit files that just arrived (a sync) must be known before they are enabled and started
+  systemctl --user daemon-reload 2> /dev/null || true
+  retire_units
   systemctl --user is-active -q graphical-session.target 2> /dev/null && session=1
   while read -r unit; do
     enable_user_unit "$unit" || continue

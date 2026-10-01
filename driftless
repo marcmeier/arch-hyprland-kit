@@ -19,7 +19,8 @@ set -euo pipefail
 export LC_ALL=C
 
 DRIFTLESS=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
-for lib in common link packages signing sync setup system verify publish; do
+LIBS="common link packages signing sync setup system verify publish"
+for lib in $LIBS; do
   # shellcheck source=/dev/null
   source "$DRIFTLESS/lib/$lib.sh"
 done
@@ -75,7 +76,7 @@ case $cmd in
   verify) cmd_verify ;;
   publish) cmd_publish "$@" ;;
   facts) facts | xargs -n1 ;;
-  manifest) manifest "${1:?usage: driftless manifest link|group|unit|user-unit}" ;;
+  manifest) manifest "${1:?usage: driftless manifest link|group|unit|user-unit|user-unit-retired}" ;;
   help | -h | --help) usage ;;
   *) usage 2 >&2 ;;
 esac

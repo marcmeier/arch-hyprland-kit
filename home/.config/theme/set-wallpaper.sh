@@ -73,7 +73,7 @@ elif awww query > /dev/null 2>&1; then
 else
   systemctl --user restart driftless-wallpaper.service 2> /dev/null || true
 fi
-systemctl --user restart waybar.service 2> /dev/null || true
+# the bar, its popups and the Claude bubble follow colors.json and avatar.png by themselves
 # thumbnails for the wallpaper menu in walker, made ahead so the menu opens at once
 if [[ -z ${walls:-} ]]; then
   # shellcheck source=/dev/null

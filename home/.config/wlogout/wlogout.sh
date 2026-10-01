@@ -1,5 +1,5 @@
 #!/bin/sh
-# Toggle the compact, centered wlogout layout (single point of truth for hyprland + waybar).
+# Toggle the compact, centered wlogout layout (single point of truth for hyprland + the bar).
 # Margins are computed from the focused monitor's logical size (respects scale), so the
 # 5 buttons of ~187px + 16px gaps stay centered on any resolution/scale.
 pkill -x wlogout && exit 0

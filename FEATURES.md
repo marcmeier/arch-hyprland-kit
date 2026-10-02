@@ -1,3 +1,5 @@
+<a href="README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-on-dark.svg"><img src="docs/brand/logo-on-light.svg" alt="driftless" width="44" align="right"></picture></a>
+
 # Features
 
 Everything driftless sets up, in one page. `SUPER + SHIFT + K` lists every key on the running desktop,

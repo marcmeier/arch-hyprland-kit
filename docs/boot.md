@@ -1,3 +1,5 @@
+<a href="../README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="brand/logo-on-dark.svg"><img src="brand/logo-on-light.svg" alt="driftless" width="44" align="right"></picture></a>
+
 # Boot: unified kernel images
 
 A new install (`install/install-base.sh`) boots with unified kernel images (UKI): mkinitcpio packs

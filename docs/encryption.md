@@ -1,3 +1,5 @@
+<a href="../README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="brand/logo-on-dark.svg"><img src="brand/logo-on-light.svg" alt="driftless" width="44" align="right"></picture></a>
+
 # Disk encryption
 
 `install/install-base.sh --encrypt` formats the system partition as LUKS2 and puts the btrfs inside

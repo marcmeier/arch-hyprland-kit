@@ -1,6 +1,19 @@
+<a href="README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-on-dark.svg"><img src="docs/brand/logo-on-light.svg" alt="driftless" width="44" align="right"></picture></a>
+
 # Changelog
 
 Versions follow the [releases](../../releases), which have the full notes.
+
+## Unreleased
+
+### Added
+- A logo and a wordmark. The README, the other pages and the repository's social preview carry
+  them; the files and how to use them are in [docs/brand](docs/brand/README.md).
+
+### Fixed
+- Keep awake (the coffee cup in the bar) did nothing: the screen still locked and went off. Hyprland
+  ignores idle inhibitors on the bar, and the bar read QtQuick's own `State` instead of the shell's
+  switch. It now holds an idle lock with logind (`systemd-inhibit`), which hypridle honours.
 
 ## v2.6.0 (2026-10-02): your picture, placed by you
 

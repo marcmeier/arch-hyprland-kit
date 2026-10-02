@@ -27,12 +27,6 @@ PanelWindow {
     WlrLayershell.namespace: "driftless-bar"
     WlrLayershell.layer: WlrLayer.Top
 
-    // keep awake (the coffee cup in the system pill)
-    IdleInhibitor {
-        window: bar
-        enabled: !!State.idleInhibited
-    }
-
     Item {
         id: content
         anchors.fill: parent

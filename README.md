@@ -1,8 +1,30 @@
-# driftless
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/wordmark-on-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/brand/wordmark-on-light.svg">
+    <img src="docs/brand/wordmark-on-light.svg" alt="driftless" width="360">
+  </picture>
+</h1>
 
-[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+<p align="center">
+  <strong>One Arch Linux + Hyprland setup on all your machines, and they don't drift apart.</strong>
+</p>
 
-One Arch Linux + Hyprland setup on all your machines, and they don't drift apart.
+<p align="center">
+  <a href="../../actions/workflows/ci.yml"><img src="../../actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Arch_Linux-1f6f9c?logo=archlinux&logoColor=white" alt="Arch Linux">
+  <img src="https://img.shields.io/badge/Hyprland-1f6f9c?logo=hyprland&logoColor=white" alt="Hyprland">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-14212b" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <a href="FEATURES.md">Features</a> ·
+  <a href="#install-a-new-machine">Install</a> ·
+  <a href="ARCHITECTURE.md">Architecture</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
+
+<br>
 
 The repository is the only truth. Your home is made of symlinks into it, so editing
 `~/.config/hypr/hyprland.lua` *is* editing the repository. An hourly sync commits what you changed,
@@ -210,3 +232,13 @@ as GitHub, with real SSH signatures. `pacman`, `systemctl` and the desktop tools
 - [CHANGELOG.md](CHANGELOG.md)
 - [docs/boot.md](docs/boot.md): unified kernel images, and moving an existing machine to them
 - [docs/encryption.md](docs/encryption.md): LUKS2 and unlocking with the TPM
+- [docs/brand](docs/brand/README.md): the logo, the wordmark and how to use them
+
+<br>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-on-dark.svg">
+    <img src="docs/brand/logo-on-light.svg" alt="driftless" width="40">
+  </picture>
+</p>

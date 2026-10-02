@@ -26,7 +26,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - name: Install bats
-        run: git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats"
+      - name: Install bats and Pillow
+        run: |
+          git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends python3-pil
       - name: Tests
         run: '"$RUNNER_TEMP/bats/bin/bats" tests/'

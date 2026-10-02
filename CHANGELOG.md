@@ -2,6 +2,15 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.6.0 (2026-10-02): your picture, placed by you
+
+### Added
+- Your picture in the settings: a click on it (or "Picture …") picks an image, an editor in the
+  shell's look places it behind a round mask (drag, wheel or slider to zoom; portraits start at the
+  face's usual height). It goes to `~/.face` and the bar, the lock and the login screen follow at
+  once. A picture linked into the repository (`personal/face.png`) reaches your other machines with
+  the sync, which renders it there too.
+
 ## v2.5.0 (2026-10-02): the login screen in the lock screen's look
 
 ### Added

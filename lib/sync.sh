@@ -134,6 +134,12 @@ apply_changes() {
   }
   if grep -q '^dconf.ini$' <<< "$files"; then dconf load / < "$DRIFTLESS/dconf.ini" 2> /dev/null || warn "dconf not loaded"; fi
   grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py)' <<< "$files" && reload+=(theme hypr)
+  # a new picture of you (~/.face linked into the repository, e.g. personal/face.png): the bar, the lock
+  # and the login screen show it rendered round
+  local face root
+  root=$(readlink -f "$DRIFTLESS")
+  face=$(readlink -f "$HOME/.face" 2> /dev/null) && [[ $face == "$root"/* ]] &&
+    grep -qxF "${face#"$root"/}" <<< "$files" && reload+=(avatar)
   grep -qE '^home/\.config/hypr/' <<< "$files" && reload+=(hypr)
   # hypridle reads its file once (lock_cmd, the timeouts)
   grep -qE '^home/\.config/hypr/hypridle\.conf$' <<< "$files" && reload+=(hypridle)
@@ -163,6 +169,8 @@ reload() {
         python3 "$HOME/.config/theme/apply.py" --current > /dev/null || warn "theme not rendered"
         pkill -USR2 -x ghostty 2> /dev/null || true
         ;;
+      # also the login screen's copy (pkexec, no password for the active session)
+      avatar) "$HOME/.config/theme/set-wallpaper.sh" --current > /dev/null 2>&1 || warn "picture not rendered" ;;
     esac
   done
   for r in $(printf '%s\n' "$@" | sort -u); do

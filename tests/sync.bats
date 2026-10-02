@@ -160,3 +160,20 @@ hypr() { echo "$(home "$1")/.config/hypr/hyprland.lua"; }
   grep -qx "aur newaur" "$T/B/state/driftless/install-pending"
   grep -qx "repo newpkg" "$T/B/state/driftless/install-pending"
 }
+
+@test "a new picture from A is rendered round on B" {
+  # ~/.face linked into the repository, as personal/manifest does it
+  mkdir -p "$(repo A)/personal"
+  python3 -c 'import sys; from PIL import Image; Image.new("RGB", (64, 64), "red").save(sys.argv[1], "PNG")' "$(repo A)/personal/face.png"
+  echo "link .face personal/face.png" >> "$(repo A)/personal/manifest"
+  git -C "$(repo A)" add -A && git -C "$(repo A)" commit -qm "a picture"
+  dl A sync
+  dl B sync
+  [ -L "$(home B)/.face" ]
+  rm -f "$(home B)/.config/theme/avatar.png"
+  # A picks another one in the settings: written through the link
+  python3 -c 'import sys; from PIL import Image; Image.new("RGB", (64, 64), "blue").save(sys.argv[1], "PNG")' "$(home A)/.face"
+  dl A sync
+  dl B sync
+  [ -f "$(home B)/.config/theme/avatar.png" ]
+}

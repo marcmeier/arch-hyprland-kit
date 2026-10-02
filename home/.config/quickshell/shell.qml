@@ -13,10 +13,11 @@ import "osd"
 import "power"
 import "lock"
 import "polkit"
+import "avatar"
 
 // The driftless shell (driftless-shell.service): a bar on every screen with its tooltips and popups,
 // the notifications (it is the notification server), the on-screen display, the power menu, the lock
-// screen, the password dialog (it is the polkit agent) and the bubble of "ask Claude by voice"
+// screen, the password dialog (it is the polkit agent), the editor for your picture and the bubble of "ask Claude by voice"
 // (SUPER + A). One process, one theme from the wallpaper.
 // Edits to these files apply on save; scripts tell it about changes with scripts/poke NAME.
 ShellRoot {
@@ -32,6 +33,7 @@ ShellRoot {
     PowerMenu {}
     Lock {}
     PolkitDialog {}
+    AvatarEditor {}
 
     // the card "N while you were in fullscreen": the list on the focused screen
     Connections {

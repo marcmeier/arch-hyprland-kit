@@ -85,32 +85,68 @@ Item {
         width: parent.width
         spacing: 14
 
-        // ---- who and where ----
-        Row {
-            spacing: 12
-            Image {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 40
-                height: 40
-                sourceSize: Qt.size(80, 80)
-                source: Theme.avatarVersion >= 0 ? "file://" + Theme.avatar : ""
-                cache: false
-                smooth: true
-                mipmap: true
+        // ---- who and where; a click on the picture changes it ----
+        Item {
+            width: column.width
+            height: who.implicitHeight
+            Row {
+                id: who
+                spacing: 12
+                Item {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 40
+                    height: 40
+                    Image {
+                        anchors.fill: parent
+                        sourceSize: Qt.size(80, 80)
+                        source: Theme.avatarVersion >= 0 ? "file://" + Theme.avatar : ""
+                        cache: false
+                        smooth: true
+                        mipmap: true
+                    }
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: width / 2
+                        color: Qt.rgba(0, 0, 0, 0.5)
+                        opacity: faceMouse.containsMouse ? 1 : 0
+                        Behavior on opacity {
+                            NumberAnimation { duration: 120 }
+                        }
+                        Icon {
+                            anchors.centerIn: parent
+                            text: "\u{F03EB}"
+                            size: 16
+                        }
+                    }
+                    MouseArea {
+                        id: faceMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.open(["avatar"])
+                    }
+                }
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+                    Label {
+                        text: Feeds.userName
+                        bold: true
+                        font.pixelSize: 15
+                    }
+                    Label {
+                        small: true
+                        dim: true
+                        text: "Settings of this machine"
+                    }
+                }
             }
-            Column {
+            PButton {
+                anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-                Label {
-                    text: Feeds.userName
-                    bold: true
-                    font.pixelSize: 15
-                }
-                Label {
-                    small: true
-                    dim: true
-                    text: "Settings of this machine"
-                }
+                icon: "\u{F06BC}"
+                text: "Picture …"
+                onClicked: root.open(["avatar"])
             }
         }
 

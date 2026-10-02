@@ -6,6 +6,8 @@
 #        settings-menu.sh wallpaper-pick IMAGE|random|previous|other|folder  (a wallpaper, from both menus)
 #        settings-menu.sh wallpapers           the folder's images: "image<TAB>thumbnail" lines, newest first
 #        settings-menu.sh monitors-arrange|monitors-reset|display-mode
+#        settings-menu.sh avatar               your picture (~/.face) for the bar, the lock and login screen
+#        settings-menu.sh avatar-save IMAGE [X Y SIZE]   the square the picture editor chose
 # Per machine choices: widget layout, bar size and monitor layout (~/.local/state) and the wallpaper with its
 # colours (~/.config/wall.png and the files rendered from it, not in the repository). None of them
 # travels to your other machines.
@@ -39,6 +41,48 @@ wallpaper_other() {
   # keep it in the folder, so it is one click away next time
   [[ $(dirname "$(readlink -f "$f")") == "$(readlink -f "$WALLS")" ]] || cp -n "$f" "$WALLS/"
   set_wallpaper "$f"
+}
+
+# your picture: picked here, placed in the shell's editor (avatar/AvatarEditor.qml: drag, zoom), which
+# hands the square back to avatar-save; without the shell the middle of the image is taken
+avatar() {
+  local f
+  f=$(zenity --file-selection --title "Your picture" --filename "$HOME/Pictures/" \
+    --file-filter "Images | *.png *.jpg *.jpeg *.webp *.PNG *.JPG *.JPEG *.WEBP") || return 0
+  [[ $(quickshell ipc -p "$HOME/.config/quickshell" call avatar edit "$f" 2> /dev/null) == true ]] && return 0
+  avatar_save "$f"
+}
+
+# avatar_save IMAGE [X Y SIZE]: the square at X, Y (fractions of the width and height, the image turned
+# upright as its camera says) and SIZE wide (a fraction of the width), else the middle. Written to
+# ~/.face, through its link when personal/manifest links it into the repository (then the sync takes
+# it to your other machines), and rendered round for the bar, the lock and the login screen.
+avatar_save() {
+  local face=$HOME/.face
+  [[ -L $face ]] && face=$(readlink -f "$face")
+  python3 - "$face.new" "$@" << 'PY' || {
+import sys
+from PIL import Image, ImageOps
+
+out, src, *box = sys.argv[1:]
+image = ImageOps.exif_transpose(Image.open(src)).convert("RGB")
+if box:
+    w, h = image.size
+    x, y, size = (float(v) for v in box)
+    image = image.crop((round(x * w), round(y * h), round((x + size) * w), round(y * h + size * w)))
+    image = image.resize((512, 512), Image.LANCZOS)
+else:
+    image = ImageOps.fit(image, (512, 512), Image.LANCZOS)
+image.save(out, "PNG")
+PY
+    rm -f "$face.new"
+    notify-send -a settings -u critical "Your picture" "Not an image: ${1##*/}"
+    return 0
+  }
+  mv -f "$face.new" "$face"
+  if "$HOME/.config/theme/set-wallpaper.sh" --current > "$STATE/set-wallpaper.log" 2>&1; then
+    notify-send -a settings "Your picture" "Done: the bar, the lock and the login screen show it"
+  else notify-send -a settings -u critical "Your picture" "Failed, see $STATE/set-wallpaper.log"; fi
 }
 
 wallpaper_previous() {
@@ -177,6 +221,15 @@ case $action in
     notify-send -a settings "Monitors" "Automatic layout again"
     ;;
   display-mode) exec "$HOME/.config/hypr/display-mode.sh" ;;
+  avatar)
+    mkdir -p "$STATE"
+    avatar
+    ;;
+  avatar-save)
+    mkdir -p "$STATE"
+    [[ -f ${2:-} ]] || exit 2
+    avatar_save "${@:2}"
+    ;;
   wallpapers)
     mkdir -p "$WALLS"
     exec "$HOME/.config/theme/thumbs.py" "$WALLS"

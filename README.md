@@ -42,8 +42,9 @@ A new machine gets everything from two scripts.
   sync, ...), compact on notebook panels; a click opens the details: the month with your events, the
   forecast, cover and controls, outputs and levels per app, Wi-Fi networks, Bluetooth devices, power
   profiles
-- **Settings** on the avatar, a popup of the bar: wallpaper (with thumbnails), bar size, widgets,
-  monitors, sync, and every keybinding in a list you search as you type (`SUPER + SHIFT + K`)
+- **Settings** on the avatar, a popup of the bar: your picture (placed and zoomed in a round mask),
+  wallpaper (with thumbnails), bar size, widgets, monitors, sync, and every keybinding in a list you
+  search as you type (`SUPER + SHIFT + K`)
 - **Gaming stack**: Steam, Proton-GE, Lutris, gamescope, gamemode, tearing for games
 - **Base system**: btrfs with snapper, optional LUKS2, unified kernel images, zram, firewall
 - **The sync** that keeps all of it the same on every machine you own

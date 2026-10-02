@@ -179,12 +179,16 @@ the desktop looks borrowed from another program.
 
 ## Settings menu
 
-A click on the avatar opens them as a popup of the bar, every choice per machine:
+A click on the avatar opens them as a popup of the bar, every choice per machine (but your picture):
 
 <img src="docs/img/settings.jpg" alt="The settings popup: wallpaper thumbnails, bar size, widget switches, monitors, sync and keys" width="700"><br>
 <sub>The settings popup.</sub>
 
 
+- **Your picture**: a click on it (or "Picture …") picks an image, then you place it behind a round
+  mask: drag to move, wheel or slider to zoom. The bar, the lock and the login screen show it at once.
+  It is `~/.face`; linked into `personal/` (as `examples/personal/manifest` suggests), the sync takes it
+  to your other machines, which render it too
 - **Wallpaper and colours**: the newest images of your folder as thumbnails (click: that one), random,
   the previous one, any other image, the folder; "Browse …" opens the whole folder with a large preview
 - **Bar size**: automatic, always full size, always compact

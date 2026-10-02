@@ -50,7 +50,7 @@ reads it out. Like Siri or Alexa, for the quick things, without opening a window
 
 <table>
 <tr>
-<td width="50%"><img src="docs/img/notch-listening.png" alt="The bubble listening, with level bars"><br><sub>Listening: the orb and the bars follow your voice.</sub></td>
+<td width="50%"><img src="docs/img/notch-listening.png" alt="The bubble listening, with level bars"><br><sub>Listening: the little bot and the bars follow your voice.</sub></td>
 <td width="50%"><img src="docs/img/notch-thinking.png" alt="The bubble showing the question while Claude thinks"><br><sub>Your question while Claude works on it.</sub></td>
 </tr>
 <tr>

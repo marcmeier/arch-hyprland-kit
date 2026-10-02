@@ -19,7 +19,7 @@ Scope {
     property string fullText: ""
     property int shown: 0
     property real level: -1          // < 0: no real level, the bars move by themselves
-    property bool speaking: false    // the answer is being spoken: stay open, the orb pulses with it
+    property bool speaking: false    // the answer is being spoken: stay open, the face talks with it
     property bool ringing: false     // a timer rings: stay open until it is stopped
 
     readonly property bool open: mode !== "idle"
@@ -139,21 +139,25 @@ Scope {
             id: bubble
 
             readonly property int pad: 14
-            readonly property int headerH: 44
-            readonly property int textW: 480 - 2 * pad
+            readonly property int headerH: 50
+            readonly property int faceW: 38
+            // the answer stands right of the face, in line with the question
+            readonly property int indent: pad - 2 + faceW + header.spacing
+            readonly property int answerW: 520
+            readonly property int textW: answerW - indent - pad
 
             readonly property real targetW: {
                 switch (root.mode) {
                 case "listening": return 230;
                 case "thinking": return Math.min(440, Math.max(250, header.implicitWidth + 2 * pad + 36));
                 case "answer":
-                case "error": return 480;
+                case "error": return answerW;
                 default: return 110;
                 }
             }
             readonly property real targetH: {
                 if (root.mode === "answer" || root.mode === "error")
-                    return headerH + Math.min(measure.implicitHeight, 240) + pad + 4;
+                    return headerH - 4 + Math.min(measure.implicitHeight, 240) + pad + 2;
                 return root.open ? headerH : 26;
             }
 
@@ -196,19 +200,24 @@ Scope {
                 }
             }
 
-            // ---------- header: orb + status ----------
+            // ---------- header: the face + status ----------
             Row {
                 id: header
                 x: bubble.pad - 2
                 height: bubble.headerH
                 spacing: 10
 
-                Orb {
+                Face {
+                    id: face
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 28
-                    height: 28
+                    width: bubble.faceW
+                    height: bubble.faceW
                     mode: root.mode
                     level: root.level < 0 ? 0 : root.level
+                    speaking: root.speaking
+                    reading: root.mode === "answer" && root.shown < root.fullText.length
+                    pointerIn: hover.hovered
+                    pointer: hover.hovered ? face.mapFromItem(bubble, hover.point.position) : Qt.point(0, 0)
                     primary: Theme.primary
                     secondary: Theme.secondary
                     error: Theme.crit
@@ -217,7 +226,7 @@ Scope {
                 Text {
                     id: status
                     anchors.verticalCenter: parent.verticalCenter
-                    width: Math.min(implicitWidth, root.mode === "answer" || root.mode === "error" ? 420 : 340)
+                    width: Math.min(implicitWidth, root.mode === "answer" || root.mode === "error" ? bubble.textW : 340)
                     elide: Text.ElideRight
                     color: root.mode === "answer" ? Theme.dim : Theme.text
                     font.family: Theme.font
@@ -313,8 +322,8 @@ Scope {
 
             Text {
                 id: answerText
-                x: bubble.pad
-                y: bubble.headerH - 2
+                x: bubble.indent
+                y: bubble.headerH - 6
                 width: bubble.textW
                 height: Math.min(measure.implicitHeight, 240)
                 wrapMode: Text.Wrap

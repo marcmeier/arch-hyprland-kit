@@ -1,7 +1,7 @@
 """Speaker for notch.py: reads sentences from stdin, one per line, and speaks them with Piper.
 Started by notch.py as soon as a question is asked, so the voice loads while Claude thinks.
 
-The playback is paced to real time, so the level sent to the bubble (the orb pulses with it) matches
+The playback is paced to real time, so the level sent to the bubble (the face talks with it) matches
 what is heard. SIGTERM stops at once.
 
 Usage: <venv>/bin/python speak.py <voice>[:<speaker>]

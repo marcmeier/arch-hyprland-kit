@@ -2,6 +2,15 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.4.1 (2026-10-02): a face for Claude by voice
+
+### Changed
+- The voice bubble has a little bot instead of the orb: a screen for a face, rimmed in the
+  wallpaper's accents, with an antenna. It listens with wide eyes, looks up and around while Claude
+  thinks, reads along as the answer comes in, talks with the voice, smiles when done, glances at the
+  pointer and shakes its head on an error. The answer stands right of it, in line with the question.
+- New screenshots of the bubble in FEATURES.
+
 ## v2.4.0 (2026-10-01): the whole desktop in one shell
 
 The Quickshell shell takes over what mako, hyprlock, wlogout and hyprpolkitagent did, and the settings

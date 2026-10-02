@@ -30,9 +30,9 @@ A new machine gets everything from two scripts.
 
 ## What you get
 
-- **A complete Hyprland desktop** in the colours of your wallpaper: the bar, notifications, lock
-  screen, power menu and password dialog (one Quickshell shell), walker, the ReGreet login screen,
-  Ghostty, GTK, Qt, btop and VS Code, all themed by `set-wallpaper IMAGE`. A new wallpaper grows in
+- **A complete Hyprland desktop** in the colours of your wallpaper: the bar, notifications, login and
+  lock screen, power menu and password dialog (all drawn by Quickshell), walker, Ghostty, GTK, Qt,
+  btop and VS Code, all themed by `set-wallpaper IMAGE`. A new wallpaper grows in
   from the mouse pointer, and every day another one from your folder takes over
 - **Dictation** (`SUPER + D`): speak into any window. whisper.cpp and a small LLM tidy the text up,
   both locally on the GPU
@@ -60,8 +60,8 @@ A new machine gets everything from two scripts.
 <td><img src="docs/img/theme-notifications.jpg" alt="Notifications below the bar"><br><sub>Notifications; the bell keeps the list and do not disturb.</sub></td>
 </tr>
 <tr>
-<td><img src="docs/img/theme-lock.jpg" alt="The lock screen"><br><sub>The lock screen (<code>SUPER + L</code>), like the login screen.</sub></td>
-<td><img src="docs/img/theme-greeter.jpg" alt="ReGreet login screen"><br><sub>ReGreet, with the wallpaper, avatar and hostname.</sub></td>
+<td><img src="docs/img/theme-lock.jpg" alt="The lock screen: clock, picture, password"><br><sub>The lock screen (<code>SUPER + L</code>).</sub></td>
+<td><img src="docs/img/theme-greeter.jpg" alt="The login screen: the lock screen's card, with the machine and the session below"><br><sub>The login screen: the same card, the machine and the session below.</sub></td>
 </tr>
 </table>
 
@@ -122,8 +122,8 @@ from it, the bar's widget layout (`~/.local/state/driftless-shell`), the monitor
    ```bash
    sudo bash ~/.local/share/driftless/install/bootstrap.sh     # --review-aur to read each PKGBUILD
    ```
-3. Reboot. The login screen offers **Hyprland (uwsm-managed)**; that session starts the bar and the
-   helpers.
+3. Reboot and log in. The login screen starts **Hyprland (uwsm-managed)**, the session that starts
+   the bar and the helpers.
 4. On one of your other machines, the sync pill offers *Trust new machine*. Compare the fingerprint.
 
 `driftless verify` checks at any time whether a machine is what the repository describes

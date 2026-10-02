@@ -128,7 +128,7 @@ one bar, with two theme systems and the signal plumbing left in place. *Consider
 Quickshell config (end-4, Caelestia, DankMaterialShell): far more than the bar needs, and they bring
 their own launcher and settings, which this setup has.
 
-## 9. Notifications, lock screen, power menu and password dialog are the shell too
+## 9. Notifications, login and lock screen, power menu and password dialog are the shell too
 
 **Before:** mako for notifications (its own config format, rendered from a template; the bell polled
 `makoctl` every five seconds), hyprlock for the lock screen, wlogout for the power menu (CSS, PNG icons
@@ -164,10 +164,18 @@ machine, in a folder only the user can read, seven days at most. A token per run
 restart (everything comes back from the file) from a reload (the live ones come back from the server
 and keep their time).
 
-*Considered:* keeping mako, wlogout, hyprlock and hyprpolkitagent and only theming them better. They
+*Considered:* keeping mako, wlogout, hyprlock, hyprpolkitagent and ReGreet and only theming them better. They
 were themed; what was missing was that they work together. walker, hypridle and awww stay: they work
 unseen or already match, and replacing them would add code without adding anything you notice. blueman
 stays for its pairing agent and settings; the bar hides its tray icon, it shows Bluetooth itself.
+
+**The login screen** is Quickshell too, but not the shell: greetd starts it as its own user, which
+cannot read any home. So it is a small second config in driftless-system
+(`/usr/share/driftless/greeter`) with a copy of the lock screen's card and password field, and it
+shows only what `greeter-update` rendered into `/var/lib/driftless/greeter` (the blurred wallpaper,
+the colours, the avatar, who set them). It talks to greetd with Quickshell's `Greetd` service and
+starts the uwsm session first. `/usr/lib/driftless/greeter` runs it in cage and falls back to ReGreet,
+the login screen before, when Quickshell does not start: a broken greeter cannot keep you out.
 
 The polkit agent registers once, when the shell starts, and polkit allows one per session: the sync
 restarts the shell when the agent's files change, after the retired hyprpolkitagent let go. The lock

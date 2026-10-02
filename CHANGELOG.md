@@ -2,6 +2,20 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
+## v2.5.0 (2026-10-02): the login screen in the lock screen's look
+
+### Added
+- A login screen drawn by Quickshell, in the lock screen's look: the same card with your picture and
+  the password over the same blurred wallpaper, the machine, the session and reboot and shut down
+  below. It puts the uwsm session first, offers the account that set the wallpaper, and talks to
+  greetd directly. ReGreet stays as its fallback when it does not start
+  ([why](ARCHITECTURE.md#9-notifications-login-and-lock-screen-power-menu-and-password-dialog-are-the-shell-too)).
+
+### Changed
+- `greeter-update` also hands the login screen the colours (`colors.json`) and the caller's login name.
+- FEATURES: the wallpaper is chosen in the settings popup; the walker menu's screenshot is gone. A new
+  screenshot of the login screen in README and FEATURES.
+
 ## v2.4.1 (2026-10-02): a face for Claude by voice
 
 ### Changed
@@ -15,7 +29,7 @@ Versions follow the [releases](../../releases), which have the full notes.
 
 The Quickshell shell takes over what mako, hyprlock, wlogout and hyprpolkitagent did, and the settings
 move into it, all in the bar's look:
-[FEATURES.md](FEATURES.md#notifications-lock-screen-power-menu-and-password-dialog), [why](ARCHITECTURE.md#9-notifications-lock-screen-power-menu-and-password-dialog-are-the-shell-too).
+[FEATURES.md](FEATURES.md#notifications-login-and-lock-screen-power-menu-and-password-dialog), [why](ARCHITECTURE.md#9-notifications-login-and-lock-screen-power-menu-and-password-dialog-are-the-shell-too).
 
 ### Added
 - Notifications drawn by the shell: cards below the bar with the app's icon, progress, buttons and a

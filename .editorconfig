@@ -6,7 +6,7 @@ end_of_line = lf
 insert_final_newline = true
 
 # shell scripts: read by shfmt
-[{*.sh,*.bash,*.bats,driftless,config,cfg-backup,install-packages,greeter-update,smartd-notify,poke,brightness,lock}]
+[{*.sh,*.bash,*.bats,driftless,config,cfg-backup,install-packages,greeter,greeter-update,smartd-notify,poke,brightness,lock}]
 indent_style = space
 indent_size = 2
 switch_case_indent = true

@@ -29,7 +29,7 @@ for f in regreet.toml regreet.css login.png avatar.png; do
   [[ -s /var/lib/driftless/greeter/$f ]] || { echo "!! $f missing: do not reboot before set-wallpaper --current" && exit 1; }
 done
 
-# the login screen offers the uwsm session from now on (ReGreet remembers the last choice per user)
+# the greeter puts the uwsm session first; ReGreet, its fallback, remembers the last choice per user
 session=$(sed -n 's/^Name=//p' /usr/share/wayland-sessions/hyprland-uwsm.desktop | head -1)
 state=/var/lib/regreet/state.toml
 if [[ -n $session && -f $state ]]; then

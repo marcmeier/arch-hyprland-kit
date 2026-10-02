@@ -8,7 +8,7 @@ pkgrel=1
 pkgdesc="System drop-ins of the driftless kit: greeter, SMART warnings, zram, mirrors, initramfs hooks"
 arch=(any)
 license=(MIT)
-depends=(bash polkit systemd util-linux greetd greetd-regreet cage smartmontools zram-generator reflector mkinitcpio)
+depends=(bash polkit systemd util-linux greetd quickshell greetd-regreet cage smartmontools zram-generator reflector mkinitcpio)
 backup=(etc/security/limits.d/20-driftless-games.conf etc/mkinitcpio.conf.d/driftless.conf)
 install=driftless-system.install
 

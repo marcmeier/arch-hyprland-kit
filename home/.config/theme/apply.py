@@ -287,6 +287,7 @@ def main(argv):
     # login screen (root-owned): rendered here, installed by set-wallpaper.sh
     cache = HOME / ".cache" / "theme"
     cache.mkdir(parents=True, exist_ok=True)
+    write(cache / "colors.json", json.dumps(palette, indent=1) + "\n")
     write(cache / "regreet.css", render((THEME / "templates" / "regreet.css").read_text(), rgb_colors))
     make_login_image(ensure_wall())
     print(f"primary {palette['primary']}  secondary {palette['secondary']}  ({palette['source']})")

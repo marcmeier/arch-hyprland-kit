@@ -21,6 +21,7 @@ STUB
     "$BATS_TEST_DIRNAME/../system/files/usr/lib/driftless/greeter-update" > "$T/helper"
   HELPER=$T/helper
   echo "css" > "$T/theme/regreet.css"
+  echo '{"primary": "#112233"}' > "$T/theme/colors.json"
   echo "png" > "$T/theme/login.png"
   echo "png" > "$T/theme/avatar.png"
 }
@@ -32,10 +33,10 @@ STUB
   [ ! -e "$T/out/login.png" ]
 }
 
-@test "copies the three theme files, readable by the greeter" {
+@test "copies the theme files, readable by the greeter" {
   PKEXEC_UID=$(id -u) run bash "$HELPER" "$T/theme"
   [ "$status" -eq 0 ]
-  for f in login.png regreet.css avatar.png; do
+  for f in login.png colors.json regreet.css avatar.png; do
     cmp "$T/theme/$f" "$T/out/$f"
     [ "$(stat -c %a "$T/out/$f")" = 644 ]
   done
@@ -53,6 +54,14 @@ STUB
   env -u PKEXEC_UID -u SUDO_UID bash "$HELPER" "$T/theme"
   [ ! -e "$T/setpriv.log" ]
   cmp "$T/theme/login.png" "$T/out/login.png"
+  [ ! -e "$T/out/user" ]
+}
+
+@test "the caller's account comes first on the login screen" {
+  SUDO_UID=$(id -u) run bash "$HELPER" "$T/theme"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$T/out/user")" = "$(id -nu)" ]
+  [ "$(stat -c %a "$T/out/user")" = 644 ]
 }
 
 @test "skips links, so nothing else ends up on the login screen" {

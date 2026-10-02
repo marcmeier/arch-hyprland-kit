@@ -1,0 +1,19 @@
+#!/bin/bash
+# The login screen, started by greetd as the user "greeter": the Quickshell greeter in cage
+# (/usr/share/driftless/greeter, the lock screen's look). If it cannot start or crashes, ReGreet takes
+# over in the same cage, so a broken greeter never keeps you out.
+set -u
+export PATH=/usr/bin
+# the greeter user's home is /, which it cannot write: Quickshell's cache and state go to the runtime dir
+base=${XDG_RUNTIME_DIR:-/tmp/driftless-greeter-$UID}
+mkdir -p "$base"
+export XDG_CACHE_HOME=$base/cache XDG_STATE_HOME=$base/state XDG_DATA_HOME=$base/data XDG_CONFIG_HOME=$base/config
+# cage offers no server-side decorations, so Qt would draw its own title bar and frame around the screen
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+
+if command -v quickshell > /dev/null && [[ -r /usr/share/driftless/greeter/shell.qml ]]; then
+  # Greetd.launch() quits Quickshell with 0 once a session is ready; anything else is a failure
+  cage -s -mlast -- quickshell -p /usr/share/driftless/greeter && exit 0
+  echo "driftless greeter: Quickshell failed, falling back to ReGreet" >&2
+fi
+exec cage -s -mlast -- regreet --config /var/lib/driftless/greeter/regreet.toml --style /var/lib/driftless/greeter/regreet.css

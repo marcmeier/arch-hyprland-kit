@@ -177,7 +177,7 @@ step "driftless setup (as $USERNAME)"
 as_user "$DRIFTLESS/driftless" setup || fail "driftless setup"
 # the login screen shows this user's wallpaper, colours and avatar (set-wallpaper does it later on)
 /usr/lib/driftless/greeter-update "$HOME_DIR/.cache/theme" || fail "login screen theme"
-# and offers this user the uwsm session first: ReGreet's own memory of the last choice, seeded once
+# the greeter puts the uwsm session first; ReGreet, its fallback, remembers the last choice: seeded once
 session=$(sed -n 's/^Name=//p' /usr/share/wayland-sessions/hyprland-uwsm.desktop 2> /dev/null | head -1)
 if [[ -n $session && ! -s /var/lib/regreet/state.toml ]]; then
   install -d -o greeter -g greeter /var/lib/regreet
@@ -226,7 +226,7 @@ else
 fi
 cat << EOF
 
-Next: reboot, pick "Hyprland (uwsm-managed)" at the login screen. Then, once:
+Next: reboot and log in (the login screen starts "Hyprland (uwsm-managed)"). Then, once:
   * trust this machine on your others: their sync pill offers it ("Trust new machine")
   * personal data (SSH keys, browser and mail profiles, games) from your own backup
   * encrypted disk: let the TPM unlock it, see docs/encryption.md

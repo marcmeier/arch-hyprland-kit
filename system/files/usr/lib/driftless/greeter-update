@@ -1,8 +1,10 @@
 #!/bin/bash
 # Renders the login screen's files in /var/lib/driftless/greeter: regreet.toml with this machine's
-# hostname, and (given the user's theme folder) the blurred wallpaper, the colours and the avatar.
+# hostname (for the ReGreet fallback), and (given the user's theme folder) the blurred wallpaper, the
+# colours, the avatar and who the caller is, so the greeter offers that account first.
 #   greeter-update                 only regreet.toml (package install, hostname change)
-#   greeter-update THEME_CACHE     also login.png, regreet.css, avatar.png from ~/.cache/theme
+#   greeter-update THEME_CACHE     also login.png, colors.json, regreet.css, avatar.png from
+#                                  ~/.cache/theme, and the caller's login name as "user"
 # Called through pkexec by set-wallpaper (polkit action org.driftless.greeter-update, no password for
 # the active session) or through sudo. The files are read with the caller's rights, not root's: a
 # caller can only put onto the login screen what it could read itself (no symlink swapping
@@ -19,7 +21,7 @@ caller=${PKEXEC_UID:-${SUDO_UID:-0}}
 as_caller=()
 ((caller == 0)) || as_caller=(setpriv --reuid="$caller" --regid="$(id -g "$caller")" --init-groups --)
 max=$((64 * 1024 * 1024))
-for f in login.png regreet.css avatar.png; do
+for f in login.png colors.json regreet.css avatar.png; do
   src=$1/$f
   # plain files only (the check is a courtesy; the read below runs as the caller anyway)
   [[ -f $src && ! -L $src ]] || continue
@@ -34,3 +36,7 @@ for f in login.png regreet.css avatar.png; do
   chmod 644 "$out/$f.new"
   mv "$out/$f.new" "$out/$f"
 done
+# the account that set the wallpaper comes first on the login screen (the avatar is its picture)
+if ((caller != 0)); then
+  id -nu "$caller" > "$out/user.new" && chmod 644 "$out/user.new" && mv "$out/user.new" "$out/user"
+fi

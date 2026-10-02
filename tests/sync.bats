@@ -167,6 +167,8 @@ hypr() { echo "$(home "$1")/.config/hypr/hyprland.lua"; }
   python3 -c 'import sys; from PIL import Image; Image.new("RGB", (64, 64), "red").save(sys.argv[1], "PNG")' "$(repo A)/personal/face.png"
   echo "link .face personal/face.png" >> "$(repo A)/personal/manifest"
   git -C "$(repo A)" add -A && git -C "$(repo A)" commit -qm "a picture"
+  # A writes the next picture through its own link (a template has no personal/manifest that made it)
+  dl A link > /dev/null
   dl A sync
   dl B sync
   [ -L "$(home B)/.face" ]

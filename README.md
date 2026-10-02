@@ -141,6 +141,12 @@ from it, the bar's widget layout (`~/.local/state/driftless-shell`), the monitor
    bash /root/driftless/install/install-base.sh --hostname NAME --encrypt
    ```
    It wipes the disk you pick. `--encrypt` puts everything into LUKS2; on a notebook, do it.
+
+   No network access to your repository (a private one, say)? Bring a bundle on a USB stick. The
+   sync keeps one up to date when `BUNDLE` in `personal/config` names a file; by hand it is
+   `git bundle create driftless.bundle HEAD main` (without `HEAD`, `git clone` checks nothing out).
+   The clone's `origin` is then that file: after step 2, point it back at your repository with
+   `git -C ~/.local/share/driftless remote set-url origin git@github.com:YOU/YOUR-REPO.git`.
 2. Reboot, log in, connect with `nmtui`, then:
    ```bash
    sudo bash ~/.local/share/driftless/install/bootstrap.sh     # --review-aur to read each PKGBUILD

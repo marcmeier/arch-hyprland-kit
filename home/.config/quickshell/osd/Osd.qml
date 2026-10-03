@@ -189,7 +189,7 @@ Scope {
                     width: 300 - 32 - 24 - 24 - 46
                     height: 6
                     radius: 3
-                    color: Qt.rgba(1, 1, 1, 0.10)
+                    color: Qt.alpha(Theme.overlay, 0.10)
                     Rectangle {
                         width: Math.max(parent.height, parent.width * root.value)
                         height: parent.height

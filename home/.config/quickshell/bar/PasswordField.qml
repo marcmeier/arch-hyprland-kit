@@ -12,6 +12,7 @@ Rectangle {
     property bool failed: false
     property bool reveal: false            // show the text itself (a prompt that is not a password)
     property string placeholder: "Password"
+    property bool night: false             // the lock screen: dark in both looks
     readonly property bool focused: input.activeFocus
     signal edited(string text)
     signal accepted
@@ -26,10 +27,10 @@ Rectangle {
     implicitWidth: 300
     implicitHeight: 44
     radius: 12
-    color: Qt.rgba(11 / 255, 13 / 255, 16 / 255, 0.6)
+    color: night ? Theme.night.field : Theme.field
     border.width: 1
-    border.color: failed ? Qt.alpha(Theme.crit, 0.8)
-                : input.activeFocus ? Theme.primary : Qt.rgba(215 / 255, 220 / 255, 226 / 255, 0.12)
+    border.color: failed ? Qt.alpha(night ? Theme.night.crit : Theme.crit, 0.8)
+                : input.activeFocus ? (night ? Theme.night.primary : Theme.primary) : night ? Theme.night.fieldBorder : Theme.fieldBorder
     Behavior on border.color {
         ColorAnimation { duration: 150 }
     }
@@ -64,7 +65,7 @@ Rectangle {
         x: 14
         visible: field.text === "" && !field.checking
         text: field.placeholder
-        color: Theme.faint
+        color: field.night ? Theme.night.faint : Theme.faint
     }
 
     // what you typed, shown (not a password)
@@ -75,6 +76,7 @@ Rectangle {
         elide: Text.ElideLeft
         visible: field.reveal && !field.checking
         text: field.text
+        color: field.night ? Theme.night.text : Theme.text
     }
 
     Row {
@@ -95,7 +97,7 @@ Rectangle {
                 width: 8
                 height: 8
                 radius: 4
-                color: Theme.accentAt(dots.fit > 1 ? index / (dots.fit - 1) : 0)
+                color: (field.night ? Theme.night : Theme).accentAt(dots.fit > 1 ? index / (dots.fit - 1) : 0)
                 scale: 0
                 Component.onCompleted: scale = 1
                 Behavior on scale {
@@ -121,7 +123,7 @@ Rectangle {
                 width: 7
                 height: 7
                 radius: 3.5
-                color: Theme.accentAt(index / 2)
+                color: (field.night ? Theme.night : Theme).accentAt(index / 2)
                 SequentialAnimation on opacity {
                     running: field.checking
                     loops: Animation.Infinite
@@ -141,6 +143,6 @@ Rectangle {
         visible: Keyboard.caps && !field.reveal
         text: "\u{F030E}"
         size: 16
-        color: Theme.warn
+        color: field.night ? Theme.night.warn : Theme.warn
     }
 }

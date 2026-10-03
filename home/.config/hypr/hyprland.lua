@@ -31,7 +31,7 @@ end)
 ---------------------
 
 -- Set programs that you use
-local theme = dofile(os.getenv("HOME") .. "/.config/theme/colors.lua") -- accent colours, generated from the wallpaper
+local theme = dofile(os.getenv("HOME") .. "/.config/theme/colors.lua") -- accent colours and the look (dark/light), generated from the wallpaper
 local terminal = "ghostty"
 local menu = "walker"
 local fileManager = "nautilus"
@@ -103,7 +103,7 @@ hl.config({
 
         col = {
             active_border   = { colors = {"rgba(" .. theme.primary .. "ee)", "rgba(" .. theme.secondary .. "ee)"}, angle = 45 },
-            inactive_border = "rgba(ffffff33)",
+            inactive_border = "rgba(" .. (theme.inactive_border or "ffffff") .. (theme.scheme == "light" and "24" or "33") .. ")",
         },
 
         -- Set to true to enable resizing windows by clicking and dragging on borders and gaps
@@ -129,7 +129,7 @@ hl.config({
             enabled      = true,
             range        = 18,
             render_power = 3,
-            color        = 0x66000000,
+            color        = tonumber("0x" .. (theme.scheme == "light" and "30" or "66") .. (theme.shadow or "000000")),
         },
 
         blur = {

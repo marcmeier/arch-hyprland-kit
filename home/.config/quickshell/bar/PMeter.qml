@@ -11,7 +11,7 @@ Rectangle {
     implicitWidth: 260
     implicitHeight: 8
     radius: height / 2
-    color: Qt.rgba(1, 1, 1, 0.08)
+    color: Qt.alpha(Theme.overlay, 0.08)
 
     Rectangle {
         width: Math.max(parent.height, parent.width * Math.min(meter.percent, 100) / 100)

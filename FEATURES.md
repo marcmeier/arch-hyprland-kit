@@ -191,6 +191,8 @@ A click on the avatar opens them as a popup of the bar, every choice per machine
   mask: drag to move, wheel or slider to zoom. The bar, the lock and the login screen show it at once.
   It is `~/.face`; linked into `personal/` (as `examples/personal/manifest` suggests), the sync takes it
   to your other machines, which render it too
+- **Appearance**: dark, light, or auto (light from sunrise to sunset), each shown as your desktop in
+  miniature with your wallpaper; a click switches everything at once and the shell blends over
 - **Wallpaper and colours**: the newest images of your folder as thumbnails (click: that one), random,
   the previous one, any other image, the folder; "Browse …" opens the whole folder with a large preview
 - **Bar size**: automatic, always full size, always compact
@@ -204,8 +206,14 @@ A click on the avatar opens them as a popup of the bar, every choice per machine
 
 `set-wallpaper IMAGE` derives two accent colours from the image and renders them into the shell (bar,
 notifications, login and lock screen, power menu), walker, Ghostty, GTK, Qt, btop and VS Code
-(theme "driftless": 2026 Dark with your accents). The calendar, fastfetch, bat and fzf use the terminal's accent slots, so they
+(theme "driftless": 2026 Dark or Light with your accents). The calendar, fastfetch, bat and fzf use the terminal's accent slots, so they
 follow too.
+
+- **Dark or light**: the light look is paper instead of white and slate instead of black, and every
+  grey carries a trace of the wallpaper's main hue, so it belongs to the image like the dark one does.
+  The accents keep their hue but get deeper, so they read on paper (contrast checked). GTK, libadwaita,
+  Electron apps, Qt, Ghostty, walker, btop, starship, VS Code and Hyprland follow; the lock and the
+  login screen stay dark, as one night screen. Auto takes sunrise and sunset from the weather feed
 
 - **Choosing one** in the settings popup (the avatar): the newest images of your folder as thumbnails,
   a random one, the previous one or any other image; "Browse …" opens the whole folder with a large

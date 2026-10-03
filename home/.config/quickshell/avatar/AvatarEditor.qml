@@ -113,7 +113,7 @@ Scope {
         Rectangle {
             id: backdrop
             anchors.fill: parent
-            color: Qt.rgba(8 / 255, 9 / 255, 12 / 255, 0.6)
+            color: Theme.scrim
             opacity: root.open ? 1 : 0
             Behavior on opacity {
                 NumberAnimation { duration: root.open ? 180 : 220; easing.type: Easing.OutCubic }
@@ -130,7 +130,7 @@ Scope {
             width: root.view + 64
             height: content.implicitHeight + 56
             radius: 20
-            color: Qt.rgba(20 / 255, 22 / 255, 28 / 255, 0.92)
+            color: Theme.card
             border.width: 1
             border.color: Qt.alpha(Theme.primary, 0.25)
             opacity: backdrop.opacity

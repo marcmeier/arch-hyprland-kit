@@ -7,8 +7,9 @@
 #        settings-menu.sh wallpapers           the folder's images: "image<TAB>thumbnail" lines, newest first
 #        settings-menu.sh monitors-arrange|monitors-reset|display-mode
 #        settings-menu.sh avatar               your picture (~/.face) for the bar, the lock and login screen
+#        settings-menu.sh appearance dark|light|auto   the look (auto: light from sunrise to sunset)
 #        settings-menu.sh avatar-save IMAGE [X Y SIZE]   the square the picture editor chose
-# Per machine choices: widget layout, bar size and monitor layout (~/.local/state) and the wallpaper with its
+# Per machine choices: widget layout, bar size, monitor layout and the look (~/.local/state) and the wallpaper with its
 # colours (~/.config/wall.png and the files rendered from it, not in the repository). None of them
 # travels to your other machines.
 # Started from a service (the bar, elephant), a restart of that service would kill the menu halfway (the
@@ -224,6 +225,12 @@ case $action in
   avatar)
     mkdir -p "$STATE"
     avatar
+    ;;
+  appearance)
+    mkdir -p "$STATE"
+    [[ ${2:-} =~ ^(dark|light|auto)$ ]] || exit 2
+    python3 "$HOME/.config/theme/apply.py" --appearance "$2" > "$STATE/set-wallpaper.log" 2>&1 ||
+      notify-send -a settings -u critical "Appearance" "Failed, see $STATE/set-wallpaper.log"
     ;;
   avatar-save)
     mkdir -p "$STATE"

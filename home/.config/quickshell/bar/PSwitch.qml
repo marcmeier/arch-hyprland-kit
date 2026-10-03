@@ -11,7 +11,7 @@ Rectangle {
     implicitWidth: 42
     implicitHeight: 24
     radius: 12
-    color: checked ? Theme.accent2 : Qt.rgba(1, 1, 1, 0.12)
+    color: checked ? Theme.accent2 : Qt.alpha(Theme.overlay, Theme.light ? 0.16 : 0.12)
     Behavior on color {
         ColorAnimation { duration: 150 }
     }
@@ -22,7 +22,7 @@ Rectangle {
         radius: 9
         y: 3
         x: sw.checked ? parent.width - width - 3 : 3
-        color: sw.checked ? Theme.accentInk : Theme.text
+        color: sw.checked ? Theme.accentInk : Theme.knob
         Behavior on x {
             NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
         }

@@ -41,7 +41,7 @@ Rectangle {
     implicitHeight: content.implicitHeight + 2 * pad
     readonly property int pad: 14
     radius: popup ? 18 : 14
-    color: popup ? Theme.card : (mouse.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Theme.well)
+    color: popup ? Theme.card : (mouse.containsMouse ? Qt.alpha(Theme.overlay, 0.06) : Theme.well)
     border.width: popup || critical ? 1 : 0
     border.color: critical ? Qt.alpha(Theme.crit, 0.6) : low ? Theme.cardBorder : Qt.alpha(Theme.primary, 0.45)
     clip: true

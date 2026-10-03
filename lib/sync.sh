@@ -133,7 +133,7 @@ apply_changes() {
     setup_units
   }
   if grep -q '^dconf.ini$' <<< "$files"; then dconf load / < "$DRIFTLESS/dconf.ini" 2> /dev/null || warn "dconf not loaded"; fi
-  grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py)' <<< "$files" && reload+=(theme hypr)
+  grep -qE '^home/\.config/theme/(templates/|apply\.py|palette\.py|scheme\.py)' <<< "$files" && reload+=(theme hypr)
   # a new picture of you (~/.face linked into the repository, e.g. personal/face.png): the bar, the lock
   # and the login screen show it rendered round
   local face root

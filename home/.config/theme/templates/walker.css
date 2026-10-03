@@ -1,14 +1,15 @@
 /* rendered by theme/apply.py into ~/.config/walker/themes/driftless/style.css (the path to colors.css is absolute there) */
-/* Matches the shell (bar, notifications, power menu). Falls back to the default theme for layouts. */
+/* Matches the shell (bar, notifications, power menu), dark or light. Falls back to the default theme for layouts. */
 
 @import url("file://@home@/.config/theme/colors.css");
 
-@define-color window_bg_color rgba(20, 22, 28, 0.92);
+@define-color window_bg_color @glass:0.92@;
 @define-color accent_bg_color @primary;
-@define-color theme_fg_color  #d7dce2;
-@define-color error_bg_color  #ff5f6d;
-@define-color error_fg_color  #0b0d10;
-@define-color dim             #8b93a1;
+@define-color theme_fg_color  @fg@;
+@define-color error_bg_color  @red@;
+@define-color error_fg_color  @ink@;
+@define-color dim             @dim@;
+@define-color overlay         @overlay@;
 @define-color accent          @secondary;
 
 * {
@@ -18,8 +19,8 @@
 }
 
 popover {
-  background: #1a1d24;
-  border: 1px solid alpha(white, 0.10);
+  background: @bg_alt@;
+  border: 1px solid alpha(@overlay, 0.10);
   border-radius: 14px;
   padding: 8px;
 }
@@ -30,11 +31,11 @@ popover {
 scrollbar { opacity: 0; }
 
 .box-wrapper {
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 18px 40px @shadow:@shadow_alpha@@;
   background: @window_bg_color;
   padding: 14px;
   border-radius: 18px;
-  border: 1px solid alpha(white, 0.08);
+  border: 1px solid alpha(@overlay, 0.08);
 }
 
 .preview-box,
@@ -45,8 +46,8 @@ scrollbar { opacity: 0; }
 
 .input {
   caret-color: @accent;
-  background: alpha(white, 0.05);
-  border: 1px solid alpha(white, 0.06);
+  background: alpha(@overlay, 0.05);
+  border: 1px solid alpha(@overlay, 0.06);
   border-radius: 12px;
   padding: 12px 16px;
   font-size: 15px;
@@ -67,7 +68,7 @@ scrollbar { opacity: 0; }
 }
 
 .item-quick-activation {
-  background: alpha(white, 0.06);
+  background: alpha(@overlay, 0.06);
   color: @dim;
   border-radius: 8px;
   padding: 4px 8px;
@@ -84,7 +85,7 @@ row:selected .item-box {
 .item-image-text { font-size: 28px; }
 
 .preview {
-  border: 1px solid alpha(white, 0.08);
+  border: 1px solid alpha(@overlay, 0.08);
   border-radius: 12px;
   color: @theme_fg_color;
 }
@@ -100,7 +101,7 @@ row:selected .item-box {
 
 .keybinds {
   padding-top: 10px;
-  border-top: 1px solid alpha(white, 0.06);
+  border-top: 1px solid alpha(@overlay, 0.06);
   font-size: 12px;
   color: @dim;
 }
@@ -110,7 +111,7 @@ row:selected .item-box {
 .keybind-label {
   padding: 2px 6px;
   border-radius: 6px;
-  border: 1px solid alpha(white, 0.15);
+  border: 1px solid alpha(@overlay, 0.15);
 }
 
 .error {

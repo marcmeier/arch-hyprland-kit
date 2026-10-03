@@ -1,4 +1,4 @@
-# Matches the bar / ghostty: cyan path, green accent, dim details.
+# Matches the bar / ghostty: the accents of the wallpaper, dim details; dark or light look.
 add_newline = false
 command_timeout = 500
 
@@ -8,23 +8,23 @@ $character"""
 
 [character]
 success_symbol = "[❯](bold @secondary@)"
-error_symbol   = "[❯](bold #ff5f6d)"
+error_symbol   = "[❯](bold @red@)"
 
 [directory]
 style = "bold @primary@"
 truncation_length = 3
 truncation_symbol = "…/"
 read_only = " "
-read_only_style = "#ffb454"
+read_only_style = "@orange@"
 
 [git_branch]
 symbol = " "
-format = "[on](#6b7280) [$symbol$branch]($style) "
+format = "[on](@muted@) [$symbol$branch]($style) "
 style = "@secondary@"
 
 [git_status]
 format = "([$all_status$ahead_behind]($style) )"
-style = "#ffb454"
+style = "@orange@"
 conflicted = "="
 ahead = "⇡${count}"
 behind = "⇣${count}"
@@ -38,30 +38,30 @@ deleted = "✘"
 [cmd_duration]
 min_time = 3000
 format = "[took $duration]($style) "
-style = "#6b7280"
+style = "@muted@"
 
 [jobs]
 symbol = "✦"
-style = "#c792ea"
+style = "@purple@"
 
 [username]
 format = "[$user]($style)@"
-style_user = "#6b7280"
-style_root = "bold #ff5f6d"
+style_user = "@muted@"
+style_root = "bold @red@"
 
 [hostname]
 ssh_only = true
 format = "[$hostname]($style) "
-style = "#6b7280"
+style = "@muted@"
 
 [python]
 format = "[py $version]($style) "
-style = "#6b7280"
+style = "@muted@"
 
 [rust]
 format = "[rs $version]($style) "
-style = "#6b7280"
+style = "@muted@"
 
 [golang]
 format = "[go $version]($style) "
-style = "#6b7280"
+style = "@muted@"

@@ -73,14 +73,15 @@ cmd_setup() {
   cmd_link
   say "commit signing"
   signing_setup
-  say "theme"
-  [[ -f $HOME/.config/wall.png ]] || cp "$HOME/.config/theme/default-wallpaper.jpg" "$HOME/.config/wall.png" 2> /dev/null || true
-  python3 "$HOME/.config/theme/apply.py" --current > /dev/null || warn "theme not rendered (later: set-wallpaper --current)"
   say "GNOME/GTK settings"
   if command -v dconf > /dev/null; then
     dbus-run-session -- dconf load / < "$DRIFTLESS/dconf.ini" 2> /dev/null ||
       dconf load / < "$DRIFTLESS/dconf.ini" || warn "dconf not loaded"
   fi
+  # after dconf: the theme sets the colour scheme of GTK (dark or light, per machine)
+  say "theme"
+  [[ -f $HOME/.config/wall.png ]] || cp "$HOME/.config/theme/default-wallpaper.jpg" "$HOME/.config/wall.png" 2> /dev/null || true
+  python3 "$HOME/.config/theme/apply.py" --current > /dev/null || warn "theme not rendered (later: set-wallpaper --current)"
   say "folders"
   mkdir -p "$HOME"/{Desktop,Downloads,Documents,Music,Pictures,Videos,Templates,Public,Projects,Games}
   say "user units"
@@ -99,7 +100,8 @@ cmd_dconf() {
       grep '^#' "$DRIFTLESS/dconf.ini" > "$out"
       while read -r section; do
         printf '[%s]\n' "$section"
-        dconf dump "/$section/" | grep -v '^\[' | grep .
+        # the look (dark or light) is each machine's own: theme/apply.py sets these two
+        dconf dump "/$section/" | grep -v '^\[' | grep -vE '^(color-scheme|gtk-theme)=' | grep .
         echo
       done < <(sed -n 's/^\[\(.*\)\]$/\1/p' "$DRIFTLESS/dconf.ini") >> "$out"
       sed -i '${/^$/d}' "$out"

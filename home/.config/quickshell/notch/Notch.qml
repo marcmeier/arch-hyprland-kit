@@ -218,8 +218,9 @@ Scope {
                     reading: root.mode === "answer" && root.shown < root.fullText.length
                     pointerIn: hover.hovered
                     pointer: hover.hovered ? face.mapFromItem(bubble, hover.point.position) : Qt.point(0, 0)
-                    primary: Theme.primary
-                    secondary: Theme.secondary
+                    // its screen is dark in both looks: the vivid accents glow on it
+                    primary: Theme.night.primary
+                    secondary: Theme.night.secondary
                     error: Theme.crit
                 }
 
@@ -329,7 +330,7 @@ Scope {
                 wrapMode: Text.Wrap
                 elide: Text.ElideRight
                 textFormat: Text.PlainText
-                color: root.mode === "error" ? Qt.lighter(Theme.crit, 1.35) : Theme.text
+                color: root.mode === "error" ? (Theme.light ? Theme.crit : Qt.lighter(Theme.crit, 1.35)) : Theme.text
                 font.family: Theme.font
                 font.pixelSize: 14
                 lineHeight: 1.15

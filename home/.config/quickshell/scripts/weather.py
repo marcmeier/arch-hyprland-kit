@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The bar: weather from wttr.in as one JSON object (current conditions, the next hours, three days).
 Location: WTTR_LOCATION from the personal layer, else wttr.in guesses it from your IP. Prints {} when
-wttr.in does not answer, and the pill hides itself."""
+wttr.in does not answer, and the pill hides itself. Notes today's sunrise and sunset in
+~/.cache/theme/sun.json for the automatic light and dark look."""
 
 import datetime as dt
 import json
@@ -61,6 +62,18 @@ def clock(text):
     return dt.datetime.strptime(text.strip(), "%I:%M %p").time()
 
 
+def note_sun(sunrise, sunset):
+    """Today's sunrise and sunset for the automatic look (theme/apply.py --follow-sun)."""
+    path = os.path.expanduser("~/.cache/theme/sun.json")
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path + ".tmp", "w") as out:
+            json.dump({"sunrise": f"{sunrise:%H:%M}", "sunset": f"{sunset:%H:%M}"}, out)
+        os.replace(path + ".tmp", path)
+    except OSError:
+        pass
+
+
 def main():
     url = "https://wttr.in/" + urllib.parse.quote(location().replace(" ", "+"), safe="+,") + "?format=j1"
     try:
@@ -74,7 +87,9 @@ def main():
     now = dt.datetime.now()
     try:
         astro = days[0]["astronomy"][0]
-        night = not (clock(astro["sunrise"]) <= now.time() <= clock(astro["sunset"]))
+        sunrise, sunset = clock(astro["sunrise"]), clock(astro["sunset"])
+        night = not (sunrise <= now.time() <= sunset)
+        note_sun(sunrise, sunset)
     except (KeyError, ValueError, IndexError):
         night = not 7 <= now.hour < 19
     area = (data.get("nearest_area") or [{}])[0].get("areaName", [{}])[0].get("value", "")

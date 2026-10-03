@@ -100,7 +100,7 @@ Scope {
         Rectangle {
             id: backdrop
             anchors.fill: parent
-            color: Qt.rgba(8 / 255, 9 / 255, 12 / 255, 0.6)
+            color: Theme.scrim
             opacity: root.open ? 1 : 0
             Behavior on opacity {
                 NumberAnimation { duration: root.open ? 180 : 220; easing.type: Easing.OutCubic }
@@ -190,7 +190,7 @@ Scope {
                         width: 148
                         height: 156
                         radius: 18
-                        color: active ? Qt.rgba(40 / 255, 44 / 255, 54 / 255, 0.95) : Theme.card
+                        color: active ? Theme.raised : Theme.card
                         border.width: 1
                         border.color: active ? tone : Theme.cardBorder
                         Behavior on color {
@@ -241,7 +241,7 @@ Scope {
                                 radius: 6
                                 color: "transparent"
                                 border.width: 1
-                                border.color: tile.active ? Qt.alpha(tile.tone, 0.6) : Qt.rgba(1, 1, 1, 0.12)
+                                border.color: tile.active ? Qt.alpha(tile.tone, 0.6) : Qt.alpha(Theme.overlay, 0.12)
                                 Label {
                                     anchors.centerIn: parent
                                     text: tile.modelData.key

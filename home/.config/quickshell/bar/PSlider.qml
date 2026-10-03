@@ -28,7 +28,7 @@ Item {
         width: parent.width
         height: 6
         radius: 3
-        color: Qt.rgba(1, 1, 1, 0.10)
+        color: Qt.alpha(Theme.overlay, 0.10)
 
         Rectangle {
             width: Math.max(height, track.width * slider.shown)
@@ -50,7 +50,7 @@ Item {
         radius: width / 2
         anchors.verticalCenter: parent.verticalCenter
         x: Math.max(0, Math.min(slider.width - width, slider.width * slider.shown - width / 2))
-        color: Theme.text
+        color: Theme.knob
         border.width: 2
         border.color: slider.dim ? Theme.dim : Theme.accent2
         Behavior on width {

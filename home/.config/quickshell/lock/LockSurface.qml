@@ -6,7 +6,7 @@ import QtQuick.Effects
 import qs.services
 import "../bar"
 
-// One screen of the lock (lock/Lock.qml): the login screen's look. Every screen takes the password,
+// One screen of the lock (lock/Lock.qml): the login screen's look, dark in both looks (Theme.night). Every screen takes the password,
 // so typing works wherever the pointer is; what you type shows on all of them.
 WlSessionLockSurface {
     id: surface
@@ -70,7 +70,7 @@ WlSessionLockSurface {
                 font.family: Theme.font
                 font.pixelSize: 96
                 font.weight: Font.ExtraLight
-                color: Theme.text
+                color: Theme.night.text
                 text: Qt.formatTime(time.date, "hh:mm")
                 renderType: Text.NativeRendering
                 layer.enabled: true
@@ -84,7 +84,7 @@ WlSessionLockSurface {
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 font.pixelSize: 17
-                color: Theme.dim
+                color: Theme.night.dim
                 text: Qt.locale().toString(time.date, "dddd, d. MMMM")
             }
         }
@@ -101,9 +101,9 @@ WlSessionLockSurface {
             width: 480
             height: 168
             radius: 20
-            color: Qt.rgba(20 / 255, 22 / 255, 28 / 255, 0.78)
+            color: Theme.night.card
             border.width: 1
-            border.color: surface.ctx.failed ? Qt.alpha(Theme.crit, 0.45) : Qt.alpha(Theme.primary, 0.25)
+            border.color: surface.ctx.failed ? Qt.alpha(Theme.night.crit, 0.45) : Qt.alpha(Theme.night.primary, 0.25)
             Behavior on border.color {
                 ColorAnimation { duration: 200 }
             }
@@ -152,11 +152,12 @@ WlSessionLockSurface {
                     text: Feeds.userName
                     font.pixelSize: 17
                     bold: true
-                    color: Theme.dim
+                    color: Theme.night.dim
                 }
 
                 PasswordField {
                     id: field
+                    night: true
                     width: parent.width
                     text: surface.ctx.password
                     checking: surface.ctx.checking
@@ -175,7 +176,7 @@ WlSessionLockSurface {
                     height: 16
                     small: true
                     text: surface.ctx.message !== "" ? surface.ctx.message : Keyboard.caps ? "Caps Lock is on" : ""
-                    color: surface.ctx.failed ? Theme.crit : Keyboard.caps ? Theme.warn : Theme.dim
+                    color: surface.ctx.failed ? Theme.night.crit : Keyboard.caps ? Theme.night.warn : Theme.night.dim
                 }
             }
 
@@ -202,12 +203,12 @@ WlSessionLockSurface {
                 Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     text: parent.parent.hasBat ? Glyphs.battery(Math.round(parent.parent.bat.percentage * 100), parent.parent.bat.state === UPowerDeviceState.Charging) : ""
-                    color: Theme.dim
+                    color: Theme.night.dim
                 }
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
                     small: true
-                    dim: true
+                    color: Theme.night.dim
                     text: parent.parent.hasBat ? Math.round(parent.parent.bat.percentage * 100) + "%" : ""
                 }
             }
@@ -217,12 +218,12 @@ WlSessionLockSurface {
                 Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Notifs.dnd ? "\u{F009B}" : "\u{F009E}"
-                    color: Theme.dim
+                    color: Theme.night.dim
                 }
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
                     small: true
-                    dim: true
+                    color: Theme.night.dim
                     text: Notifs.count + (Notifs.count === 1 ? " notification" : " notifications")
                 }
             }

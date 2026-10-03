@@ -4,9 +4,9 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import qs.services
 
-// The desktop settings (a click on the avatar; walker menus before): the wallpaper with the folder's
-// thumbnails, the bar's size and which widgets it shows, the monitors, and the way to the sync and the
-// keys. Every choice is this machine's own (scripts/settings-menu.sh, scripts/bar_layout.py).
+// The desktop settings (a click on the avatar; walker menus before): the look (dark, light, with the
+// sun), the wallpaper with the folder's thumbnails, the bar's size and which widgets it shows, the
+// monitors, and the way to the sync and the keys. Every choice is this machine's own (scripts/settings-menu.sh, scripts/bar_layout.py).
 Item {
     id: root
 
@@ -18,6 +18,8 @@ Item {
     readonly property string stateDir: Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state"
 
     property var walls: []          // [{image, thumb}], newest first
+    property string pendingLook: ""  // clicked, apply.py is still rendering
+    readonly property string look: pendingLook || Theme.appearance
     property var widgets: []        // bar_layout.py --widgets
     readonly property bool laptopPanel: Hyprland.monitors.values.some(m => /^eDP-/.test(m.name))
 
@@ -53,6 +55,29 @@ Item {
         onFileChanged: reload()
         printErrors: false
     }
+    // today's sunrise and sunset (weather.py), for the line under the looks
+    FileView {
+        id: sun
+        path: Quickshell.env("HOME") + "/.cache/theme/sun.json"
+        watchChanges: true
+        onFileChanged: reload()
+        printErrors: false
+    }
+    readonly property var sunTimes: {
+        try {
+            return JSON.parse(sun.text());
+        } catch (e) {
+            return { sunrise: "07:00", sunset: "19:00" };
+        }
+    }
+    Connections {
+        target: Theme
+        function onRendersChanged() {
+            if (root.pendingLook === Theme.appearance)
+                root.pendingLook = "";
+        }
+    }
+
     FileView {
         id: customMonitors
         path: root.stateDir + "/hypr/monitors.lua"
@@ -162,6 +187,45 @@ Item {
                 id: left
                 width: 360
                 spacing: 12
+
+                // ---- the look: the desktop in miniature, dark, light or with the sun ----
+                Caption {
+                    text: "Appearance"
+                }
+                Row {
+                    id: looks
+                    width: parent.width
+                    spacing: 12
+                    Repeater {
+                        model: [["dark", "Dark", "\u{F0594}"], ["light", "Light", "\u{F0599}"], ["auto", "Auto", "\u{F050E}"]]
+                        LookTile {
+                            required property var modelData
+                            width: (looks.width - 2 * looks.spacing) / 3
+                            look: modelData[0]
+                            label: modelData[1]
+                            icon: modelData[2]
+                            selected: root.look === modelData[0]
+                            onClicked: {
+                                if (root.look === look)
+                                    return;
+                                root.pendingLook = look;
+                                root.run(["appearance", look]);
+                            }
+                        }
+                    }
+                }
+                Label {
+                    small: true
+                    dim: true
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    text: root.look === "auto"
+                          ? "Light from sunrise (" + root.sunTimes.sunrise + ") to sunset (" + root.sunTimes.sunset + "), dark at night"
+                          : root.look === "light" ? "Paper and slate, tinted by your wallpaper"
+                          : "Night colours, the accents glow"
+                }
+
+                Separator {}
 
                 // ---- wallpaper ----
                 Caption {

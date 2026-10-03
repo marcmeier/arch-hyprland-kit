@@ -4,11 +4,23 @@
 
 Versions follow the [releases](../../releases), which have the full notes.
 
-## Unreleased
+## v2.7.0 (2026-10-03): a light look
 
 ### Added
 - A logo and a wordmark. The README, the other pages and the repository's social preview carry
   them; the files and how to use them are in [docs/brand](docs/brand/README.md).
+- Light mode beside the dark one, chosen in the settings (Appearance: dark, light, auto) with three
+  previews of your desktop in miniature. Light is paper and slate tinted by the wallpaper's hue, with
+  deeper versions of its accents; auto is light from sunrise to sunset (`weather.py` notes them in
+  `~/.cache/theme/sun.json`). The shell blends into the new look; GTK/libadwaita/Electron (gsettings),
+  Qt, Ghostty, walker, btop, starship, VS Code and Hyprland follow. Lock and login screen stay dark.
+- `theme/scheme.py`: both looks as named colours (`fg`, `bg`, `dim`, `line`, `red`, ...) that every
+  template uses; `apply.py --appearance dark|light|auto`, `--follow-sun`. The choice is per machine
+  (`~/.local/state/theme/appearance`).
+
+### Changed
+- `color-scheme` and `gtk-theme` left `dconf.ini` (each machine's look; `dconf capture` skips them).
+- Ghostty's colours all come from the rendered `theme/ghostty-colors`.
 
 ### Fixed
 - Keep awake (the coffee cup in the bar) did nothing: the screen still locked and went off. Hyprland

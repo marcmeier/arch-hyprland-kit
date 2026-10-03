@@ -183,8 +183,8 @@ the desktop looks borrowed from another program.
 
 A click on the avatar opens them as a popup of the bar, every choice per machine (but your picture):
 
-<img src="docs/img/settings.jpg" alt="The settings popup: wallpaper thumbnails, bar size, widget switches, monitors, sync and keys" width="700"><br>
-<sub>The settings popup.</sub>
+<img src="docs/img/settings.jpg" alt="The settings popup: the look as three miniatures (dark, light, auto), wallpaper thumbnails, bar size, widget switches, monitors, sync and keys" width="560"><br>
+<sub>The settings popup, here in the light look.</sub>
 
 
 - **Your picture**: a click on it (or "Picture …") picks an image, then you place it behind a round
@@ -226,8 +226,12 @@ follow too.
 - **The login and lock screen** show the same wallpaper, blurred, and follow every change without a
   password prompt
 
-<img src="docs/img/theme-tiled.jpg" alt="Tiled windows: btop, Nautilus and Ghostty" width="700"><br>
-<sub>The terminal palette follows the wallpaper.</sub>
+<table>
+<tr>
+<td width="50%"><img src="docs/img/theme-tiled.jpg" alt="Tiled windows in the dark look: btop, Nautilus and Ghostty"><br><sub>Dark: the terminal palette follows the wallpaper.</sub></td>
+<td width="50%"><img src="docs/img/theme-light.jpg" alt="The same windows in the light look on warm paper, under a mountain wallpaper at sunset"><br><sub>Light: the paper takes the wallpaper's warmth, the accents get deeper.</sub></td>
+</tr>
+</table>
 
 ## Gaming
 

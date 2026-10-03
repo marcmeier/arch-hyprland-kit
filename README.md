@@ -86,6 +86,10 @@ A new machine gets everything from two scripts.
 <td><img src="docs/img/theme-lock.jpg" alt="The lock screen: clock, picture, password"><br><sub>The lock screen (<code>SUPER + L</code>).</sub></td>
 <td><img src="docs/img/theme-greeter.jpg" alt="The login screen: the lock screen's card, with the machine and the session below"><br><sub>The login screen: the same card, the machine and the session below.</sub></td>
 </tr>
+<tr>
+<td><img src="docs/img/theme-light.jpg" alt="The light look: btop, Ghostty and Nautilus on warm paper under a mountain wallpaper at sunset"><br><sub>The light look: paper tinted by the wallpaper, deeper accents.</sub></td>
+<td><img src="docs/img/settings.jpg" alt="The settings popup in the light look, with dark, light and auto as miniatures of the desktop"><br><sub>Dark, light or with the sun, chosen in the settings.</sub></td>
+</tr>
 </table>
 
 ## How it compares
